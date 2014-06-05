@@ -7,11 +7,11 @@
 #include "DroneUtils.h"
 #include "GreatCircle.h"
 
-#define DEBUG
+//#define DEBUG
 #define LEARN_COMPASS_ERROR
 #define UBLOX_GPS_FIX
 
-const double FILTER_PARAM = .988; //closer to 1 is slower "learning"
+const double FILTER_PARAM = .992; //closer to 1 is slower "learning"
 const double POINT_RADIUS = .01; //in miles, margin for error in rover location
 const int BLUE = 25;
 const int YLLW = 26;
@@ -21,6 +21,9 @@ const int steerPin = 12; //output 1
 const int backSPin = 5;  //output 8
 const int STEERTHROW = 70; //distance in degrees from far left to far right turn
 const int driveSpeed = 120;
+
+const int driveInput = 2;
+const int steerInput = 3;
 
 short XSHIFT = 50;
 short YSHIFT = 280;
@@ -32,7 +35,8 @@ Servo drive,steer,backSteer;
 
 double pathHeading; //all headings are Clockwise=+, -179 to 180, 0=north
 double trueHeading;
-double gpsFoundShift=-70;
+double gpsFoundShift=0;
+double compassHeading;
 double distance;
 double gpsHeading;
 double pitch=0, roll=0; //stores the observed angle from horizontal in x, y axis
@@ -70,6 +74,8 @@ void setup() {
 	#ifdef UBLOX_GPS_FIX
 		Serial1.write(GPS_SETUP, sizeof(GPS_SETUP)); //setup 3DR LEA6 GPS module
 	#endif
+
+	getRadio(driveInput);
 }
 
 void loop() {
@@ -77,22 +83,44 @@ void loop() {
 #ifndef DEBUG
 	updateGPS();
 #endif
-	if(ttime < millis()){
-		ttime = millis()+200;
-		observeHeading();
-		if(manager.numWaypoints() >= 1 && !nmea.getWarning()){
-			distance = calcDistance(manager.getTargetWaypoint(), location);
-			if(distance > POINT_RADIUS)
-				navigate(manager.getTargetWaypoint());
-			else if(manager.getTargetIndex() < manager.numWaypoints()-1)
-				manager.advanceTargetIndex();
-			else if (manager.loopWaypoints())
-				manager.setTargetIndex(0);
-			else
-				stop();
+	if(!isRadioOn(driveInput)){
+
+
+		if(ttime < millis()){
+			ttime = millis()+200;
+			observeHeading();
+			readAccelerometer();
+
+			if(manager.numWaypoints() >= 1 && !nmea.getWarning()){
+				distance = calcDistance(manager.getTargetWaypoint(), location);
+				if(distance > POINT_RADIUS)
+					navigate(manager.getTargetWaypoint());
+				else if(manager.getTargetIndex() < manager.numWaypoints()-1)
+					manager.advanceTargetIndex();
+				else if (manager.loopWaypoints())
+					manager.setTargetIndex(0);
+				else
+					stop();
+			}
+
+			reportLocation();
 		}
-		readAccelerometer();
-		reportLocation();
+
+
+	} else {
+
+		if(ttime < millis()){
+			ttime = millis()+200;
+			observeHeading();
+			readAccelerometer();
+			reportLocation();
+		}
+
+		int tmp = getRadio(steerInput);
+		steer.write( tmp );
+		backSteer.write( 180-tmp );
+		drive.write( getRadio(driveInput) );
+
 	}
 }
 
@@ -106,9 +134,11 @@ void navigate(Point target){
 	trueHeading += atan( float(angularError)*PI/180 )*(20);
 	location = extrapPosition(location, trueHeading, POINT_RADIUS);
 #else
+
 	steer.write( outputAngle );
 	backSteer.write( 180-outputAngle );
 	drive.write( driveSpeed );
+
 #endif
 }
 
@@ -129,16 +159,17 @@ void updateGPS(){
 }
 
 void observeHeading(){
-	double CompassHeading = getHeadingTiltComp(XSHIFT, XSCALE,
+	compassHeading = getHeadingTiltComp(XSHIFT, XSCALE,
 											   YSHIFT, YSCALE,
 											   eigenPitch, eigenRoll);
-	if(!nmea.getWarning()) CompassHeading-=nmea.getMagVar();
+	compassHeading *= -1; //because APM 2.5+ mounts the compass upsideDown
+	if(!nmea.getWarning()) compassHeading-=nmea.getMagVar();
 
 	if(nmea.getCourse() != 0){
 		gpsHeading = nmea.getCourse();
 		gpsHeading = ((int(gpsHeading)+540)%360)-180;
 
-		int error = CompassHeading-gpsHeading;
+		int error = compassHeading-gpsHeading;
 		error = ((error+540)%360)-180;
 
 		#ifdef LEARN_COMPASS_ERROR
@@ -150,7 +181,7 @@ void observeHeading(){
 		#endif
 	}
 #ifndef DEBUG
-	trueHeading = CompassHeading+gpsFoundShift;
+	trueHeading = compassHeading+gpsFoundShift;
 #endif
 }
 
@@ -168,13 +199,12 @@ void readAccelerometer(){
 void reportLocation(){
 	manager.sendDataMessage(Protocol::DATA_LATITUDE, location.degLatitude());
 	manager.sendDataMessage(Protocol::DATA_LONGITUDE, location.degLongitude());
-	manager.sendDataMessage(Protocol::DATA_DISTANCE, distance);
-	manager.sendDataMessage(Protocol::DATA_HEADING, trueHeading);
-
 	manager.sendDataMessage(Protocol::DATA_ROLL, roll*180/PI);
 	manager.sendDataMessage(Protocol::DATA_PITCH, pitch*180/PI);
+
+	manager.sendDataMessage(Protocol::DATA_HEADING, pathHeading);
+	manager.sendDataMessage(Protocol::DATA_DISTANCE, compassHeading);
 	manager.sendDataMessage(Protocol::DATA_SPEED, gpsFoundShift);
-	// manager.sendDataMessage(Protocol::DATA_SPEED, nmea.getGroundSpeed());
 }
 
 void calibrateCompass(){
