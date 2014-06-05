@@ -76,7 +76,8 @@ CommManager::recieveWaypoint(uint8_t tag, double lat,
 			else if(index==0) sendTargetIndex();
 			break;
 		case Protocol::CHANGE_WAYPOINT:
-			if(waypoints.size() > index) waypoints.set(index, Point(lat, lon));
+			if(index < waypoints.size()) waypoints.set(index, Point(lat, lon));
+			if(index == targetIndex) cachedTarget = getWaypoint(targetIndex);
 			//else  send RESEND_WAYPOINT_LIST message
 			break;
 		case Protocol::DELETE_WAYPOINT:
