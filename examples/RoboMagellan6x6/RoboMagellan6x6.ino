@@ -8,19 +8,28 @@
 #include "GreatCircle.h"
 
 //#define DEBUG
-#define LEARN_COMPASS_ERROR
 #define UBLOX_GPS_FIX
 
-const double FILTER_PARAM = .992; //closer to 1 is slower "learning"
-const double POINT_RADIUS = .01; //in miles, margin for error in rover location
+//clean up now GPS comm code
+//Test with interGPS point extrapolation
+//Test with strong form compass Shift
+//Make template function for wrapping directions
+
+//Ping sensors
+//front = A0; front left = A1; front right = A2; Right = A3; left = A4
+
+const double POINT_RADIUS = .001; //in miles, margin for error in rover location
+
+const double FILTER  = .995;
+
 const int BLUE = 25;
 const int YLLW = 26;
 const int RED  = 27;
-const int drivePin = 11; //output 2
-const int steerPin = 12; //output 1
-const int backSPin = 5;  //output 8
+const int drivePin = 12; //output 1
+const int steerPin = 11; //output 2
+const int backSPin = 8;  //output 3
 const int STEERTHROW = 70; //distance in degrees from far left to far right turn
-const int driveSpeed = 120;
+const int driveSpeed = 116;
 
 const int driveInput = 2;
 const int steerInput = 3;
@@ -35,14 +44,14 @@ Servo drive,steer,backSteer;
 
 double pathHeading; //all headings are Clockwise=+, -179 to 180, 0=north
 double trueHeading;
-double gpsFoundShift=0;
+double gpsFoundShift=-90;
 double compassHeading;
 double distance;
 double gpsHeading;
 double pitch=0, roll=0; //stores the observed angle from horizontal in x, y axis
-double eigenPitch, eigenRoll; //stores the rotations to get to our current state
+double eulerPitch, eulerRoll; //stores the rotations to get to our current state
 Point location(0,0);
-unsigned long ttime = 0;
+unsigned long ttime = 0, navTime = 0;
 HardwareSerial *CommSerial = &Serial;
 CommManager manager(CommSerial);
 
@@ -57,7 +66,7 @@ void setup() {
 	backSteer.attach(backSPin);
 	stop();
 	Serial1.begin(38400);
-	CommSerial->begin(57600);
+	CommSerial->begin(9600);
 	InitMPU();
 
 	pinMode(40, OUTPUT);
@@ -72,7 +81,11 @@ void setup() {
 	#endif
 
 	#ifdef UBLOX_GPS_FIX
-		Serial1.write(GPS_SETUP, sizeof(GPS_SETUP)); //setup 3DR LEA6 GPS module
+		Serial1.write(GPS_SETUP, sizeof(GPS_SETUP));
+		sendGPSMessage(0x06, 0x24, 0x0024, Pedestrian_Mode);
+		//sendGPSMessage(0x06, 0x01, 0x0003, GPRMC_On);
+		//sendGPSMessage(0x06, 0x17, 0x0004, CFG_NMEA);
+		//sendGPSMessage(0x06, 0x00, 0x0014, CFG_PRT);
 	#endif
 
 	getRadio(driveInput);
@@ -80,17 +93,14 @@ void setup() {
 
 void loop() {
 	manager.update();
-#ifndef DEBUG
-	updateGPS();
-#endif
+	updateGPS(); //off in debug
 	if(!isRadioOn(driveInput)){
 
 
 		if(ttime < millis()){
-			ttime = millis()+200;
-			observeHeading();
+			ttime = millis()+150;
 			readAccelerometer();
-
+			observeHeading();//off in debug
 			if(manager.numWaypoints() >= 1 && !nmea.getWarning()){
 				distance = calcDistance(manager.getTargetWaypoint(), location);
 				if(distance > POINT_RADIUS)
@@ -102,7 +112,6 @@ void loop() {
 				else
 					stop();
 			}
-
 			reportLocation();
 		}
 
@@ -127,7 +136,7 @@ void loop() {
 void navigate(Point target){
 	pathHeading = calcHeading(location, target);
 	angularError = (pathHeading - trueHeading);
-	angularError = ((angularError+540)%360)-180;
+	angularError = trunkAngle(angularError);
 	outputAngle = atan( float(angularError)*PI/180 )*(STEERTHROW/PI) + 90;
 
 #ifdef DEBUG
@@ -151,38 +160,31 @@ void stop(){
 void updateGPS(){
 	nmea.update();
 	if(nmea.newData()){
-		location = nmea.getLocation();
-		location.update(location.degLatitude(),location.degLongitude());
 		digitalWrite(BLUE, nmea.getWarning()); //blue on when signal is found
 		digitalWrite(RED , LOW);
+
+		location = nmea.getLocation();
+
+		if(nmea.getCourse()!=0) gpsHeading = nmea.getCourse();
+		gpsHeading = trunkAngle(gpsHeading);
+		gpsFoundShift = gpsHeading - compassHeading;
+		navTime = millis();
 	}
 }
 
 void observeHeading(){
-	compassHeading = getHeadingTiltComp(XSHIFT, XSCALE,
-											   YSHIFT, YSCALE,
-											   eigenPitch, eigenRoll);
-	compassHeading *= -1; //because APM 2.5+ mounts the compass upsideDown
-	if(!nmea.getWarning()) compassHeading-=nmea.getMagVar();
+/*	float tmp = getHeadingTiltComp(XSHIFT, XSCALE, YSHIFT, YSCALE,
+										eulerPitch, eulerRoll);
+*/
+	trueHeading = gpsHeading;
 
-	if(nmea.getCourse() != 0){
-		gpsHeading = nmea.getCourse();
-		gpsHeading = ((int(gpsHeading)+540)%360)-180;
-
-		int error = compassHeading-gpsHeading;
-		error = ((error+540)%360)-180;
-
-		#ifdef LEARN_COMPASS_ERROR
-			//calculate high pass filter for compass, low sig from GPS
-			if(fabs(pitch)-.18<0 && fabs(roll)-.18<0){  // .18 ~ 10 degrees
-				gpsFoundShift = gpsFoundShift*FILTER_PARAM +
-									float(error)*(1-FILTER_PARAM);
-			}
-		#endif
+	float dT = millis()-navTime;
+	if(dT < 1000){ //ignore irrational values
+		//3600000 = milliseconds per hour
+		float dTraveled = nmea.getGroundSpeed()*dT/3600000.f;
+		location = extrapPosition(location, trueHeading, dTraveled);
 	}
-#ifndef DEBUG
-	trueHeading = compassHeading+gpsFoundShift;
-#endif
+	navTime = millis();
 }
 
 void readAccelerometer(){
@@ -192,8 +194,8 @@ void readAccelerometer(){
 
 	pitch = atan2(sqrt(x*x+z*z), y)*.4+pitch*.6;
 	roll  = atan2(sqrt(y*y+z*z), -x)*.4+ roll*.6;
-	eigenPitch = atan2(x, z);
-	eigenRoll = atan2( float(y), float(x)/sin(eigenPitch) );
+	eulerPitch = atan2(x, z);
+	eulerRoll = atan2( float(y), float(x)/sin(eulerPitch) );
 }
 
 void reportLocation(){
@@ -201,10 +203,9 @@ void reportLocation(){
 	manager.sendDataMessage(Protocol::DATA_LONGITUDE, location.degLongitude());
 	manager.sendDataMessage(Protocol::DATA_ROLL, roll*180/PI);
 	manager.sendDataMessage(Protocol::DATA_PITCH, pitch*180/PI);
-
-	manager.sendDataMessage(Protocol::DATA_HEADING, pathHeading);
-	manager.sendDataMessage(Protocol::DATA_DISTANCE, compassHeading);
-	manager.sendDataMessage(Protocol::DATA_SPEED, gpsFoundShift);
+	manager.sendDataMessage(Protocol::DATA_HEADING, trueHeading);
+	manager.sendDataMessage(Protocol::DATA_DISTANCE, distance);
+	manager.sendDataMessage(Protocol::DATA_SPEED, nmea.getGroundSpeed());
 }
 
 void calibrateCompass(){

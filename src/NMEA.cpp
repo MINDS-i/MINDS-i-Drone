@@ -133,6 +133,7 @@ void NMEA::takeData(char*& buffer, char* endPtr, int type){
 			break;
 		case 6: //speed over ground
 			groundSpeed = parseFloat(buffer, endPtr);
+			groundSpeed *= 1.15077945l; //convert to MPH
 			break;
 		case 7: //Course made true
 			course = parseFloat(buffer, endPtr);

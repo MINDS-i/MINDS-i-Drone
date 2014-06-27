@@ -17,10 +17,13 @@ public:
 	double degLongitude();
 };
 
-double toRad(double degrees);
-double toDeg(double radians);
-double calcHeading(Point a, Point b);
-double calcDistance(Point a, Point b); //all distances are in Miles
-Point extrapPosition(Point position, double bearing, double distance);
+float 	trunkAngle(float	 angle);
+double 	trunkAngle(double angle);
+int		trunkAngle(int 	 angle);
+double 	toRad(double degrees);
+double	toDeg(double radians);
+double 	calcHeading(Point a, Point b);
+double 	calcDistance(Point a, Point b); //all distances are in Miles
+Point 	extrapPosition(Point position, double bearing, double distance);
 
 #endif

@@ -49,17 +49,31 @@ double
 Point::degLongitude(){
 	return toDeg(Rlng);
 }
-
+float trunkAngle(float angle){
+	return trunkAngle(double(angle));//float and double are the same on arduino
+}
+double
+trunkAngle(double angle){
+	angle += 180.l;
+	while(angle < 0.l) angle += 360.l;
+	return fmod(angle,360.l)-180.l;
+}
+int
+trunkAngle(int 	angle){
+	angle += 180;
+	while(angle < 0) angle += 360;
+	return (angle%360)-180;
+}
 double
 toRad(double degrees){
-	degrees /= 180.;
+	degrees /= 180.l;
 	degrees *= PI;
 	return degrees;
 }
 double
 toDeg(double radians){
 	radians /= PI;
-	radians *= 180.;
+	radians *= 180.l;
 	return radians;
 }
 double

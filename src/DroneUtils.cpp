@@ -13,14 +13,34 @@ CommManager::update(){
 			bufPos--;  //hide first end byte
 			processMessage(buf, bufPos);
 			bufPos = 0;
-		} else if(bufPos > Protocol::MAX_MESSAGE_SIZE+2){
+		} else if(bufPos > BUFF_LEN){
 			bufPos = 0;
 		} else {
 			buf[bufPos] = tmp;
 			bufPos++;
 		}
 	}
+
+/*	while(stream->available()){
+		uint8_t tmp = stream->read();
+		buf[bufPos] = tmp;
+
+		if( 	tmp == Protocol::END_BYTE){
+			testMessage();
+		}
+
+		buffPos = (buffPos+1)%BUF_LEN
+	}*/
 }
+
+/*void
+CommManager::testMessage(){
+	uint8_t msg = bufPos-readBuf(bufPos-1);
+	if()
+}
+
+void inline readBuf(pos) { return buf[pos%BUF_LEN] }*/
+
 void
 CommManager::processMessage(uint8_t* data, uint8_t length){
 	if(!Protocol::fletcher(data, length)) return;
@@ -37,8 +57,8 @@ CommManager::processMessage(uint8_t* data, uint8_t length){
 				double lon = ((double)tmplon) / 100000.;
 				uint8_t pos = data[9];
 
-				recieveWaypoint(tag, lat, lon, pos);
-				sendConfirm(Protocol::fletcher16(data, length),stream);
+				if(recieveWaypoint(tag, lat, lon, pos))
+					sendConfirm(Protocol::fletcher16(data, length),stream);
 			}
 			break;
 		case Protocol::COMMAND_MSG_LENGTH:
@@ -63,28 +83,32 @@ CommManager::sendConfirm(uint16_t data, HardwareSerial *stream){
 	stream->write(sum&0xff);
 	stream->write(Protocol::END_BYTE, 2);
 }
-void
+boolean
 CommManager::recieveWaypoint(uint8_t tag, double lat,
 								double lon, uint8_t index){
 	switch(tag){
 		case Protocol::RECEIVE_TARGET:
+			if(index > waypoints.size()-1) return false;
 			setTargetIndex(index);
 			break;
 		case Protocol::ADD_WAYPOINT:
+			if(index > waypoints.size()) return false;
 			waypoints.add(index, Point(lat,lon));
-			if(targetIndex > index-1) advanceTargetIndex();
+			if(index < targetIndex) advanceTargetIndex();
 			else if(index==0) sendTargetIndex();
 			break;
 		case Protocol::CHANGE_WAYPOINT:
-			if(index < waypoints.size()) waypoints.set(index, Point(lat, lon));
+			if(index > waypoints.size()-1) return false;
+			waypoints.set(index, Point(lat, lon));
 			if(index == targetIndex) cachedTarget = getWaypoint(targetIndex);
-			//else  send RESEND_WAYPOINT_LIST message
 			break;
 		case Protocol::DELETE_WAYPOINT:
+			if(index > waypoints.size()-1) return false;
 			waypoints.remove(index);
 			if(targetIndex > index) retardTargetIndex();
 			break;
 	}
+	return true;
 }
 void
 CommManager::recieveCommand(uint8_t command){
@@ -175,4 +199,30 @@ CommManager::requestResync(){
 	uint8_t message[1];
 	message[0] = Protocol::SEND_WAYPOINT_LIST;
 	Protocol::sendMessage(message, 1, stream);
+}
+
+void sendGPSMessage(uint8_t Type, uint8_t ID, uint16_t len, uint8_t* buf){
+  uint8_t header[4];
+  uint8_t check[2];
+  header[0] = Type;
+  header[1] = ID;
+  header[2] = (uint8_t) (len&0xff);
+  header[3] = (uint8_t) len>>8;
+
+  updateGPSchecksum(header, 4, check[0], check[1]);
+  if(len > 0) updateGPSchecksum(buf, len, check[0], check[1]);
+
+  Serial1.write((char)0xB5);
+  Serial1.write((char)0x62);
+  Serial1.write(header, 4);
+  if(len > 0) Serial1.write(buf, len);
+  Serial1.write(check, 2);
+}
+
+void updateGPSchecksum(uint8_t *data, uint8_t len, uint8_t &c_a, uint8_t &c_b){
+    while (len--) {
+        c_a += *data;
+        c_b += c_a;
+        data++;
+    }
 }

@@ -17,7 +17,7 @@ public:
 	float getTimeOfFix();
 	float getDateOfFix();
 	bool getWarning();
-	float getGroundSpeed();
+	float getGroundSpeed(); //mph
 	float getCourse();
 	float getMagVar();
 private:
