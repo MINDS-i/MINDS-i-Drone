@@ -58,6 +58,6 @@ private:
 	boolean recieveWaypoint(uint8_t tag, double lat, double lon, uint8_t index);
 };
 
-void sendGPSMessage(uint8_t Type, uint8_t ID, uint16_t len, uint8_t* buf);
-void updateGPSchecksum(uint8_t *data, uint8_t len, uint8_t &c_a, uint8_t &c_b);
+void sendGPSMessage(uint8_t Type, uint8_t ID, uint16_t len, const uint8_t* buf);
+void updateGPSchecksum(const uint8_t *data, uint8_t len, uint8_t &c_a, uint8_t &c_b);
 #endif

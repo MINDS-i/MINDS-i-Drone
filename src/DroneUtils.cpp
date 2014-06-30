@@ -201,7 +201,8 @@ CommManager::requestResync(){
 	Protocol::sendMessage(message, 1, stream);
 }
 
-void sendGPSMessage(uint8_t Type, uint8_t ID, uint16_t len, uint8_t* buf){
+//Serial port and commands specific to stock 3DR UBLOX GPS
+void sendGPSMessage(uint8_t Type, uint8_t ID, uint16_t len, const uint8_t* buf){
   uint8_t header[4];
   uint8_t check[2];
   header[0] = Type;
@@ -219,7 +220,7 @@ void sendGPSMessage(uint8_t Type, uint8_t ID, uint16_t len, uint8_t* buf){
   Serial1.write(check, 2);
 }
 
-void updateGPSchecksum(uint8_t *data, uint8_t len, uint8_t &c_a, uint8_t &c_b){
+void updateGPSchecksum(const uint8_t *data, uint8_t len, uint8_t &c_a, uint8_t &c_b){
     while (len--) {
         c_a += *data;
         c_b += c_a;

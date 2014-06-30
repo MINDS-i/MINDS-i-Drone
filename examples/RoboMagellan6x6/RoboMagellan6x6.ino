@@ -6,185 +6,198 @@
 #include "MPU.h"
 #include "DroneUtils.h"
 #include "GreatCircle.h"
+#include "HLAverage.h"
+#include "wiring_private.h"
 
 //#define DEBUG
-#define UBLOX_GPS_FIX
 
-//clean up now GPS comm code
-//Test with interGPS point extrapolation
-//Test with strong form compass Shift
-//Make template function for wrapping directions
+//assume the right direction until we know from GPS
 
-//Ping sensors
-//front = A0; front left = A1; front right = A2; Right = A3; left = A4
+const uint8_t LEDpin[]   = {25, 26, 27}; //blue, yellow, red
+const uint8_t PingPin[]  = {A4, A1, A0, A2, A3}; //left to right
+const uint8_t ServoPin[] = {12, 11, 8};//drive, steer, backs, outputs 1,2,3 resp
+const uint8_t RadioPin[] = {2, 3}; //drive, steer
 
 const double POINT_RADIUS = .001; //in miles, margin for error in rover location
+const int SCHEDULE_DELAY = 25;
+const int STEERTHROW  = 50; //distance in degrees from far left to far right turn
+const int REVTHROW    = 20;
+const int FWDSPEED    = 116;
+const int REVSPEED    = 75;
+const int STOP_TIME   = 1500;//time to coast to stop
+const int DANGER_TIME = STOP_TIME+1000; //time to backup after last sighting
+const uint16_t warn[] = {650, 850, 1500, 850, 650};
+const double pAngle[5]={ 79.27l, 36.83l, 0.l, -36.83l, -79.27l};
+const double ISTR = 1.l;
+const double PSTR = 1350.l;
+const double dPlsb = 4.f/float(0xffff);
 
-const double FILTER  = .995;
-
-const int BLUE = 25;
-const int YLLW = 26;
-const int RED  = 27;
-const int drivePin = 12; //output 1
-const int steerPin = 11; //output 2
-const int backSPin = 8;  //output 3
-const int STEERTHROW = 70; //distance in degrees from far left to far right turn
-const int driveSpeed = 116;
-
-const int driveInput = 2;
-const int steerInput = 3;
-
-short XSHIFT = 50;
-short YSHIFT = 280;
-short XSCALE = 600;
-short YSCALE = 725;
-
+HardwareSerial *CommSerial = &Serial;
 NMEA nmea(Serial1);
-Servo drive,steer,backSteer;
-
+CommManager manager(CommSerial);
+Point location(0,0);
+HLA lowFilter(60000*10, 0);
+HLA highFilter(10, 0);
+Servo servo[3]; //drive, steer, backSteer
+uint16_t ping[5]={20000,20000,20000,20000,20000};
+uint32_t uTime = 0, nTime = 0, oTime = 0, sTime = 0; //scheduler, navigation, obstacle, stop
 double pathHeading; //all headings are Clockwise=+, -179 to 180, 0=north
 double trueHeading;
-double gpsFoundShift=-90;
-double compassHeading;
+double gyroHeading[2]={0,0}; //Gyro Heading Full and Half
 double distance;
-double gpsHeading;
 double pitch=0, roll=0; //stores the observed angle from horizontal in x, y axis
 double eulerPitch, eulerRoll; //stores the rotations to get to our current state
-Point location(0,0);
-unsigned long ttime = 0, navTime = 0;
-HardwareSerial *CommSerial = &Serial;
-CommManager manager(CommSerial);
+uint8_t sIter, pIter; //iterators for scheduler and ping
 
-int angularError;
-float outputAngle; //used in calculations
-long x,y,z;
+voidFuncPtr schedule[] = {
+							extrapPosition,
+							checkPing,
+							readAccelerometer,
+							reportLocation,
+							};
+
+int16_t x,y,z; //used in calculations
+int angularError, backDir;
+float outputAngle;
 
 void setup() {
-	beginCompass();
-	drive.attach(drivePin);
-	steer.attach(steerPin);
-	backSteer.attach(backSPin);
-	stop();
+	pinMode(40, OUTPUT);
+	digitalWrite(40, HIGH);
+	for(int i=0; i<3; i++) pinMode(LEDpin[i], OUTPUT);
 	Serial1.begin(38400);
 	CommSerial->begin(9600);
 	InitMPU();
+	for(int i=0; i<3; i++) servo[i].attach(ServoPin[i]);
+	output(90,90);
 
-	pinMode(40, OUTPUT);
-	digitalWrite(40, HIGH);
-	pinMode(RED , OUTPUT);
-	pinMode(BLUE, OUTPUT);
+	Serial1.write(GPS_SETUP, sizeof(GPS_SETUP));
+	sendGPSMessage(0x06, 0x24, 0x0024, Pedestrian_Mode);
+	//sendGPSMessage(0x06, 0x01, 0x0003, GPRMC_On);
+	//sendGPSMessage(0x06, 0x17, 0x0004, CFG_NMEA);
+	//sendGPSMessage(0x06, 0x00, 0x0014, CFG_PRT);
 
-	delay(1000);//provides 2 second delay for arming
-	#ifndef DEBUG
-		manager.requestResync();
-		calibrateCompass();
-	#endif
+	delay(1000);
+	double tmp = 0;
+	for(int i=0; i<100; i++){
+		uint16_t Gz = MPU_Gz();
+		tmp += double(Gz)/100;
+		delay(10);
+	}
+	lowFilter.set(tmp);
 
-	#ifdef UBLOX_GPS_FIX
-		Serial1.write(GPS_SETUP, sizeof(GPS_SETUP));
-		sendGPSMessage(0x06, 0x24, 0x0024, Pedestrian_Mode);
-		//sendGPSMessage(0x06, 0x01, 0x0003, GPRMC_On);
-		//sendGPSMessage(0x06, 0x17, 0x0004, CFG_NMEA);
-		//sendGPSMessage(0x06, 0x00, 0x0014, CFG_PRT);
-	#endif
-
-	getRadio(driveInput);
+	manager.requestResync();
+	getRadio(RadioPin[0]);
+	uTime = millis();
 }
 
-void loop() {
+void loop(){
 	manager.update();
-	updateGPS(); //off in debug
-	if(!isRadioOn(driveInput)){
-
-
-		if(ttime < millis()){
-			ttime = millis()+150;
-			readAccelerometer();
-			observeHeading();//off in debug
-			if(manager.numWaypoints() >= 1 && !nmea.getWarning()){
-				distance = calcDistance(manager.getTargetWaypoint(), location);
-				if(distance > POINT_RADIUS)
-					navigate(manager.getTargetWaypoint());
-				else if(manager.getTargetIndex() < manager.numWaypoints()-1)
-					manager.advanceTargetIndex();
-				else if (manager.loopWaypoints())
-					manager.setTargetIndex(0);
-				else
-					stop();
-			}
-			reportLocation();
-		}
-
-
-	} else {
-
-		if(ttime < millis()){
-			ttime = millis()+200;
-			observeHeading();
-			readAccelerometer();
-			reportLocation();
-		}
-
-		int tmp = getRadio(steerInput);
-		steer.write( tmp );
-		backSteer.write( 180-tmp );
-		drive.write( getRadio(driveInput) );
-
+	updateGPS();
+	updateGyro();
+	if(uTime <= millis()){
+		uTime += SCHEDULE_DELAY;
+		schedule[sIter]();
+		sIter = (sIter++)%(sizeof(schedule)/sizeof(*schedule));
+		navigate();
 	}
 }
 
-void navigate(Point target){
-	pathHeading = calcHeading(location, target);
-	angularError = (pathHeading - trueHeading);
-	angularError = trunkAngle(angularError);
-	outputAngle = atan( float(angularError)*PI/180 )*(STEERTHROW/PI) + 90;
+void navigate(){
+	if (isRadioOn(RadioPin[0])) {
+		output(getRadio(RadioPin[0]), getRadio(RadioPin[1]));
+	} else if (oTime != 0) {
+		//Back Up
+		if(sTime == 0){
+			output(90, 90);
+			sTime = millis();
+			backDir = (ping[0]<ping[4])? 90-REVTHROW : 90+REVTHROW;
+		} else if(sTime+STOP_TIME < millis()){
+			output(REVSPEED, backDir);
+		}
 
-#ifdef DEBUG
-	trueHeading += atan( float(angularError)*PI/180 )*(20);
-	location = extrapPosition(location, trueHeading, POINT_RADIUS);
-#else
+		if(oTime+DANGER_TIME < millis()){
+			sTime = 0;
+			oTime = 0;
+		}
+	} else {
+		//drive based on pathHeading and side ping sensors
+		angularError = trunkAngle(pathHeading - trueHeading);
+		outputAngle = atan( float(angularError)*PI/180 )*(STEERTHROW/PI) + 90;
 
-	steer.write( outputAngle );
-	backSteer.write( 180-outputAngle );
-	drive.write( driveSpeed );
+		x = ISTR*cos(toRad(outputAngle));
+		y = ISTR*sin(toRad(outputAngle));
+		for(int i=0; i<5; i++){
+			double tmp = ping[i]/PSTR;
+			tmp *= tmp;
+			x += cos(toRad(pAngle[i]))/tmp;
+			y += sin(toRad(pAngle[i]))/tmp;
+		}
 
-#endif
-}
-
-void stop(){
-	drive.write(90);
-	steer.write(90);
-	backSteer.write(90);
+		outputAngle = toDeg(atan2(y,x))+90;
+		outputAngle = max(min(outputAngle, 90+STEERTHROW),90-STEERTHROW);
+		output(FWDSPEED, outputAngle);
+	}
 }
 
 void updateGPS(){
 	nmea.update();
 	if(nmea.newData()){
-		digitalWrite(BLUE, nmea.getWarning()); //blue on when signal is found
-		digitalWrite(RED , LOW);
-
 		location = nmea.getLocation();
-
-		if(nmea.getCourse()!=0) gpsHeading = nmea.getCourse();
-		gpsHeading = trunkAngle(gpsHeading);
-		gpsFoundShift = gpsHeading - compassHeading;
-		navTime = millis();
+		updateWaypoint();
+		syncHeading();
+		positionChanged();
 	}
 }
 
-void observeHeading(){
-/*	float tmp = getHeadingTiltComp(XSHIFT, XSCALE, YSHIFT, YSCALE,
-										eulerPitch, eulerRoll);
-*/
-	trueHeading = gpsHeading;
+void updateWaypoint(){
+	if(manager.numWaypoints() >= 1 && !nmea.getWarning()){
+		distance = calcDistance(manager.getTargetWaypoint(), location);
+		if(distance > POINT_RADIUS) return;
 
-	float dT = millis()-navTime;
+		if(manager.getTargetIndex() < manager.numWaypoints()-1)
+			manager.advanceTargetIndex();
+		else if (manager.loopWaypoints())
+			manager.setTargetIndex(0);
+	}
+}
+
+void updateGyro(){
+	double dt = lowFilter.millisSinceUpdate();
+	if(dt < 4.l) return;
+
+	uint16_t Gz = MPU_Gz();
+	lowFilter.update(Gz);
+	highFilter.update(Gz-lowFilter.get());
+	trueHeading += dt*(highFilter.get())*dPlsb;
+}
+
+void syncHeading(){
+	//make the gyro useful
+	trueHeading = trunkAngle(nmea.getCourse());
+}
+
+void checkPing(){
+	ping[pIter] = getPing(PingPin[pIter]);
+	pIter++;
+	pIter = pIter%5;
+	if(ping[pIter] < warn[pIter]) oTime = millis();
+}
+
+void extrapPosition(){
+	float dT = millis()-nTime;
 	if(dT < 1000){ //ignore irrational values
 		//3600000 = milliseconds per hour
 		float dTraveled = nmea.getGroundSpeed()*dT/3600000.f;
 		location = extrapPosition(location, trueHeading, dTraveled);
+		positionChanged();
 	}
-	navTime = millis();
+}
+
+void positionChanged(){
+	if(manager.numWaypoints() < 1 || nmea.getWarning()) return;
+	nTime = millis();
+	pathHeading = calcHeading(location, manager.getTargetWaypoint());
+
 }
 
 void readAccelerometer(){
@@ -208,29 +221,8 @@ void reportLocation(){
 	manager.sendDataMessage(Protocol::DATA_SPEED, nmea.getGroundSpeed());
 }
 
-void calibrateCompass(){
-	long endTime = millis()+15000;
-	int maxX = -0xfff;
-	int maxY = -0xfff;
-	int minX =  0xfff;
-	int minY =  0xfff;
-	int x,y,z;
-
-	steer.write( 90-STEERTHROW/2 );
-	backSteer.write( 90+STEERTHROW/2 );
-	drive.write(driveSpeed);
-	while( millis()<endTime){
-		manager.update();
-		rawCompass(&x,&y,&z);
-		if(y < minY) minY = y;
-		if(x < minX) minX = x;
-		if(y > maxY) maxY = y;
-		if(x > maxX) maxX = x;
-	}
-	stop();
-
-	XSCALE = (maxX-minX)/2;
-	YSCALE = (maxY-minY)/2;
-	XSHIFT = -(maxX+minX)/2;
-	YSHIFT = -(maxY+minY)/2;
+void output(uint8_t drive, uint8_t steer){
+	servo[0].write(drive);
+	servo[1].write(steer);
+	servo[2].write(180-steer);
 }

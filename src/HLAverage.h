@@ -27,6 +27,12 @@ public:
 	double get(){
 		return value;
 	}
+	double millisSinceUpdate(){
+		return (micros()-time)/1000.l;
+	}
+	uint32_t microsSinceUpdate(){
+		return micros()-time;
+	}
 	void set(double newValue){
 		if(isnan(newValue)) return;
 		value = newValue;
