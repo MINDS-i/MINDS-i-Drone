@@ -20,27 +20,7 @@ CommManager::update(){
 			bufPos++;
 		}
 	}
-
-/*	while(stream->available()){
-		uint8_t tmp = stream->read();
-		buf[bufPos] = tmp;
-
-		if( 	tmp == Protocol::END_BYTE){
-			testMessage();
-		}
-
-		buffPos = (buffPos+1)%BUF_LEN
-	}*/
 }
-
-/*void
-CommManager::testMessage(){
-	uint8_t msg = bufPos-readBuf(bufPos-1);
-	if()
-}
-
-void inline readBuf(pos) { return buf[pos%BUF_LEN] }*/
-
 void
 CommManager::processMessage(uint8_t* data, uint8_t length){
 	if(!Protocol::fletcher(data, length)) return;
@@ -204,7 +184,7 @@ CommManager::requestResync(){
 //Serial port and commands specific to stock 3DR UBLOX GPS
 void sendGPSMessage(uint8_t Type, uint8_t ID, uint16_t len, const uint8_t* buf){
   uint8_t header[4];
-  uint8_t check[2];
+  uint8_t check[2] = {0,0};
   header[0] = Type;
   header[1] = ID;
   header[2] = (uint8_t) (len&0xff);

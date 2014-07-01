@@ -20,17 +20,16 @@ const uint8_t RadioPin[] = {2, 3}; //drive, steer
 
 const double POINT_RADIUS = .001; //in miles, margin for error in rover location
 const int SCHEDULE_DELAY = 25;
-const int STEERTHROW  = 50; //distance in degrees from far left to far right turn
+const int STEERTHROW  = 50; //distance in deg from far left to far right turn
 const int REVTHROW    = 20;
 const int FWDSPEED    = 116;
 const int REVSPEED    = 75;
 const int STOP_TIME   = 1500;//time to coast to stop
+const double PING_CALIB = 1350.l;
 const int DANGER_TIME = STOP_TIME+1000; //time to backup after last sighting
 const uint16_t warn[] = {650, 850, 1500, 850, 650};
 const double pAngle[5]={ 79.27l, 36.83l, 0.l, -36.83l, -79.27l};
-const double ISTR = 1.l;
-const double PSTR = 1350.l;
-const double dPlsb = 4.f/float(0xffff);
+const double dPlsb = 4.f/float(0xffff); //dps Per leastSigBit for gyro
 
 HardwareSerial *CommSerial = &Serial;
 NMEA nmea(Serial1);
@@ -40,7 +39,8 @@ HLA lowFilter(60000*10, 0);
 HLA highFilter(10, 0);
 Servo servo[3]; //drive, steer, backSteer
 uint16_t ping[5]={20000,20000,20000,20000,20000};
-uint32_t uTime = 0, nTime = 0, oTime = 0, sTime = 0; //scheduler, navigation, obstacle, stop
+//scheduler, navigation, obstacle, stop
+uint32_t uTime = 0, nTime = 0, oTime = 0, sTime = 0;
 double pathHeading; //all headings are Clockwise=+, -179 to 180, 0=north
 double trueHeading;
 double gyroHeading[2]={0,0}; //Gyro Heading Full and Half
@@ -61,32 +61,25 @@ int angularError, backDir;
 float outputAngle;
 
 void setup() {
-	pinMode(40, OUTPUT);
-	digitalWrite(40, HIGH);
-	for(int i=0; i<3; i++) pinMode(LEDpin[i], OUTPUT);
 	Serial1.begin(38400);
 	CommSerial->begin(9600);
 	InitMPU();
+
+	pinMode(40, OUTPUT); digitalWrite(40, HIGH);
+	for(int i=0; i<3; i++) pinMode(LEDpin[i], OUTPUT);
 	for(int i=0; i<3; i++) servo[i].attach(ServoPin[i]);
 	output(90,90);
 
-	Serial1.write(GPS_SETUP, sizeof(GPS_SETUP));
+	sendGPSMessage(0x06, 0x01, 0x0003, GPRMC_On);
+	sendGPSMessage(0x06, 0x17, 0x0004, CFG_NMEA);
+	sendGPSMessage(0x06, 0x00, 0x0014, CFG_PRT);
 	sendGPSMessage(0x06, 0x24, 0x0024, Pedestrian_Mode);
-	//sendGPSMessage(0x06, 0x01, 0x0003, GPRMC_On);
-	//sendGPSMessage(0x06, 0x17, 0x0004, CFG_NMEA);
-	//sendGPSMessage(0x06, 0x00, 0x0014, CFG_PRT);
 
 	delay(1000);
-	double tmp = 0;
-	for(int i=0; i<100; i++){
-		uint16_t Gz = MPU_Gz();
-		tmp += double(Gz)/100;
-		delay(10);
-	}
-	lowFilter.set(tmp);
+	calibrateGyro(); //this also takes one second
 
+	getRadio(RadioPin[0]);//start radio interrupts
 	manager.requestResync();
-	getRadio(RadioPin[0]);
 	uTime = millis();
 }
 
@@ -97,7 +90,8 @@ void loop(){
 	if(uTime <= millis()){
 		uTime += SCHEDULE_DELAY;
 		schedule[sIter]();
-		sIter = (sIter++)%(sizeof(schedule)/sizeof(*schedule));
+		sIter++;
+		sIter = sIter%(sizeof(schedule)/sizeof(*schedule));
 		navigate();
 	}
 }
@@ -124,10 +118,10 @@ void navigate(){
 		angularError = trunkAngle(pathHeading - trueHeading);
 		outputAngle = atan( float(angularError)*PI/180 )*(STEERTHROW/PI) + 90;
 
-		x = ISTR*cos(toRad(outputAngle));
-		y = ISTR*sin(toRad(outputAngle));
+		x = cos(toRad(outputAngle));
+		y = sin(toRad(outputAngle));
 		for(int i=0; i<5; i++){
-			double tmp = ping[i]/PSTR;
+			double tmp = ping[i]/PING_CALIB;
 			tmp *= tmp;
 			x += cos(toRad(pAngle[i]))/tmp;
 			y += sin(toRad(pAngle[i]))/tmp;
@@ -197,7 +191,6 @@ void positionChanged(){
 	if(manager.numWaypoints() < 1 || nmea.getWarning()) return;
 	nTime = millis();
 	pathHeading = calcHeading(location, manager.getTargetWaypoint());
-
 }
 
 void readAccelerometer(){
@@ -219,6 +212,16 @@ void reportLocation(){
 	manager.sendDataMessage(Protocol::DATA_HEADING, trueHeading);
 	manager.sendDataMessage(Protocol::DATA_DISTANCE, distance);
 	manager.sendDataMessage(Protocol::DATA_SPEED, nmea.getGroundSpeed());
+}
+
+void calibrateGyro(){ //takes one second
+	double tmp = 0;
+	for(int i=0; i<100; i++){
+		uint16_t Gz = MPU_Gz();
+		tmp += double(Gz)/100;
+		delay(10);
+	}
+	lowFilter.set(tmp);
 }
 
 void output(uint8_t drive, uint8_t steer){
