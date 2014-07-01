@@ -9,45 +9,43 @@
 #include "HLAverage.h"
 #include "wiring_private.h"
 
-//#define DEBUG
-
-//assume the right direction until we know from GPS
-
-const uint8_t LEDpin[]   = {25, 26, 27}; //blue, yellow, red
-const uint8_t PingPin[]  = {A4, A1, A0, A2, A3}; //left to right
-const uint8_t ServoPin[] = {12, 11, 8};//drive, steer, backs, outputs 1,2,3 resp
-const uint8_t RadioPin[] = {2, 3}; //drive, steer
+const uint8_t LEDpin[]    = {25, 26, 27}; //blue, yellow, red
+const uint8_t PingPin[]   = {A4, A1, A0, A2, A3}; //left to right
+const uint8_t ServoPin[]  = {12, 11,  8};//drive, steer, backS; APM 1,2,3 resp.
+const uint8_t RadioPin[]  = {2, 3}; //drive, steer
+const int SCHEDULE_DELAY  = 25;
+const int STEERTHROW      = 45; //degrees from far turn to center
+const int REVTHROW        = 20;
+const int FWDSPEED        = 116;
+const int REVSPEED        = 75;
+const int STOP_TIME       = 1500;//time to coast to stop
+const int DANGER_TIME     = STOP_TIME+800; //time to backup after last sighting
+const uint16_t warn[]     = {650, 850, 1500, 850, 650};
 const double POINT_RADIUS = .001; //in miles, margin for error in rover location
-const int SCHEDULE_DELAY = 25;
-const int STEERTHROW  = 50; //distance in deg from far left to far right turn
-const int REVTHROW    = 20;
-const int FWDSPEED    = 116;
-const int REVSPEED    = 75;
-const int STOP_TIME   = 1500;//time to coast to stop
-const double PING_CALIB = 1350.l;
-const int DANGER_TIME = STOP_TIME+1000; //time to backup after last sighting
-const uint16_t warn[] = {650, 850, 1500, 850, 650};
-const double pAngle[5]={ 79.27l, 36.83l, 0.l, -36.83l, -79.27l};
-const double dPlsb = 4.f/float(0xffff); //dps Per leastSigBit for gyro
+const double PING_CALIB   = 1300.l;
+const double pAngle[5]    = { 79.27l, 36.83l, 0.l, -36.83l, -79.27l};
+const double dPlsb        = 4.f/float(0xffff); //dps Per leastSigBit for gyro
 
 HardwareSerial *CommSerial = &Serial;
-NMEA nmea(Serial1);
-CommManager manager(CommSerial);
-Point location(0,0);
-HLA lowFilter(60000*10, 0);
-HLA highFilter(10, 0);
-Servo servo[3]; //drive, steer, backSteer
-uint16_t ping[5]={20000,20000,20000,20000,20000};
+NMEA			nmea(Serial1);
+CommManager		manager(CommSerial);
+Point			location(0,0);
+HLA				lowFilter (600000, 0);//10 minutes
+HLA				highFilter(    10, 0);//10 milliseconds
+Servo			servo[3]; //drive, steer, backSteer
 //scheduler, navigation, obstacle, stop
 uint32_t uTime = 0, nTime = 0, oTime = 0, sTime = 0;
-double pathHeading; //all headings are Clockwise=+, -179 to 180, 0=north
-double trueHeading;
-double gyroHeading[2]={0,0}; //Gyro Heading Full and Half
-double distance;
-double pitch=0, roll=0; //stores the observed angle from horizontal in x, y axis
-double eulerPitch, eulerRoll; //stores the rotations to get to our current state
-uint8_t sIter, pIter; //iterators for scheduler and ping
-boolean stop = true;
+ int32_t x,y,z; //used in accelerometer calculations
+uint16_t ping[5] = {20000,20000,20000,20000,20000};
+uint8_t  sIter, pIter; //iterators for scheduler and ping
+double   pathHeading; //all headings are Clockwise=+, -179 to 180, 0=north
+double   trueHeading;
+double   gyroHeading[2]={0,0}; //Gyro Heading Full and Half
+double   distance;
+double   pitch=0, roll=0; //stores the observed angle from horizontal
+double   eulerPitch, eulerRoll; //the rotations to get to our current state
+boolean  stop = true;
+boolean  backDir;
 
 voidFuncPtr schedule[] = {
 							extrapPosition,
@@ -56,15 +54,10 @@ voidFuncPtr schedule[] = {
 							reportLocation,
 							};
 
-int32_t x,y,z; //used in calculations
-int angularError, backDir;
-float outputAngle;
-
 void setup() {
 	Serial1.begin(38400);
 	CommSerial->begin(9600);
 	InitMPU();
-
 	pinMode(40, OUTPUT); digitalWrite(40, HIGH);
 	for(int i=0; i<3; i++) pinMode(LEDpin[i], OUTPUT);
 	for(int i=0; i<3; i++) servo[i].attach(ServoPin[i]);
@@ -104,9 +97,11 @@ void navigate(){
 		if(sTime == 0){
 			output(90, 90);
 			sTime = millis();
-			backDir = (ping[0]<ping[4])? 90-REVTHROW : 90+REVTHROW;
+			//backDir = (ping[0]<ping[4])? 90-REVTHROW : 90+REVTHROW;
+			backDir = ping[0]<ping[4];
 		} else if(sTime+STOP_TIME < millis()){
-			output(REVSPEED, backDir);
+			if(backDir) output(REVSPEED, 90-REVTHROW);
+			else 		output(REVSPEED, 90+REVTHROW);
 		}
 
 		if(oTime+DANGER_TIME < millis()){
@@ -115,8 +110,8 @@ void navigate(){
 		}
 	} else {
 		//drive based on pathHeading and side ping sensors
-		angularError = trunkAngle(pathHeading - trueHeading);
-		outputAngle = atan( float(angularError)*PI/180 )*(STEERTHROW/PI) + 90;
+		double angularError = trunkAngle(pathHeading - trueHeading);
+		double outputAngle = atan( angularError*PI/180 )*(2*STEERTHROW/PI) + 90;
 
 		x = cos(toRad(outputAngle));
 		y = sin(toRad(outputAngle));
@@ -171,7 +166,6 @@ void updateGyro(){
 void syncHeading(){
 	if(!nmea.getWarning()) trueHeading = trunkAngle(nmea.getCourse());
 	else if(stop) trueHeading = pathHeading;
-	//make the gyro useful
 }
 
 void checkPing(){
