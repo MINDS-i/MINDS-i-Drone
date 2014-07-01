@@ -17,7 +17,6 @@ const uint8_t LEDpin[]   = {25, 26, 27}; //blue, yellow, red
 const uint8_t PingPin[]  = {A4, A1, A0, A2, A3}; //left to right
 const uint8_t ServoPin[] = {12, 11, 8};//drive, steer, backs, outputs 1,2,3 resp
 const uint8_t RadioPin[] = {2, 3}; //drive, steer
-
 const double POINT_RADIUS = .001; //in miles, margin for error in rover location
 const int SCHEDULE_DELAY = 25;
 const int STEERTHROW  = 50; //distance in deg from far left to far right turn
@@ -48,6 +47,7 @@ double distance;
 double pitch=0, roll=0; //stores the observed angle from horizontal in x, y axis
 double eulerPitch, eulerRoll; //stores the rotations to get to our current state
 uint8_t sIter, pIter; //iterators for scheduler and ping
+boolean stop = true;
 
 voidFuncPtr schedule[] = {
 							extrapPosition,
@@ -56,7 +56,7 @@ voidFuncPtr schedule[] = {
 							reportLocation,
 							};
 
-int16_t x,y,z; //used in calculations
+int32_t x,y,z; //used in calculations
 int angularError, backDir;
 float outputAngle;
 
@@ -129,7 +129,9 @@ void navigate(){
 
 		outputAngle = toDeg(atan2(y,x))+90;
 		outputAngle = max(min(outputAngle, 90+STEERTHROW),90-STEERTHROW);
-		output(FWDSPEED, outputAngle);
+
+		if(stop) output(90,90);
+		else output(FWDSPEED, outputAngle);
 	}
 }
 
@@ -148,26 +150,28 @@ void updateWaypoint(){
 		distance = calcDistance(manager.getTargetWaypoint(), location);
 		if(distance > POINT_RADIUS) return;
 
+		stop = false;
 		if(manager.getTargetIndex() < manager.numWaypoints()-1)
 			manager.advanceTargetIndex();
 		else if (manager.loopWaypoints())
 			manager.setTargetIndex(0);
+		else
+			stop = true;
 	}
 }
 
 void updateGyro(){
 	double dt = lowFilter.millisSinceUpdate();
-	if(dt < 4.l) return;
-
-	uint16_t Gz = MPU_Gz();
+	double Gz = MPU_Gz();
 	lowFilter.update(Gz);
 	highFilter.update(Gz-lowFilter.get());
 	trueHeading += dt*(highFilter.get())*dPlsb;
 }
 
 void syncHeading(){
+	if(!nmea.getWarning()) trueHeading = trunkAngle(nmea.getCourse());
+	else if(stop) trueHeading = pathHeading;
 	//make the gyro useful
-	trueHeading = trunkAngle(nmea.getCourse());
 }
 
 void checkPing(){
@@ -179,27 +183,26 @@ void checkPing(){
 
 void extrapPosition(){
 	float dT = millis()-nTime;
-	if(dT < 1000){ //ignore irrational values
+	if(dT < 1000 && !nmea.getWarning()){ //ignore irrational values
 		//3600000 = milliseconds per hour
 		float dTraveled = nmea.getGroundSpeed()*dT/3600000.f;
 		location = extrapPosition(location, trueHeading, dTraveled);
-		positionChanged();
 	}
+	positionChanged();
 }
 
 void positionChanged(){
-	if(manager.numWaypoints() < 1 || nmea.getWarning()) return;
 	nTime = millis();
-	pathHeading = calcHeading(location, manager.getTargetWaypoint());
+	if(manager.numWaypoints() >= 1)
+		pathHeading = calcHeading(location, manager.getTargetWaypoint());
 }
 
 void readAccelerometer(){
 	x = MPU_Ax();
 	y = MPU_Ay();
 	z = MPU_Az();
-
-	pitch = atan2(sqrt(x*x+z*z), y)*.4+pitch*.6;
-	roll  = atan2(sqrt(y*y+z*z), -x)*.4+ roll*.6;
+	pitch = atan2(sqrt(x*x+z*z), y);
+	roll  = atan2(sqrt(y*y+z*z), -x);
 	eulerPitch = atan2(x, z);
 	eulerRoll = atan2( float(y), float(x)/sin(eulerPitch) );
 }
@@ -210,15 +213,15 @@ void reportLocation(){
 	manager.sendDataMessage(Protocol::DATA_ROLL, roll*180/PI);
 	manager.sendDataMessage(Protocol::DATA_PITCH, pitch*180/PI);
 	manager.sendDataMessage(Protocol::DATA_HEADING, trueHeading);
-	manager.sendDataMessage(Protocol::DATA_DISTANCE, distance);
 	manager.sendDataMessage(Protocol::DATA_SPEED, nmea.getGroundSpeed());
+	manager.sendDataMessage(Protocol::DATA_DISTANCE, distance);
 }
 
 void calibrateGyro(){ //takes one second
 	double tmp = 0;
 	for(int i=0; i<100; i++){
-		uint16_t Gz = MPU_Gz();
-		tmp += double(Gz)/100;
+		double Gz = MPU_Gz();
+		tmp += Gz/100;
 		delay(10);
 	}
 	lowFilter.set(tmp);

@@ -74,8 +74,8 @@ CommManager::recieveWaypoint(uint8_t tag, double lat,
 		case Protocol::ADD_WAYPOINT:
 			if(index > waypoints.size()) return false;
 			waypoints.add(index, Point(lat,lon));
-			if(index < targetIndex) advanceTargetIndex();
-			else if(index==0) sendTargetIndex();
+			if(index == targetIndex) cachedTarget = getWaypoint(targetIndex);
+			else if(index < targetIndex) advanceTargetIndex();
 			break;
 		case Protocol::CHANGE_WAYPOINT:
 			if(index > waypoints.size()-1) return false;
