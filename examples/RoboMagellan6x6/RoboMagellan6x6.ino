@@ -17,9 +17,9 @@ const uint8_t PingPin[]	  = {A4, A1, A0, A2, A3}; //left to right
 const uint8_t ServoPin[]  = {12, 11,  8};//drive, steer, backS; APM 1,2,3 resp.
 const uint8_t RadioPin[]  = {2, 3}; //drive, steer
 const int SCHEDULE_DELAY  = 25;
-const int STEERTHROW	  = 30; //degrees from far turn to center
+const int STEERTHROW	  = 25; //degrees from far turn to center
 const int REVTHROW		  = 20;
-const int MIN_FWD		  = 105;
+const int MIN_FWD		  = 107;
 const int MAX_FWD		  = 115;
 const int REVSPEED        = 75;
 const int STOP_TIME       = 1500;//time to coast to stop
@@ -136,8 +136,7 @@ void navigate(){
 		outputAngle = toDeg(atan2(y,x))+90;
 		bound(double(90-STEERTHROW), outputAngle, double(90+STEERTHROW));
 
-		/*int */speed = (distance*5280.l);//from 7.5 feet to 4.7, slow
-		speed *= speed/2;
+		/*int */speed = (distance*5280.l);
 		speed += 90;
 		bound(MIN_FWD, speed, MAX_FWD);
 
@@ -163,12 +162,17 @@ void updateWaypoint(){
 		distance = calcDistance(manager.getTargetWaypoint(), location);
 		if(distance > POINT_RADIUS) return;
 
-		if(manager.getTargetIndex() < manager.numWaypoints()-1)
+		if(manager.getTargetIndex() < manager.numWaypoints()-1){
+			//backWaypoint = manager.getTargetWaypoint();
 			manager.advanceTargetIndex();
-		else if (manager.loopWaypoints())
+		}
+		else if (manager.loopWaypoints()){
+			//backWaypoint = manager.getTargetWaypoint();
 			manager.setTargetIndex(0);
-		else
+		}
+		else{
 			stop = true;
+		}
 	}
 }
 
@@ -205,21 +209,24 @@ void checkPing(){
 }
 
 void extrapPosition(){
-/*	float dT = millis()-nTime;
+	float dT = millis()-nTime;
 	if(dT < 1000 && !nmea.getWarning()){ //ignore irrational values
 		//3600000 = milliseconds per hour
 		float dTraveled = nmea.getGroundSpeed()*dT/3600000.f;
 		location = extrapPosition(location, trueHeading, dTraveled);
 	}
-	positionChanged();*/
+	positionChanged();
 }
 
 void positionChanged(){
 	nTime = millis();
 	if(manager.numWaypoints() <= 0) return;
 
-	pathHeading = calcHeading(location, manager.getTargetWaypoint());
 	distance = calcDistance(manager.getTargetWaypoint(), location);
+	pathHeading = calcHeading(location, manager.getTargetWaypoint());
+	//if there is a waypoint path, find the line to drive from;
+	//either going to waypoint != to the first
+	//or looping is on
 }
 
 void readAccelerometer(){
