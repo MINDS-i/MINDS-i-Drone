@@ -19,7 +19,8 @@ const uint8_t RadioPin[]  = {2, 3}; //drive, steer
 const int SCHEDULE_DELAY  = 25;
 const int STEERTHROW	  = 30; //degrees from far turn to center
 const int REVTHROW		  = 20;
-const int FWDSPEED		  = 115;
+const int MIN_FWD		  = 105;
+const int MAX_FWD		  = 115;
 const int REVSPEED        = 75;
 const int STOP_TIME       = 1500;//time to coast to stop
 const int DANGER_TIME     = STOP_TIME+800; //time to backup after last sighting
@@ -57,6 +58,8 @@ voidFuncPtr schedule[] = {
 							readAccelerometer,
 							reportLocation,
 							};
+
+int speed;
 
 void setup() {
 	Serial1.begin(38400);
@@ -133,11 +136,10 @@ void navigate(){
 		outputAngle = toDeg(atan2(y,x))+90;
 		bound(double(90-STEERTHROW), outputAngle, double(90+STEERTHROW));
 
-		//slow down near waypoints
-		int speed = (distance*5280.l);//distance in feet;
-		speed *= speed;
-		speed += 96;
-		speed = min(FWDSPEED, speed);
+		/*int */speed = (distance*5280.l);//from 7.5 feet to 4.7, slow
+		speed *= speed/2;
+		speed += 90;
+		bound(MIN_FWD, speed, MAX_FWD);
 
 		if(stop) output(90 ,90);
 		else     output(speed, outputAngle);
@@ -234,11 +236,11 @@ void reportLocation(){
 	float voltage = float(analogRead(67)/1024.l*5.l*10.1l);
 	manager.sendDataMessage(Protocol::DATA_LATITUDE, location.degLatitude());
 	manager.sendDataMessage(Protocol::DATA_LONGITUDE, location.degLongitude());
-	manager.sendDataMessage(Protocol::DATA_ROLL, roll*180/PI);
-	manager.sendDataMessage(Protocol::DATA_PITCH, pitch*180/PI);
+	manager.sendDataMessage(Protocol::DATA_ROLL, 10.0*stop);//roll*180/PI);
+	manager.sendDataMessage(Protocol::DATA_PITCH, (double)speed);//pitch*180/PI);
 	manager.sendDataMessage(Protocol::DATA_HEADING, trueHeading);
 	manager.sendDataMessage(Protocol::DATA_SPEED, trunkAngle(nmea.getCourse()));
-	manager.sendDataMessage(Protocol::DATA_DISTANCE, voltage);//nmea.getCourse());//distance);
+	manager.sendDataMessage(Protocol::DATA_DISTANCE, distance);//voltage);
 }
 
 void calibrateGyro(){ //takes one second
