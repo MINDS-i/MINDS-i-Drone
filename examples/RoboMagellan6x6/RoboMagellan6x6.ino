@@ -24,16 +24,18 @@ const int MAX_FWD		  = 115;
 const int REVSPEED        = 75;
 const int STOP_TIME       = 1500;//time to coast to stop
 const int DANGER_TIME     = STOP_TIME+800; //time to backup after last sighting
-const uint16_t warn[]     = {850, 1050, 2150, 1050, 850};
+const uint16_t warn[]     = {1000, 1600, 2400, 1600, 1000};
 const double POINT_RADIUS = .001; //in miles, margin for error in rover location
-const double PING_CALIB   = 1500.l;
+const double PING_CALIB   = 1800.l;
 const double pAngle[5]    = { 79.27l, 36.83l, 0.l, -36.83l, -79.27l};
 const double dPlsb        = 4.f/float(0xffff); //dps Per leastSigBit for gyro
+const double lineGravity  = .50; //line return factor
 
 HardwareSerial *CommSerial = &Serial;
 NMEA			nmea(Serial1);
 CommManager		manager(CommSerial);
 Point			location(0,0);
+Point			backWaypoint(0,0);
 HLA				lowFilter (600000, 0);//10 minutes
 HLA				highFilter(    10, 0);//10 milliseconds
 Servo			servo[3]; //drive, steer, backSteer
@@ -163,11 +165,11 @@ void updateWaypoint(){
 		if(distance > POINT_RADIUS) return;
 
 		if(manager.getTargetIndex() < manager.numWaypoints()-1){
-			//backWaypoint = manager.getTargetWaypoint();
+			backWaypoint = manager.getTargetWaypoint();
 			manager.advanceTargetIndex();
 		}
 		else if (manager.loopWaypoints()){
-			//backWaypoint = manager.getTargetWaypoint();
+			backWaypoint = manager.getTargetWaypoint();
 			manager.setTargetIndex(0);
 		}
 		else{
@@ -213,6 +215,7 @@ void extrapPosition(){
 	if(dT < 1000 && !nmea.getWarning()){ //ignore irrational values
 		//3600000 = milliseconds per hour
 		float dTraveled = nmea.getGroundSpeed()*dT/3600000.f;
+		dTraveled *= (2.l/3.l);//purposly undershoot
 		location = extrapPosition(location, trueHeading, dTraveled);
 	}
 	positionChanged();
@@ -223,10 +226,17 @@ void positionChanged(){
 	if(manager.numWaypoints() <= 0) return;
 
 	distance = calcDistance(manager.getTargetWaypoint(), location);
-	pathHeading = calcHeading(location, manager.getTargetWaypoint());
-	//if there is a waypoint path, find the line to drive from;
-	//either going to waypoint != to the first
-	//or looping is on
+	if(backWaypoint.radLongitude() == 0 || distance*5280.l < 25){
+		pathHeading = calcHeading(location, manager.getTargetWaypoint());
+	} else {
+		double fullDist = calcDistance(backWaypoint, manager.getTargetWaypoint());
+		double AB = calcHeading(backWaypoint, manager.getTargetWaypoint());
+		double AL = calcHeading(backWaypoint, location);
+		double d  = cos(AB-AL)*calcDistance(backWaypoint, location);
+		double D  = d + (fullDist-d)*lineGravity;
+		Point target = extrapPosition(backWaypoint, AB, D);
+		pathHeading = calcHeading(location, target);
+	}
 }
 
 void readAccelerometer(){
@@ -243,11 +253,11 @@ void reportLocation(){
 	float voltage = float(analogRead(67)/1024.l*5.l*10.1l);
 	manager.sendDataMessage(Protocol::DATA_LATITUDE, location.degLatitude());
 	manager.sendDataMessage(Protocol::DATA_LONGITUDE, location.degLongitude());
-	manager.sendDataMessage(Protocol::DATA_ROLL, 10.0*stop);//roll*180/PI);
-	manager.sendDataMessage(Protocol::DATA_PITCH, (double)speed);//pitch*180/PI);
+	manager.sendDataMessage(Protocol::DATA_ROLL, roll*180/PI);
+	manager.sendDataMessage(Protocol::DATA_PITCH, pitch*180/PI);
 	manager.sendDataMessage(Protocol::DATA_HEADING, trueHeading);
-	manager.sendDataMessage(Protocol::DATA_SPEED, trunkAngle(nmea.getCourse()));
-	manager.sendDataMessage(Protocol::DATA_DISTANCE, distance);//voltage);
+	manager.sendDataMessage(Protocol::DATA_SPEED, nmea.getGroundSpeed());
+	manager.sendDataMessage(Protocol::DATA_DISTANCE, voltage);
 }
 
 void calibrateGyro(){ //takes one second
