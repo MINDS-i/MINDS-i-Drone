@@ -1,5 +1,7 @@
 #include "GreatCircle.h"
 
+double _eRad = 3963.1676; //earth's radius in miles
+
 Point::Point(): Rlat(0), Rlng(0){
 }
 
@@ -88,15 +90,47 @@ calcDistance(Point a, Point b){  //3959 = radius of earth in miles
 	double sinlat = sin((a.Rlat - b.Rlat)/2.);
 	double sinlng = sin((a.Rlng - b.Rlng)/2.);
 	double chord = sinlat*sinlat + sinlng*sinlng*cos(a.Rlat)*cos(b.Rlat);
-	return 2.* 3959. * atan2( sqrt(chord), sqrt(1.-chord) );
+	return 2. * _eRad * atan2( sqrt(chord), sqrt(1.-chord) );
 }
-Point
-extrapPosition(Point position, double bearing, double distance){ //radians
+/*Point
+extrapPosition(Point position, double bearing, double distance){ //degrees,miles
 	Point destination(0,0);
-	destination.Rlat = asin(sin(position.Rlat)*cos(distance/3959) +
-					 cos(position.Rlat)*sin(distance/3959)*cos(toRad(bearing)));
+	double arcLen = distance/_eRad;
+	double arcSin, arcCos;
+	if(arcLen < .2) { //this is almost always much smaller than .2
+		arcSin = arcLen;
+		arcCos = 1.l - (arcLen*arcLen)/2;
+	}
+	else {
+		arcSin = sin(arcLen);
+		arcCos = cos(arcLen);
+	}
+
+	double pLatSin = sin(position.Rlat);
+	double pLatCos = cos(position.Rlat);
+
+	bearing = toRad(bearing);
+	double bearingSin = sin(bearing);
+	double bearingCos = cos(bearing);
+
+	destination.Rlat = asin(pLatSin*arcCos + pLatCos*arcSin*bearingCos);
+	destination.Rlng = position.Rlng + atan2(	(bearingSin*arcSin*pLatCos),
+										(arcCos-pLatSin*sin(destination.Rlat))
+																			);
+	return destination;
+}*/
+
+//legacy code
+Point
+extrapPosition(Point position, double bearing, double distance){ //degrees,miles
+	Point destination(0,0);
+
+	destination.Rlat = asin(sin(position.Rlat)*cos(distance/_eRad) +
+					 cos(position.Rlat)*sin(distance/_eRad)*cos(toRad(bearing)));
 	destination.Rlng = position.Rlng+
-		atan2(	(sin(toRad(bearing))*sin(distance/3959)*cos(position.Rlat)),
-				(cos(distance/3959)-sin(position.Rlat)*sin(destination.Rlat)) );
+		atan2(	(sin(toRad(bearing))*sin(distance/_eRad)*cos(position.Rlat)),
+				(cos(distance/_eRad)-sin(position.Rlat)*sin(destination.Rlat)) );
 	return destination;
 }
+
+
