@@ -186,7 +186,10 @@ void updateGyro(){
 
 void syncHeading(){
 	if(!nmea.getWarning() && nmea.getCourse()!=0){
-		trueHeading = trunkAngle(nmea.getCourse() + trueHeading - gyroHalf);
+		if(millis() - gpsTime < 1500) //dont use gyrohalf if it is too old
+			trueHeading = trunkAngle(nmea.getCourse() + trueHeading - gyroHalf);
+		else
+			trueHeading = trunkAngle(nmea.getCourse());
 		gpsHalfTime = millis()+(millis()-gpsTime)/2;
 	}
 	else if(stop) trueHeading = pathHeading;
