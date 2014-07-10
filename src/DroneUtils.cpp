@@ -75,7 +75,7 @@ CommManager::recieveWaypoint(uint8_t tag, double lat,
 			if(index > waypoints.size()) return false;
 			waypoints.add(index, Point(lat,lon));
 			if(index == targetIndex) cachedTarget = getWaypoint(targetIndex);
-			else if(index < targetIndex) advanceTargetIndex();
+			if(index <  targetIndex) advanceTargetIndex();
 			break;
 		case Protocol::CHANGE_WAYPOINT:
 			if(index > waypoints.size()-1) return false;
@@ -85,7 +85,7 @@ CommManager::recieveWaypoint(uint8_t tag, double lat,
 		case Protocol::DELETE_WAYPOINT:
 			if(index > waypoints.size()-1) return false;
 			waypoints.remove(index);
-			if(targetIndex > index) retardTargetIndex();
+			if(targetIndex >= index) retardTargetIndex();
 			break;
 	}
 	return true;
@@ -154,7 +154,7 @@ CommManager::sendTargetIndex(){
 void
 CommManager::sendDataMessage(uint8_t tag, double data){
 	uint8_t message[5];
-	data *= 100000;
+	data *= 10000000;
 	long ndata = (long)data;
 	message[0] = tag;
 	message[1] = (ndata>>24)&0xff;
@@ -165,7 +165,7 @@ CommManager::sendDataMessage(uint8_t tag, double data){
 }
 void
 CommManager::sendDataMessage(uint8_t tag, long data){
-	data *= 100000;
+	data *= 10000000;
 	uint8_t message[5];
 	message[0] = tag;
 	message[1] = (data>>24)&0xff;

@@ -86,7 +86,7 @@ calcHeading(Point a, Point b){
 	return toDeg(  atan2(y,x)  );
 }
 double
-calcDistance(Point a, Point b){  //3959 = radius of earth in miles
+calcDistance(Point a, Point b){
 	double sinlat = sin((a.Rlat - b.Rlat)/2.);
 	double sinlng = sin((a.Rlng - b.Rlng)/2.);
 	double chord = sinlat*sinlat + sinlng*sinlng*cos(a.Rlat)*cos(b.Rlat);
