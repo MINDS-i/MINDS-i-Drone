@@ -74,18 +74,18 @@ CommManager::recieveWaypoint(uint8_t tag, double lat,
 		case Protocol::ADD_WAYPOINT:
 			if(index > waypoints.size()) return false;
 			waypoints.add(index, Point(lat,lon));
-			if(index == targetIndex) cachedTarget = getWaypoint(targetIndex);
 			if(index <  targetIndex) advanceTargetIndex();
+			if(index == targetIndex) cachedTarget = getWaypoint(targetIndex);
 			break;
 		case Protocol::CHANGE_WAYPOINT:
-			if(index > waypoints.size()-1) return false;
+			if(index >= waypoints.size()) return false;
 			waypoints.set(index, Point(lat, lon));
 			if(index == targetIndex) cachedTarget = getWaypoint(targetIndex);
 			break;
 		case Protocol::DELETE_WAYPOINT:
-			if(index > waypoints.size()-1) return false;
+			if(index >= waypoints.size()) return false;
 			waypoints.remove(index);
-			if(targetIndex >= index) retardTargetIndex();
+			if(index <= targetIndex) retardTargetIndex();
 			break;
 	}
 	return true;
@@ -119,19 +119,22 @@ CommManager::loopWaypoints(){
 	return isLooped;
 }
 void
-CommManager::setTargetIndex(unsigned int index){
+CommManager::setTargetIndex(uint16_t index){
+	if(index >= waypoints.size()) return;
 	targetIndex = index;
 	cachedTarget = getWaypoint(targetIndex);
 	sendTargetIndex();
 }
 void
 CommManager::advanceTargetIndex(){
+	if(targetIndex+1 >= waypoints.size()) return;
 	targetIndex++;
 	cachedTarget = getWaypoint(targetIndex);
 	sendTargetIndex();
 }
 void
 CommManager::retardTargetIndex(){
+	if(targetIndex <= 0) return;
 	targetIndex--;
 	cachedTarget = getWaypoint(targetIndex);
 	sendTargetIndex();
@@ -176,6 +179,8 @@ CommManager::sendDataMessage(uint8_t tag, long data){
 }
 void
 CommManager::requestResync(){
+	//end any unfinished messages from code before reboot
+	stream->write(Protocol::END_BYTE, 2);
 	uint8_t message[1];
 	message[0] = Protocol::SEND_WAYPOINT_LIST;
 	Protocol::sendMessage(message, 1, stream);
