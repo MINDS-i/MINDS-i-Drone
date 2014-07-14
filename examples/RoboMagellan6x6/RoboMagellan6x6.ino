@@ -11,13 +11,15 @@
 
 //resync is sketchy
 
+//40/50 works great
+
 const uint8_t VoltagePin  = 67;
 const uint8_t LEDpin[]    = {25, 26, 27}; //blue, yellow, red
 const uint8_t PingPin[]	  = {A4, A1, A0, A2, A3}; //left to right
 const uint8_t ServoPin[]  = {12, 11,  8};//drive, steer, backS; APM 1,2,3 resp.
 const uint8_t RadioPin[]  = {2, 3}; //drive, steer
 const int SCHEDULE_DELAY  = 20;
-const int STEERTHROW	  = 40; //degrees from far turn to center
+const int STEERTHROW	  = 45; //degrees from far turn to center
 const int REVTHROW		  = 20;
 const int MIN_FWD		  = 107;
 const int MAX_FWD		  = 115;
@@ -29,7 +31,7 @@ const double POINT_RADIUS = .001; //in miles, margin for error in rover location
 const double PING_CALIB   = 1400.l;
 const double pAngle[5]    = { 79.27l, 36.83l, 0.l, -36.83l, -79.27l};
 const double dPlsb        = 4.f/float(0xffff); //dps Per leastSigBit for gyro
-const double lineGravity  = .50; //line return factor
+const double lineGravity  = .65; //line return factor
 
 HardwareSerial *CommSerial = &Serial;
 NMEA			nmea(Serial1);
@@ -38,6 +40,8 @@ Point			location(0,0);
 Point			backWaypoint(0,0);
 HLA				lowFilter (600000, 0);//10 minutes
 HLA				highFilter(    10, 0);//10 milliseconds
+HLA 			pitch(  75, 0);
+HLA 			roll (  75, 0);
 Servo			servo[3]; //drive, steer, backSteer
 //scheduler, navigation, obstacle, stop
 uint32_t uTime = 0, nTime = 0, oTime = 0, sTime = 0;
@@ -49,8 +53,6 @@ double   pathHeading; //all headings are Clockwise=+, -179 to 180, 0=north
 double   trueHeading;
 double   gyroHalf; //Gyro Heading halfway between gps points
 double   distance;
-double   pitch=0, roll=0; //stores the observed angle from horizontal
-double   eulerPitch, eulerRoll; //the rotations to get to our current state
 boolean  stop = true;
 boolean  backDir;
 
@@ -63,7 +65,7 @@ voidFuncPtr schedule[] = {
 
 void setup() {
 	Serial1.begin(38400);
-	CommSerial->begin(9600);
+	CommSerial->begin(Protocol::BAUD_RATE);
 	InitMPU();
 	pinMode(40, OUTPUT); digitalWrite(40, HIGH);
 	for(int i=0; i<3; i++) pinMode(LEDpin[i], OUTPUT);
@@ -120,7 +122,7 @@ void navigate(){
 		double angularError = trunkAngle(pathHeading - trueHeading);
 		//double outputAngle = atan( angularError*PI/180 )*(2*STEERTHROW/PI);
 		double outputAngle = ((angularError/180.l)*(angularError/180.l))*
-																(2*STEERTHROW);
+															(2.l*STEERTHROW);
 		if(angularError < 0) outputAngle *= -1;
 
 		x = cos(toRad(outputAngle));
@@ -135,7 +137,10 @@ void navigate(){
 		outputAngle = toDeg(atan2(y,x))+90;
 		bound(double(90-STEERTHROW), outputAngle, double(90+STEERTHROW));
 
+		//try slowing down on steep turns
+		int disp = STEERTHROW - abs(90-outputAngle);
 		int speed = (distance*5280.l);
+		speed = min(speed, disp);
 		speed += 90;
 		bound(MIN_FWD, speed, MAX_FWD);
 
@@ -156,7 +161,7 @@ void updateGPS(){
 }
 
 void waypointUpdated(){
-	if(manager.numWaypoints() >= 1 && !nmea.getWarning()){
+	if(manager.numWaypoints() > 0 && !nmea.getWarning()){
 		stop = false;
 		distance = calcDistance(manager.getTargetWaypoint(), location);
 		if(distance > POINT_RADIUS) return;
@@ -239,10 +244,8 @@ void readAccelerometer(){
 	Ax = MPU_Ax();
 	Ay = MPU_Ay();
 	Az = MPU_Az();
-	pitch = atan2(sqrt(Ax*Ax+Az*Az), Ay);
-	roll  = atan2(sqrt(Ay*Ay+Az*Az), -Ax);
-	eulerPitch = atan2(Ax, Az);
-	eulerRoll = atan2( float(Ay), float(Ax)/sin(eulerPitch) );
+	pitch.update( atan2(sqrt(Ax*Ax+Az*Az), Ay) );
+	roll .update( atan2(sqrt(Ay*Ay+Az*Az),-Ax) );
 }
 
 void reportLocation(){
@@ -250,8 +253,8 @@ void reportLocation(){
 	manager.sendDataMessage(Protocol::DATA_LATITUDE,   location.degLatitude());
 	manager.sendDataMessage(Protocol::DATA_LONGITUDE,  location.degLongitude());
 	manager.sendDataMessage(Protocol::DATA_HEADING,	   trueHeading);
-	manager.sendDataMessage(Protocol::DATA_PITCH,      pitch*180/PI);
-	manager.sendDataMessage(Protocol::DATA_ROLL,       roll*180/PI);
+	manager.sendDataMessage(Protocol::DATA_PITCH,      pitch.get()*180/PI);
+	manager.sendDataMessage(Protocol::DATA_ROLL,       roll.get()*180/PI);
 	manager.sendDataMessage(Protocol::DATA_SPEED,      nmea.getGroundSpeed());
 	manager.sendDataMessage(Protocol::DATA_DISTANCE,   voltage);
 }

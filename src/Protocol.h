@@ -31,6 +31,9 @@ namespace Protocol{
 	const uint8_t MAX_MESSAGE_SIZE    = 12;
 	const uint8_t MAX_WAYPOINTS		  = 200;
 
+	const uint32_t FIXED_POINT_FACTOR = 0x100000;
+	const uint16_t BAUD_RATE = 9600;
+
 	const uint8_t END_BYTE[] = {0x17, 0x1f};
 
 	void sendMessage(uint8_t* data, int length, HardwareSerial *stream);

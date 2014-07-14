@@ -157,7 +157,7 @@ CommManager::sendTargetIndex(){
 void
 CommManager::sendDataMessage(uint8_t tag, double data){
 	uint8_t message[5];
-	data *= 10000000;
+	data *= Protocol::FIXED_POINT_FACTOR;
 	long ndata = (long)data;
 	message[0] = tag;
 	message[1] = (ndata>>24)&0xff;
@@ -168,8 +168,8 @@ CommManager::sendDataMessage(uint8_t tag, double data){
 }
 void
 CommManager::sendDataMessage(uint8_t tag, long data){
-	data *= 10000000;
 	uint8_t message[5];
+	data *= Protocol::FIXED_POINT_FACTOR;
 	message[0] = tag;
 	message[1] = (data>>24)&0xff;
 	message[2] = (data>>16)&0xff;
