@@ -28,10 +28,11 @@ namespace Protocol{
 	}
 	void
 	sendMessage(uint8_t* data, int length, HardwareSerial *stream){
-		stream->write(data,length);
 		uint16_t sum = Protocol::fletcher16(data, length);
+		stream->write(HEADER, HEADER_SIZE);
+		stream->write(data,length);
 		stream->write(sum>>8);
 		stream->write(sum&0xff);
-		stream->write(Protocol::END_BYTE, 2);
+		stream->write(FOOTER, FOOTER_SIZE);
 	}
 }

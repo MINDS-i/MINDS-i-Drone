@@ -19,10 +19,7 @@ const uint8_t PingPin[]	  = {A4, A1, A0, A2, A3}; //left to right
 const uint8_t ServoPin[]  = {12, 11,  8};//drive, steer, backS; APM 1,2,3 resp.
 const uint8_t RadioPin[]  = {2, 3}; //drive, steer
 const int SCHEDULE_DELAY  = 20;
-const int STEERTHROW	  = 45; //degrees from far turn to center
 const int REVTHROW		  = 20;
-const int MIN_FWD		  = 107;
-const int MAX_FWD		  = 115;
 const int REVSPEED        = 75;
 const int STOP_TIME       = 1500;//time to coast to stop
 const int DANGER_TIME     = STOP_TIME+800; //time to backup after last sighting
@@ -31,7 +28,11 @@ const double POINT_RADIUS = .001; //in miles, margin for error in rover location
 const double PING_CALIB   = 1400.l;
 const double pAngle[5]    = { 79.27l, 36.83l, 0.l, -36.83l, -79.27l};
 const double dPlsb        = 4.f/float(0xffff); //dps Per leastSigBit for gyro
-const double lineGravity  = .65; //line return factor
+
+double lineGravity  = .65; //line return factor
+int STEERTHROW	  = 45; //degrees from far turn to center
+int MIN_FWD		  = 107;
+int MAX_FWD		  = 115;
 
 HardwareSerial *CommSerial = &Serial;
 NMEA			nmea(Serial1);
@@ -83,10 +84,20 @@ void setup() {
 	getRadio(RadioPin[0]);//start radio interrupts
 	manager.requestResync();
 	uTime = millis();
+
+	manager.setData(10, lineGravity);
+	manager.setData(11, STEERTHROW);
+	manager.setData(12, MIN_FWD);
+	manager.setData(13, MAX_FWD);
 }
 
 void loop(){
 	manager.update();
+	lineGravity   = manager.getFloat(10);
+	STEERTHROW	  = manager.getInt(11);
+	MIN_FWD		  = manager.getInt(12);
+	MAX_FWD		  = manager.getInt(13);
+
 	updateGPS();
 	updateGyro();
 	if(uTime <= millis()){
@@ -250,13 +261,13 @@ void readAccelerometer(){
 
 void reportLocation(){
 	float voltage = float(analogRead(67)/1024.l*5.l*10.1l);
-	manager.sendDataMessage(Protocol::DATA_LATITUDE,   location.degLatitude());
-	manager.sendDataMessage(Protocol::DATA_LONGITUDE,  location.degLongitude());
-	manager.sendDataMessage(Protocol::DATA_HEADING,	   trueHeading);
-	manager.sendDataMessage(Protocol::DATA_PITCH,      pitch.get()*180/PI);
-	manager.sendDataMessage(Protocol::DATA_ROLL,       roll.get()*180/PI);
-	manager.sendDataMessage(Protocol::DATA_SPEED,      nmea.getGroundSpeed());
-	manager.sendDataMessage(Protocol::DATA_DISTANCE,   voltage);
+	manager.setData(Protocol::DATA_LATITUDE,   location.degLatitude());
+	manager.setData(Protocol::DATA_LONGITUDE,  location.degLongitude());
+	manager.setData(Protocol::DATA_HEADING,	   trueHeading);
+	manager.setData(Protocol::DATA_PITCH,      pitch.get()*180/PI);
+	manager.setData(Protocol::DATA_ROLL,       roll.get()*180/PI);
+	manager.setData(Protocol::DATA_SPEED,      nmea.getGroundSpeed());
+	manager.setData(Protocol::DATA_VOLTAGE,    voltage);
 }
 
 void calibrateGyro(){ //takes one second

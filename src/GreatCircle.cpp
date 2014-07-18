@@ -2,7 +2,7 @@
 
 double _eRad = 3963.1676; //earth's radius in miles
 
-Point::Point(): Rlat(0), Rlng(0){
+Point::Point(): Rlat(0), Rlng(0), altitude(0){
 }
 
 Point::Point(double latitude,double longitude){
@@ -18,6 +18,12 @@ Point::Point(double latitude, double longitude, bool rad){
 		Rlat = toRad(latitude);
 		Rlng = toRad(longitude);
 	}
+}
+
+Point::Point(double latitude, double longitude, uint16_t alt){
+	Rlat = toRad(latitude);
+	Rlng = toRad(longitude);
+	altitude = alt;
 }
 
 void
@@ -51,6 +57,15 @@ double
 Point::degLongitude(){
 	return toDeg(Rlng);
 }
+uint16_t
+Point::getAltitude(){
+	return altitude;
+}
+void
+Point::setAltitude(uint16_t alt){
+	altitude = alt;
+}
+
 float trunkAngle(float angle){
 	return trunkAngle(double(angle));//float and double are the same on arduino
 }
@@ -92,35 +107,7 @@ calcDistance(Point a, Point b){
 	double chord = sinlat*sinlat + sinlng*sinlng*cos(a.Rlat)*cos(b.Rlat);
 	return 2. * _eRad * atan2( sqrt(chord), sqrt(1.-chord) );
 }
-/*Point
-extrapPosition(Point position, double bearing, double distance){ //degrees,miles
-	Point destination(0,0);
-	double arcLen = distance/_eRad;
-	double arcSin, arcCos;
-	if(arcLen < .2) { //this is almost always much smaller than .2
-		arcSin = arcLen;
-		arcCos = 1.l - (arcLen*arcLen)/2;
-	}
-	else {
-		arcSin = sin(arcLen);
-		arcCos = cos(arcLen);
-	}
 
-	double pLatSin = sin(position.Rlat);
-	double pLatCos = cos(position.Rlat);
-
-	bearing = toRad(bearing);
-	double bearingSin = sin(bearing);
-	double bearingCos = cos(bearing);
-
-	destination.Rlat = asin(pLatSin*arcCos + pLatCos*arcSin*bearingCos);
-	destination.Rlng = position.Rlng + atan2(	(bearingSin*arcSin*pLatCos),
-										(arcCos-pLatSin*sin(destination.Rlat))
-																			);
-	return destination;
-}*/
-
-//legacy code
 Point
 extrapPosition(Point position, double bearing, double distance){ //degrees,miles
 	Point destination(0,0);
