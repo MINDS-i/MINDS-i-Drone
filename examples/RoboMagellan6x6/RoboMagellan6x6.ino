@@ -2,8 +2,8 @@
 #include <SPI.h>
 #include <Servo.h>
 #include <MINDSi.h>
-#include "Compass.h"
-#include "MPU.h"
+#include "APM/Compass.h"
+#include "APM/MPU.h"
 #include "DroneUtils.h"
 #include "GreatCircle.h"
 #include "HLAverage.h"
@@ -29,10 +29,10 @@ const double PING_CALIB   = 1400.l;
 const double pAngle[5]    = { 79.27l, 36.83l, 0.l, -36.83l, -79.27l};
 const double dPlsb        = 4.f/float(0xffff); //dps Per leastSigBit for gyro
 
-double lineGravity  = .65; //line return factor
-int STEERTHROW	  = 45; //degrees from far turn to center
-int MIN_FWD		  = 107;
-int MAX_FWD		  = 115;
+double lineGravity  = .75; //line return factor
+int STEERTHROW	  	= 45; //degrees from far turn to center
+int MIN_FWD		 	= 107;
+int MAX_FWD		  	= 115;
 
 HardwareSerial *CommSerial = &Serial;
 NMEA			nmea(Serial1);
@@ -93,11 +93,6 @@ void setup() {
 
 void loop(){
 	manager.update();
-	lineGravity   = manager.getFloat(10);
-	STEERTHROW	  = manager.getInt(11);
-	MIN_FWD		  = manager.getInt(12);
-	MAX_FWD		  = manager.getInt(13);
-
 	updateGPS();
 	updateGyro();
 	if(uTime <= millis()){
@@ -268,6 +263,11 @@ void reportLocation(){
 	manager.setData(Protocol::DATA_ROLL,       roll.get()*180/PI);
 	manager.setData(Protocol::DATA_SPEED,      nmea.getGroundSpeed());
 	manager.setData(Protocol::DATA_VOLTAGE,    voltage);
+	digitalWrite(LEDpin[0], manager.getBool(15));
+/*	lineGravity   = manager.getFloat(10);
+	STEERTHROW	  = manager.getInt(11);
+	MIN_FWD		  = manager.getInt(12);
+	MAX_FWD		  = manager.getInt(13);*/
 }
 
 void calibrateGyro(){ //takes one second
