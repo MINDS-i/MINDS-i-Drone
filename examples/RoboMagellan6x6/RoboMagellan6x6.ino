@@ -29,10 +29,18 @@ const double PING_CALIB   = 1400.l;
 const double pAngle[5]    = { 79.27l, 36.83l, 0.l, -36.83l, -79.27l};
 const double dPlsb        = 4.f/float(0xffff); //dps Per leastSigBit for gyro
 
-double lineGravity  = .75; //line return factor
+/*double lineGravity  = .75; //line return factor
 int STEERTHROW	  	= 45; //degrees from far turn to center
 int MIN_FWD		 	= 107;
-int MAX_FWD		  	= 115;
+int MAX_FWD		  	= 115;*/
+
+#define lineGravity  manager.getFloat(10)
+#define STEERTHROW   manager.getInt  (11)
+#define STEER_STYLE  manager.getInt  (12)
+#define STEER_FACTOR manager.getFloat(13)
+#define MIN_FWD      manager.getInt  (14)
+#define MAX_FWD      manager.getInt  (15)
+#define BLUE_LED     manager.getBool (16)
 
 HardwareSerial *CommSerial = &Serial;
 NMEA			nmea(Serial1);
@@ -85,10 +93,12 @@ void setup() {
 	manager.requestResync();
 	uTime = millis();
 
-	manager.setData(10, lineGravity);
-	manager.setData(11, STEERTHROW);
-	manager.setData(12, MIN_FWD);
-	manager.setData(13, MAX_FWD);
+	manager.setData(10, .50); //lineGravity
+	manager.setData(11, 45);  //STEERTHROW
+	manager.setData(12, 0);   //STEER_STYLE
+	manager.setData(13, 1.82);//STEER_FACTOR
+	manager.setData(14, 107); //MIN_FWD
+	manager.setData(15, 115); //MAX_FWD
 }
 
 void loop(){
@@ -126,10 +136,20 @@ void navigate(){
 		//drive based on pathHeading and side ping sensors
 		double x,y;
 		double angularError = trunkAngle(pathHeading - trueHeading);
-		//double outputAngle = atan( angularError*PI/180 )*(2*STEERTHROW/PI);
-		double outputAngle = ((angularError/180.l)*(angularError/180.l))*
-															(2.l*STEERTHROW);
-		if(angularError < 0) outputAngle *= -1;
+		double outputAngle;
+		switch(STEER_STYLE){
+			case 0:
+				outputAngle = atan( angularError*PI/180.l )*(2*STEERTHROW/PI);
+				break;
+			case 1:
+				outputAngle = ((angularError/180.l)*(angularError/180.l))*(2.l*STEERTHROW);
+				if(angularError < 0) outputAngle *= -1;
+				break;
+			default:
+				outputAngle = (angularError/180.l)*(2.l*STEERTHROW);
+				break;
+		}
+		outputAngle *= STEER_FACTOR;
 
 		x = cos(toRad(outputAngle));
 		y = sin(toRad(outputAngle));
@@ -212,7 +232,7 @@ void syncHeading(){
 
 void checkPing(){
 	ping[pIter] = getPing(PingPin[pIter]);
-	pIter++;
+	pIter+=2;
 	pIter = pIter%5;
 	if(ping[pIter] < warn[pIter]) oTime = millis();
 }
@@ -263,11 +283,10 @@ void reportLocation(){
 	manager.setData(Protocol::DATA_ROLL,       roll.get()*180/PI);
 	manager.setData(Protocol::DATA_SPEED,      nmea.getGroundSpeed());
 	manager.setData(Protocol::DATA_VOLTAGE,    voltage);
-	digitalWrite(LEDpin[0], manager.getBool(15));
-/*	lineGravity   = manager.getFloat(10);
-	STEERTHROW	  = manager.getInt(11);
-	MIN_FWD		  = manager.getInt(12);
-	MAX_FWD		  = manager.getInt(13);*/
+	digitalWrite(LEDpin[0], BLUE_LED);
+	manager.setData(31, manager.numWaypoints());
+	manager.setData(20, manager.getTargetWaypoint().degLatitude () );
+	manager.setData(21, manager.getTargetWaypoint().degLongitude() );
 }
 
 void calibrateGyro(){ //takes one second

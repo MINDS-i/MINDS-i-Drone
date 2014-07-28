@@ -34,7 +34,6 @@ class CommManager{
 	uint8_t 			 bufPos;
 	boolean 			 isLooped;
 	AVRLinkedList<Point> waypoints;
-	unsigned int 		 targetIndex;
 public:
 	CommManager(HardwareSerial *inStream);
 	void  update();

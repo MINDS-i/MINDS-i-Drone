@@ -1,8 +1,7 @@
 #include "DroneUtils.h"
 
 CommManager::CommManager(HardwareSerial *inStream): stream(inStream),
-		bufPos(0), waypoints(Protocol::MAX_WAYPOINTS), cachedTarget(0,0),
-		targetIndex(0) {
+		bufPos(0), waypoints(Protocol::MAX_WAYPOINTS), cachedTarget(0,0){
 		for(int i=0; i<Protocol::MAX_DATA_SLOTS; i++) data[i] = 0;
 }
 void
@@ -74,9 +73,9 @@ CommManager::processMessage(uint8_t* msg, uint8_t length){
 			//Currently, the rover does not use confirmation checks
 			break;
 		case Protocol::CLEAR_WAYPOINT:
+			clearWaypointList();
 			if(Protocol::WAYPOINT_CONFIRM_REQ)
 					sendConfirm(Protocol::fletcher16(msg, length),stream);
-			clearWaypointList();
 			break;
 		default:
 			break;
@@ -98,18 +97,19 @@ CommManager::recieveWaypoint(uint8_t type, double lat, double lon, uint16_t alt,
 		case Protocol::ADD_WAYPOINT:
 			if(index > waypoints.size()) return false;
 			waypoints.add(index, Point(lat,lon,alt));
-			if(index <  targetIndex) advanceTargetIndex();
-			if(index == targetIndex) cachedTarget = getWaypoint(targetIndex);
+			if(index <  getTargetIndex()) advanceTargetIndex();
+			if(index == getTargetIndex()) cachedTarget = getWaypoint(index);
 			break;
 		case Protocol::CHANGE_WAYPOINT:
 			if(index >= waypoints.size()) return false;
-			waypoints.set(index, Point(lat, lon,alt));
-			if(index == targetIndex) cachedTarget = getWaypoint(targetIndex);
+			waypoints.set(index, Point(lat, lon, alt));
+			if(index == getTargetIndex()) cachedTarget = getWaypoint(index);
 			break;
 		case Protocol::DELETE_WAYPOINT:
 			if(index >= waypoints.size()) return false;
 			waypoints.remove(index);
-			if(index <= targetIndex) retardTargetIndex();
+			if(index <= getTargetIndex()) retardTargetIndex();
+			if(waypoints.size()==0) cachedTarget = Point();
 			break;
 	}
 	return true;

@@ -183,6 +183,7 @@ void AVRLinkedList<T>::clear(){
 	}
 	root = 0;
 	last = 0;
+	curSize = 0;
 }
 #endif
 
