@@ -70,7 +70,7 @@ CommManager::processMessage(uint8_t* msg, uint8_t length){
 				}
 			break;
 		case Protocol::CONFIRMATION:
-			//Currently, the rover does not use confirmation checks
+			//Currently, the rover only sends confirmations
 			break;
 		case Protocol::CLEAR_WAYPOINT:
 			clearWaypointList();
@@ -158,8 +158,14 @@ CommManager::getTargetWaypoint(){
 	return cachedTarget;
 }
 void
+CommManager::setNewDataCallback( void	(*callback)(int) ){
+	newDataCallback = callback;
+}
+//Functions below are private
+void
 CommManager::inputData (uint8_t id, int32_t input){
 	data[id] = input;
+	if(newDataCallback != 0) newDataCallback(id);
 }
 void
 CommManager::sendData(uint8_t id){

@@ -52,11 +52,12 @@ public:
 	int     getInt  (uint8_t id);
 	boolean getBool (uint8_t id);
 	float   getFloat(uint8_t id);
-	void     setTargetIndex(int index);
-	void     advanceTargetIndex();
-	void     retardTargetIndex();
-	int      getTargetIndex();
-	Point    getTargetWaypoint();
+	void    setTargetIndex(int index);
+	void    advanceTargetIndex();
+	void    retardTargetIndex();
+	int     getTargetIndex();
+	Point   getTargetWaypoint();
+	void	setNewDataCallback( void (*callback)(int) );
 private:
 	void    inputData (uint8_t id, int32_t input);
 	int32_t data[Protocol::MAX_DATA_SLOTS];
@@ -67,6 +68,7 @@ private:
 	boolean rightMatch(uint8_t* lhs, uint8_t llen, const uint8_t* rhs, const uint8_t rlen);
 	boolean recieveWaypoint(uint8_t type, double lat, double lon, uint16_t alt,
 										uint8_t index);
+	void	(*newDataCallback)(int);
 };
 
 void sendGPSMessage(uint8_t Type, uint8_t ID, uint16_t len, const uint8_t* buf);
