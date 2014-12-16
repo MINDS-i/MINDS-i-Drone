@@ -2,7 +2,6 @@
 #include "MPU.h"
 #include "Arduino.h"
 
-
 volatile uint8_t MPU6000_newdata;
 int accelX;
 int accelY;

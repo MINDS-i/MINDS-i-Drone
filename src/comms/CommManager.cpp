@@ -1,8 +1,9 @@
-#include "DroneUtils.h"
+#include "CommManager.h"
 
-CommManager::CommManager(HardwareSerial *inStream): stream(inStream),
-		bufPos(0), waypoints(Protocol::MAX_WAYPOINTS), cachedTarget(0,0){
-		for(int i=0; i<Protocol::MAX_DATA_SLOTS; i++) data[i] = 0;
+CommManager::CommManager(HardwareSerial *inStream):
+		stream(inStream), bufPos(0), cachedTarget(0,0){
+	for(int i=0; i<Protocol::MAX_DATA_SLOTS; i++) data[i] = 0;
+	waypoints = new SRAMlist<Point>(Protocol::MAX_WAYPOINTS);
 }
 void
 CommManager::update(){
@@ -23,7 +24,8 @@ CommManager::update(){
 }
 
 boolean
-CommManager::rightMatch(uint8_t* lhs, uint8_t llen, const uint8_t* rhs, const uint8_t rlen){
+CommManager::rightMatch(uint8_t* lhs, const uint8_t llen,
+						const uint8_t* rhs, const uint8_t rlen){
 	if(rlen > llen) return false;
 	for(int i=0; i < rlen; i++){
 		if( lhs[llen-i-1] != rhs[rlen-i-1] ) return false;
@@ -83,7 +85,7 @@ CommManager::processMessage(uint8_t* msg, uint8_t length){
 }
 void
 CommManager::clearWaypointList(){
-	waypoints.clear();
+	waypoints->clear();
 }
 void
 CommManager::sendConfirm(uint16_t msg, HardwareSerial *stream){
@@ -95,33 +97,33 @@ CommManager::recieveWaypoint(uint8_t type, double lat, double lon, uint16_t alt,
 										uint8_t index){
 	switch(type){
 		case Protocol::ADD_WAYPOINT:
-			if(index > waypoints.size()) return false;
-			waypoints.add(index, Point(lat,lon,alt));
+			if(index > waypoints->size()) return false;
+			waypoints->add(index, Point(lat,lon,alt));
 			if(index <  getTargetIndex()) advanceTargetIndex();
 			if(index == getTargetIndex()) cachedTarget = getWaypoint(index);
 			break;
 		case Protocol::CHANGE_WAYPOINT:
-			if(index >= waypoints.size()) return false;
-			waypoints.set(index, Point(lat, lon, alt));
+			if(index >= waypoints->size()) return false;
+			waypoints->set(index, Point(lat, lon, alt));
 			if(index == getTargetIndex()) cachedTarget = getWaypoint(index);
 			break;
 		case Protocol::DELETE_WAYPOINT:
-			if(index >= waypoints.size()) return false;
-			waypoints.remove(index);
+			if(index >= waypoints->size()) return false;
+			waypoints->remove(index);
 			if(index <= getTargetIndex()) retardTargetIndex();
-			if(waypoints.size()==0) cachedTarget = Point();
+			if(waypoints->size()==0) cachedTarget = Point();
 			break;
 	}
 	return true;
 }
 inline Point
 CommManager::getWaypoint(int index){
-	if(index >= waypoints.size()) return Point(0,0);
-	return waypoints.get(index);
+	if(index >= waypoints->size()) return Point(0,0);
+	return waypoints->get(index);
 }
 int
 CommManager::numWaypoints(){
-	return waypoints.size();
+	return waypoints->size();
 }
 bool
 CommManager::loopWaypoints(){
@@ -129,14 +131,14 @@ CommManager::loopWaypoints(){
 }
 void
 CommManager::setTargetIndex(int index){
-	if(index >= waypoints.size()) return;
+	if(index >= waypoints->size()) return;
 	setData(Protocol::DATA_TARGET, index);
 	cachedTarget = getWaypoint(index);
 }
 void
 CommManager::advanceTargetIndex(){
 	int targetIndex = getInt(Protocol::DATA_TARGET);
-	if(targetIndex+1 >= waypoints.size()) return;
+	if(targetIndex+1 >= waypoints->size()) return;
 	targetIndex++;
 	setData(Protocol::DATA_TARGET, targetIndex);
 	cachedTarget = getWaypoint(targetIndex);

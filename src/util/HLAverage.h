@@ -1,8 +1,8 @@
 #ifndef HLA_H
 #define HLA_H
 
-#include "math.h"
 #include "Arduino.h"
+#include "math.h"
 
 //Time controlled exponential running average
 //set the half-life in milliseconds

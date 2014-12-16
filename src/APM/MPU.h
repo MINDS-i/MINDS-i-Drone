@@ -1,7 +1,7 @@
-#include <SPI.h>
-
 #ifndef MPULIB
 #define MPULIB
+
+#include <SPI.h>
 
 #define MPU6000_CHIP_SELECT_PIN 53 //53 pin on megas, would be 4 on an uno
 #define SAMPLE_RATE 50

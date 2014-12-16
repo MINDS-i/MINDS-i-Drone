@@ -1,7 +1,7 @@
 #ifndef NMEA_H
 #define NMEA_H
 #include "Arduino.h"
-#include "GreatCircle.h"
+#include "math/GreatCircle.h"
 
 class NMEA{
 public:

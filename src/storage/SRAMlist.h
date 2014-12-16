@@ -1,20 +1,22 @@
-#ifndef AVRLinkedList_H
-#define AVRLinkedList_H
+#ifndef SRAMLIST_H
+#define SRAMLIST_H
 /*
 	AVR's are very susceptable to memory fragmentation due to the very limited
 	amount of RAM, so a Linked List Implementation using a constant number of
 	Nodes and a free list is necessary for stability
 */
+
+//change this to templated size
 template<typename T>
-struct LN{
+struct Node{
 	T data;
-	LN<T> *next;
+	Node<T> *next;
 };
 template<typename T>
-class AVRLinkedList{
+class SRAMlist : public List<T>{
 public:
-	AVRLinkedList(uint16_t numberOfNodes);
-	~AVRLinkedList();
+	SRAMlist(uint16_t numberOfNodes);
+	~SRAMlist();
 	uint16_t size();
 	uint16_t maxSize();
 	bool add(uint16_t index, T item);
@@ -28,67 +30,67 @@ public:
 	T popBottom();
 	void clear();
 private:
-	AVRLinkedList(const AVRLinkedList&);
+	SRAMlist(const SRAMlist&);
 	int curSize, maxNodes;
-	LN<T> *root, *last;
-	LN<T> *freeRoot;
+	Node<T> *root, *last;
+	Node<T> *freeRoot;
 	void* raw;
 
-	void pushFree(LN<T>* node);
-	LN<T>* popFree();
-	LN<T>* getNode(uint16_t index);
+	void pushFree(Node<T>* node);
+	Node<T>* popFree();
+	Node<T>* getNode(uint16_t index);
 };
 template<typename T>
-AVRLinkedList<T>::AVRLinkedList(uint16_t numberOfNodes)
+SRAMlist<T>::SRAMlist(uint16_t numberOfNodes)
 		:curSize(0), maxNodes(numberOfNodes), root(0), last(0){
-	raw = malloc( maxNodes*sizeof(LN<T>) );
+	raw = malloc( maxNodes*sizeof(Node<T>) );
 	if(raw == 0) maxNodes = 0; //not enough memory; disable the list
-	freeRoot = (LN<T>*) raw;
+	freeRoot = (Node<T>*) raw;
 	for (int i = 0; i < maxNodes-1; i++){
 		(freeRoot+i)->next = (freeRoot+(i+1));
 	}
 }
 template<typename T>
-AVRLinkedList<T>::~AVRLinkedList(){
+SRAMlist<T>::~SRAMlist(){
 	free(raw);
 }
 template<typename T>
-void AVRLinkedList<T>::pushFree(LN<T>* node){
+void SRAMlist<T>::pushFree(Node<T>* node){
 	node->next = freeRoot;
 	freeRoot = node;
 }
 template<typename T>
-LN<T>* AVRLinkedList<T>::popFree(){
-	LN<T>* freed = freeRoot;
+Node<T>* SRAMlist<T>::popFree(){
+	Node<T>* freed = freeRoot;
 	freeRoot = freeRoot->next;
 	return freed;
 }
 template<typename T> inline
-LN<T>* AVRLinkedList<T>::getNode(uint16_t index){
+Node<T>* SRAMlist<T>::getNode(uint16_t index){
 	if(index > curSize) return false;
-	LN<T> *cur = root;
+	Node<T> *cur = root;
 	for(int i=0; i<index; i++) cur = cur->next;
 	return cur;
 }
 //-- public from here on --//
 template<typename T>
-uint16_t AVRLinkedList<T>::size(){
+uint16_t SRAMlist<T>::size(){
 	return curSize;
 }
 template<typename T>
-uint16_t AVRLinkedList<T>::maxSize(){
+uint16_t SRAMlist<T>::maxSize(){
 	return maxNodes;
 }
 template<typename T>
-bool AVRLinkedList<T>::add(uint16_t index, T item){
+bool SRAMlist<T>::add(uint16_t index, T item){
 	if(curSize >= maxNodes) return false;
 
 	if(index == 0) return pushTop(item);
 	else if(index == curSize) return pushBottom(item);
 	else if(index > curSize) return false;
 
-	LN<T>* cur = getNode(index-1);
-	LN<T>* nw = popFree();
+	Node<T>* cur = getNode(index-1);
+	Node<T>* nw = popFree();
 	nw->next = cur->next;
 	cur->next = nw;
 	nw->data = item;
@@ -97,14 +99,14 @@ bool AVRLinkedList<T>::add(uint16_t index, T item){
 	return true;
 }
 template<typename T>
-bool AVRLinkedList<T>::add(T item){
+bool SRAMlist<T>::add(T item){
 	return pushTop(item);
 }
 template<typename T>
-bool AVRLinkedList<T>::pushTop(T item){
+bool SRAMlist<T>::pushTop(T item){
 	if(curSize >= maxNodes) return false;
 
-	LN<T>* nw = popFree();
+	Node<T>* nw = popFree();
 	nw->next = root;
 	root = nw;
 	nw->data = item;
@@ -114,10 +116,10 @@ bool AVRLinkedList<T>::pushTop(T item){
 	return true;
 }
 template<typename T>
-bool AVRLinkedList<T>::pushBottom(T item){
+bool SRAMlist<T>::pushBottom(T item){
 	if(curSize >= maxNodes) return false;
 
-	LN<T>* nw = popFree();
+	Node<T>* nw = popFree();
 	if(curSize == 0) root = nw;
 	else last->next = nw;
 	last = nw;
@@ -127,24 +129,24 @@ bool AVRLinkedList<T>::pushBottom(T item){
 	return true;
 }
 template<typename T>
-bool AVRLinkedList<T>::set(uint16_t index, T item){
+bool SRAMlist<T>::set(uint16_t index, T item){
 	if(index >= curSize) return false;
-	LN<T> *node = getNode(index);
+	Node<T> *node = getNode(index);
 	node->data = item;
 	return true;
 }
 template<typename T>
-T AVRLinkedList<T>::get(uint16_t index){
+T SRAMlist<T>::get(uint16_t index){
 	if(index >= curSize || index < 0) return T();
 	else if(index == curSize-1) return last->data;
 	return getNode(index)->data;
 }
 template<typename T>
-T AVRLinkedList<T>::remove(uint16_t index){
+T SRAMlist<T>::remove(uint16_t index){
 	if(curSize <= 0) return T();
 	else if(index >= curSize || index < 0) return T();
 	else if(index == 0) return popTop();
-	LN<T> *del, *pre;
+	Node<T> *del, *pre;
 
 	pre = getNode(index-1);
 	del = pre->next;
@@ -157,10 +159,10 @@ T AVRLinkedList<T>::remove(uint16_t index){
 	return tmp;
 }
 template<typename T>
-T AVRLinkedList<T>::popTop(){
+T SRAMlist<T>::popTop(){
 	if(curSize <= 0) return T();
 
-	LN<T> *del = root;
+	Node<T> *del = root;
 	root = root->next;
 	T tmp = del->data;
 
@@ -169,13 +171,13 @@ T AVRLinkedList<T>::popTop(){
 	return tmp;
 }
 template<typename T>
-T AVRLinkedList<T>::popBottom(){
+T SRAMlist<T>::popBottom(){
 	return remove(curSize-1);
 }
 template<typename T>
-void AVRLinkedList<T>::clear(){
+void SRAMlist<T>::clear(){
 	if(curSize == 0) return;
-	LN<T>* tmp;
+	Node<T>* tmp;
 	for (int i = 0; i < curSize; i++){
 		tmp = root;
 		root = root->next;

@@ -1,13 +1,8 @@
-#include <Wire.h>
-#include <SPI.h>
-#include <Servo.h>
-#include <MINDSi.h>
-#include "APM/Compass.h"
-#include "APM/MPU.h"
-#include "DroneUtils.h"
-#include "GreatCircle.h"
-#include "HLAverage.h"
-#include "wiring_private.h"
+#include "DroneLibs.h"
+#include "MINDSi.h"
+#include "Servo.h"
+#include "SPI.h"
+#include "Wire.h"
 
 //Constants that should never change during driving and never/rarely tuned
 const uint8_t VoltagePin  = 67;

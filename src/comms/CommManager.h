@@ -1,13 +1,14 @@
+#ifndef DRONEUTILS_H
+#define DRONEUTILS_H
+
 #include "Arduino.h"
 #include <inttypes.h>
 
-#include "Protocol.h"
-#include "GreatCircle.h"
-#include "AVRLinkedList.h"
-#include "NMEA.h"
-
-#ifndef DRONEUTILS_H
-#define DRONEUTILS_H
+#include "comms/NMEA.h"
+#include "comms/Protocol.h"
+#include "storage/List.h"
+#include "storage/SRAMlist.h"
+#include "math/GreatCircle.h"
 
 //GPS_SETUP only for legacy support
 const static uint8_t GPS_SETUP[] = {0xB5, 0x62, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x04, 0x01, 0xFF, 0x18,
@@ -29,11 +30,11 @@ const static uint8_t CFG_PRT[] =  { 0x01, 0x00, 0x00, 0x00, 0xc0, 0x08,
 const uint8_t BUFF_LEN = 32;
 
 class CommManager{
-	HardwareSerial 		 *stream;
-	uint8_t 			 buf[BUFF_LEN];
-	uint8_t 			 bufPos;
-	boolean 			 isLooped;
-	AVRLinkedList<Point> waypoints;
+	HardwareSerial 		*stream;
+	uint8_t 			buf[BUFF_LEN];
+	uint8_t 			bufPos;
+	boolean 			isLooped;
+	List<Point>*		waypoints;
 public:
 	CommManager(HardwareSerial *inStream);
 	void  update();

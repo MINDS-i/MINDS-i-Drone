@@ -1,8 +1,8 @@
-#include <Wire.h>
-#include <math.h>
-
 #ifndef COMPASS_H
 #define COMPASS_H
+
+#include <Wire.h>
+#include <math.h>
 
 void beginCompass();
 void rawCompass(int*x,int*y,int*z);
