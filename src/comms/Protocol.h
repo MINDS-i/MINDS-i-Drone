@@ -4,36 +4,69 @@
 #include <inttypes.h>
 #include "Arduino.h"
 
+/* messages are minumum of 3 bytes, max of 19 bytes, constructed as
+	HEADER :(label[1 bytes] : data[length bytes] : checksum [2 bytes]): FOOTER
+	label = legth[4 bits] : subType[2 bits] : type[2 bits]
+	checksums calculated over everything except the checksum
+	types and subtypes listed as enums below.
+	some messages need confirmations, dictated by constants below
+	confirmation messages contain only the checksum of the entire message
+		being confirmed
+
+	sync messages can be sent or received
+	receiving a sync message should result in:
+		the sending of a sync message
+		the activation of any "on connection" commands
+
+	the dashboard will send all waypoins "on connection"
+	the drone will upload settings "on connection"
+*/
+
 namespace Protocol{
-	const uint8_t  MAX_WAYPOINTS  	  = 200;
-	const uint8_t  MAX_DATA_SLOTS     = 32;
-	const uint16_t BAUD_RATE 		  = 9600;
-	const float    FIXED_POINT_FACTOR = 0x100000;
+	const uint8_t MESSAGE_TYPE_MASK	= 0x03;
 
+	enum messageType{	STANDARD = 0,
+						SETTINGS = 1,
+						WAYPOINT = 2,
+						PROTOCOL = 3 };
+
+	enum standardSubtype{	TELEMETRY	= 0,
+							COMMAND		= 1 };
+
+	enum waypointSubtype{	ADD		= 0,
+							ALTER	= 1,
+							DELETE	= 2 };
+
+	enum settingsSubtype{	SET		= 0,
+							POLL	= 1 };
+
+	enum protocolSubtype{	SYNC	= 0,
+							CONFIRM	= 1 };
+
+	enum telemetryType{ LATITUDE	= 0,
+						LONGITUDE	= 1,
+						HEADING		= 2,
+						PITCH		= 3,
+						ROLL		= 4,
+						SPEED		= 5,
+						VOLTAGE		= 6 };
+
+	enum commandType{	ESTOP			= 0,
+						TARGET			= 1,
+						LOOPING			= 2,
+						CLEAR_WAYPOINTS = 3 };
+
+	const uint8_t  MAX_WAYPOINTS	= 64;
+	const uint8_t  MAX_SETTINGS		= 32;
+	const uint16_t BAUD_RATE		= 9600;
+
+	const boolean STANDARD_CONFIRM_REQ = false;
+	const boolean SETTINGS_CONFIRM_REQ = true;
 	const boolean WAYPOINT_CONFIRM_REQ = true;
-	const boolean DATA_CONFIRM_REQ     = false;
-
-	const uint8_t DATA_LATITUDE  = 0x00;
-	const uint8_t DATA_LONGITUDE = 0x01;
-	const uint8_t DATA_HEADING   = 0x02;
-	const uint8_t DATA_PITCH     = 0x03;
-	const uint8_t DATA_ROLL      = 0x04;
-	const uint8_t DATA_SPEED     = 0x05;
-	const uint8_t DATA_VOLTAGE   = 0x06;
-	const uint8_t DATA_TARGET    = 0x07;
-	const uint8_t DATA_LOOPING   = 0x08;
-
-	const uint8_t DATA_MSG 		  = 0x00;
-	const uint8_t ADD_WAYPOINT    = 0x10;
-	const uint8_t CHANGE_WAYPOINT = 0x11;
-	const uint8_t DELETE_WAYPOINT = 0x12;
-	const uint8_t CLEAR_WAYPOINT  = 0x13;
-	const uint8_t CONFIRMATION    = 0x20;
-	const uint8_t REQUEST_RESYNC  = 0x30;
 
 	const uint8_t HEADER[] = {0x13, 0x37};
 	const uint8_t HEADER_SIZE = 2;
-	const uint8_t FOOTER[] = {0x7A };
+	const uint8_t FOOTER[] = {0x7A};
 	const uint8_t FOOTER_SIZE = 1;
 
 	void sendMessage(uint8_t* data, int length, HardwareSerial *stream);
@@ -43,6 +76,19 @@ namespace Protocol{
 
 	//return true if an array has a valid fletcher checksum concatenated
 	bool fletcher(uint8_t* data, int length);
+
+	bool needsConfirmation(uint8_t label);
+
+	messageType getMessageType(uint8_t label);
+
+	uint8_t getSubtype(uint8_t label);
+
+	uint8_t getMessageLength(uint8_t label);
+
+	uint8_t buildMessageLabel(standardSubtype type, uint8_t length);
+	uint8_t buildMessageLabel(settingsSubtype type, uint8_t length);
+	uint8_t buildMessageLabel(waypointSubtype type, uint8_t length);
+	uint8_t buildMessageLabel(protocolSubtype type, uint8_t length);
 }
 
 #endif
