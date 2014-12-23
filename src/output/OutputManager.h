@@ -29,6 +29,9 @@ public:
 											PID{PitchPID, RollPID},
 											RMS(predictionRMS)
 											{};
+	OutputManager(OutputDevice* NEWS[4]) : output(NEWS),
+										   RMS(-1.0f)
+										   {}
 	void set(float pitch, float roll, float dYaw, float throttle);
 	void enable(); //use with caution; arming takes time
 	void disable();
@@ -37,6 +40,7 @@ public:
 	void update(OrientationEngine &orientation);
 	void setPitchPID(PIDparameters inputPID);
 	void setRollPID (PIDparameters inputPID);
+	void setFeedbackRMS(float input);
 };
 void OutputManager::set(float pitch, float roll, float dYaw, float throttle){
 	desiredState[0] = pitch;
@@ -137,5 +141,8 @@ void OutputManager::setPitchPID(PIDparameters inputPID){
 }
 void OutputManager::setRollPID(PIDparameters inputPID){
 	PID[1] = inputPID;
+}
+void OutputManager::setFeedbackRMS(float input){
+	RMS = input;
 }
 #endif

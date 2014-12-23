@@ -220,7 +220,7 @@ CommManager::handleCommand(commandType command, uint8_t data){
 			setTargetIndex(data);
 			break;
 		case LOOPING:
-			waypointsLooped = data!=0;
+			waypointsLooped = (data!=0);
 			break;
 		case CLEAR_WAYPOINTS:
 			clearWaypointList();

@@ -25,6 +25,7 @@ public:
 	bool status();
 	void calibrate();
 	void update(InertialManager& man);
+	void setGryoLPF(float lpf) { LPfac = lpf; }
 	void setGyroMSE(float mse) { gyroMSE = mse; }
 	void setAcclMSE(float mse) { acclMSE = mse; }
 	float getGyroMSE() { return gyroMSE; }

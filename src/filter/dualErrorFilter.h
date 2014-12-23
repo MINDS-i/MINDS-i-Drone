@@ -10,7 +10,7 @@
 class DualErrorFilter : public OrientationEngine {
 private:
 	static const uint8_t RATE = 0;
-	static const uint8_t ATTITUDE = 0;
+	static const uint8_t ATTITUDE = 1;
 
 	math::quaternion attitude;
 	math::vector3d   rate;
@@ -56,6 +56,8 @@ public:
 	float getRollRate();
 	float getPitchRate();
 	float getYawRate();
+	void  setRateGrowthMSE(float input){ growthMSE[RATE]=input; }
+	void  setAttitudeGrowthMSE(float input){ growthMSE[ATTITUDE]=input; }
 };
 float
 DualErrorFilter::computeGain(uint8_t select, float MSE){

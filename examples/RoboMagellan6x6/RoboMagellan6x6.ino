@@ -1,24 +1,29 @@
-#include "DroneLibs.h"
-#include "MINDSi.h"
 #include "Servo.h"
 #include "SPI.h"
 #include "Wire.h"
+#include "MINDSi.h"
+#include "DroneLibs.h"
+#include "util/callbackTemplate.h"
+
+const uint8_t STORAGE_VER_IDX	= 31;
+const uint8_t STORAGE_VER		=  1;
 
 //Constants that should never change during driving and never/rarely tuned
 const uint8_t VoltagePin  = 67;
 const uint8_t LEDpin[]    = {25, 26, 27}; //blue, yellow, red
 const uint8_t PingPin[]	  = {A4, A1, A0, A2, A3}; //left to right
 const uint8_t ServoPin[]  = {12, 11,  8};//drive, steer, backS; APM 1,2,3 resp.
-const uint8_t RadioPin[]  = {2, 3}; //drive, steer
-const double  pAngle[5]   = { 79.27l, 36.83l, 0.l, -36.83l, -79.27l};
-const double  dPlsb       = 4.f/float(0xffff); //dps Per leastSigBit for gyro
+const uint8_t RadioPin[]  = {0, 1, 2}; //auto switch, drive, steer
+const double  pAngle[5]   = { 79.27, 36.83, 0.0, -36.83, -79.27};
+const double  dplsb       = 4.f/float(0xffff); //dps Per leastSigBit for gyro
 const int ScheduleDelay   = 22;
 const uint16_t warn[]     = {1000, 1600, 2500, 1600, 1000};
 const double PointRadius  = .001; //in miles, margin for error in rover location
 
 //Global variables used throught the program
-HardwareSerial *CommSerial = &Serial;
-CommManager		manager(CommSerial);
+HardwareSerial *commSerial	= &Serial;
+Storage<float> *settings	= eeStorage::getInstance();
+CommManager		manager(commSerial, settings);
 NMEA			nmea(Serial1);
 Point			location(0,0);
 Point			backWaypoint(0,0);
@@ -40,45 +45,59 @@ double   distance;
 boolean  stop = true;
 boolean  backDir;
 
-voidFuncPtr schedule[] = {
-							extrapPosition,
-							checkPing,
-							readAccelerometer,
-							reportLocation,
-							};
+void (*schedule[])(void) = {	extrapPosition,
+								checkPing,
+								readAccelerometer,
+								reportLocation,
+								};
 
-//These parameters are synced with the dashboard in real time
-//The defaults are set during setup and sent to the dash when a connection is
-//made; after that they can be changed in the dash and changes will
-//be sent to the robot.
-#define LINEGRAVITY  manager.getFloat(10)
-#define STEERTHROW   manager.getInt  (11)
-#define STEER_STYLE  manager.getInt  (12)
-#define STEER_FACTOR manager.getFloat(13)
-#define MIN_FWD      manager.getInt  (14)
-#define MAX_FWD      manager.getInt  (15)
-#define REVTHROW     manager.getInt  (16)
-#define REVSPEED     manager.getInt  (17)
-#define PING_WEIGHT  manager.getFloat(18)
-#define COAST_TIME   manager.getInt  (19)
-#define DANGER_TIME  manager.getInt  (20)+manager.getInt(19)
-void setTuningDefaults(){
-	manager.setData(10, .50);  //LINEGRAVITY
-	manager.setData(11, 45);   //STEERTHROW
-	manager.setData(12, 1);    //STEER_STYLE
-	manager.setData(13, 1.0);  //STEER_FACTOR
-	manager.setData(14, 107);  //MIN_FWD
-	manager.setData(15, 115);  //MAX_FWD
-	manager.setData(16, 20);   //REVERSE_STEER_THROW
-	manager.setData(17, 75);   //REVERSE_SPEED
-	manager.setData(18, 1400.);//PING_WEIGHT
-	manager.setData(19, 1500); //COAST_TIME
-	manager.setData(20, 800);  //Minumum Backup Time
+//These parameters are loaded from eeprom in STORAGE_VER is valid
+//the dashboard can update records in the storage passed into manager
+//The callbacks keep them up to date while the code is running
+float	lineGravity;
+int		steerThrow, steerStyle;
+float	steerFactor;
+int		minFwd, maxFwd;
+int		revThrow, revSpeed;
+float	pingWeight;
+int		coastTime, dangerTime; //danger should include coastTime
+
+void writeDefaults(){
+	settings->updateRecord( 0, .50);  //lineGravity
+	settings->updateRecord( 1, 45);   //steerThrow
+	settings->updateRecord( 2, 1);    //steerStyle
+	settings->updateRecord( 3, 1.0);  //steerFactor
+	settings->updateRecord( 4, 107);  //minFwd
+	settings->updateRecord( 5, 115);  //maxFwd
+	settings->updateRecord( 6, 20);   //REVERSE_STEER_THROW
+	settings->updateRecord( 7, 75);   //REVERSE_SPEED
+	settings->updateRecord( 8, 1400.);//pingWeight
+	settings->updateRecord( 9, 1500); //coastTime
+	settings->updateRecord(10, 800);  //Minumum Backup Time
+	settings->updateRecord(STORAGE_VER_IDX, STORAGE_VER);
+}
+void dangerTimeCallback(float in){ dangerTime = coastTime+in; }
+void setCallbacks(){
+	settings->attachCallback( 0, callback<float, &lineGravity>	);
+	settings->attachCallback( 1, callback<int  , &steerThrow>	);
+	settings->attachCallback( 2, callback<int  , &steerStyle>	);
+	settings->attachCallback( 3, callback<float, &steerFactor>	);
+	settings->attachCallback( 4, callback<int  , &minFwd>		);
+	settings->attachCallback( 5, callback<int  , &maxFwd>		);
+	settings->attachCallback( 6, callback<int  , &revThrow>		);
+	settings->attachCallback( 7, callback<int  , &revSpeed>		);
+	settings->attachCallback( 8, callback<float, &pingWeight>	);
+	settings->attachCallback( 9, callback<int  , &coastTime>	);
+	settings->attachCallback(10, &dangerTimeCallback);
 }
 
 void setup() {
+	if(settings->getRecord(STORAGE_VER_IDX) != STORAGE_VER)
+		writeDefaults();
+	setCallbacks();
+
 	Serial1.begin(38400);
-	CommSerial->begin(Protocol::BAUD_RATE);
+	commSerial->begin(Protocol::BAUD_RATE);
 	InitMPU();
 	pinMode(40, OUTPUT); digitalWrite(40, HIGH); //SPI select pin
 	for(int i=0; i<3; i++) pinMode(LEDpin[i], OUTPUT);
@@ -93,11 +112,9 @@ void setup() {
 	delay(2000);
 	calibrateGyro(); //this also takes one second
 
-	getRadio(RadioPin[0]);//start radio interrupts
+	setupAPM2radio();
 	manager.requestResync();
 	uTime = millis();
-
-	setTuningDefaults();
 }
 
 void loop(){
@@ -114,20 +131,20 @@ void loop(){
 }
 
 void navigate(){
-	if (isRadioOn(RadioPin[0])) {
-		output(getRadio(RadioPin[0]), getRadio(RadioPin[1]));
+	if (getAPM2Radio(RadioPin[0]) > 120) {
+		output(getAPM2Radio(RadioPin[1]), getAPM2Radio(RadioPin[2]));
 	} else if (oTime != 0) {
 		//Back Up
 		if(sTime == 0){
 			output(90, 90);
 			sTime = millis();
 			backDir = ping[0]<ping[4];
-		} else if(sTime+COAST_TIME < millis()){
-			if(backDir) output(REVSPEED, 90-REVTHROW);
-			else 		output(REVSPEED, 90+REVTHROW);
+		} else if(sTime+coastTime < millis()){
+			if(backDir) output(revSpeed, 90-revThrow);
+			else 		output(revSpeed, 90+revThrow);
 		}
 
-		if(oTime+DANGER_TIME < millis()){
+		if(oTime+dangerTime < millis()){
 			sTime = 0;
 			oTime = 0;
 		}
@@ -136,39 +153,39 @@ void navigate(){
 		double x,y;
 		double angularError = trunkAngle(pathHeading - trueHeading);
 		double outputAngle;
-		switch(STEER_STYLE){
+		switch(steerStyle		){
 			case 0:
-				outputAngle = atan( angularError*PI/180.l )*(2*STEERTHROW/PI);
+				outputAngle = atan( angularError*PI/180.l )*(2*steerThrow/PI);
 				break;
 			case 1:
 				outputAngle = ((angularError/180.l)*(angularError/180.l));
-				outputAngle *=(2.l*STEERTHROW);
+				outputAngle *=(2.l*steerThrow);
 				if(angularError < 0) outputAngle *= -1;
 				break;
 			default:
-				outputAngle = (angularError/180.l)*(2.l*STEERTHROW);
+				outputAngle = (angularError/180.l)*(2.l*steerThrow);
 				break;
 		}
-		outputAngle *= STEER_FACTOR;
+		outputAngle *= steerFactor;
 
 		x = cos(toRad(outputAngle));
 		y = sin(toRad(outputAngle));
 		for(int i=0; i<5; i++){
-			double tmp = ping[i]/PING_WEIGHT;
+			double tmp = ping[i]/pingWeight;
 			tmp *= tmp;
 			x += cos(toRad(pAngle[i]))/tmp;
 			y += sin(toRad(pAngle[i]))/tmp;
 		}
 
 		outputAngle = toDeg(atan2(y,x))+90;
-		bound(double(90-STEERTHROW), outputAngle, double(90+STEERTHROW));
+		bound(double(90-steerThrow), outputAngle, double(90+steerThrow));
 
 		//try slowing down on steep turns
-		int disp = STEERTHROW - abs(90-outputAngle);
+		int disp = steerThrow - abs(90-outputAngle);
 		int speed = (distance*5280.l);
 		speed = min(speed, disp);
 		speed += 90;
-		bound(MIN_FWD, speed, MAX_FWD);
+		bound(minFwd, speed, maxFwd);
 
 		if(stop) output(90 ,90);
 		else     output(speed, outputAngle);
@@ -211,7 +228,7 @@ void updateGyro(){
 	double Gz = MPU_Gz();
 	lowFilter.update(Gz);
 	highFilter.update(Gz-lowFilter.get());
-	trueHeading = trunkAngle(trueHeading + dt*(highFilter.get())*dPlsb);
+	trueHeading = trunkAngle(trueHeading + dt*(highFilter.get())*dplsb);
 
 	if(gpsHalfTime < millis() && gpsHalfTime!=0){
 		gyroHalf = trueHeading;
@@ -260,7 +277,7 @@ void positionChanged(){
 		double AB    = calcHeading(backWaypoint, manager.getTargetWaypoint());
 		double AL    = calcHeading(backWaypoint, location);
 		double d     = cos(toRad(AL-AB))*calcDistance(backWaypoint, location);
-		double D     = d + (full-d)*(1.l-LINEGRAVITY);
+		double D     = d + (full-d)*(1.l-lineGravity);
 		Point target = extrapPosition(backWaypoint, AB, D);
 		pathHeading  = calcHeading(location, target);
 	}
@@ -276,16 +293,13 @@ void readAccelerometer(){
 
 void reportLocation(){
 	float voltage = float(analogRead(67)/1024.l*5.l*10.1l);
-	manager.setData(Protocol::DATA_LATITUDE,   location.degLatitude());
-	manager.setData(Protocol::DATA_LONGITUDE,  location.degLongitude());
-	manager.setData(Protocol::DATA_HEADING,	   trueHeading);
-	manager.setData(Protocol::DATA_PITCH,      pitch.get()*180/PI);
-	manager.setData(Protocol::DATA_ROLL,       roll.get()*180/PI);
-	manager.setData(Protocol::DATA_SPEED,      nmea.getGroundSpeed());
-	manager.setData(Protocol::DATA_VOLTAGE,    voltage);
-	manager.setData(20, manager.getTargetWaypoint().degLatitude () );
-	manager.setData(21, manager.getTargetWaypoint().degLongitude() );
-	manager.setData(22, manager.numWaypoints());
+	manager.sendTelem(Protocol::telemetryType(LATITUDE),  location.degLatitude());
+	manager.sendTelem(Protocol::telemetryType(LONGITUDE), location.degLongitude());
+	manager.sendTelem(Protocol::telemetryType(HEADING),   trueHeading);
+	manager.sendTelem(Protocol::telemetryType(PITCH),     pitch.get()*180/PI);
+	manager.sendTelem(Protocol::telemetryType(ROLL),      roll.get()*180/PI);
+	manager.sendTelem(Protocol::telemetryType(SPEED),     nmea.getGroundSpeed());
+	manager.sendTelem(Protocol::telemetryType(VOLTAGE),   voltage);
 }
 
 void calibrateGyro(){ //takes one second
