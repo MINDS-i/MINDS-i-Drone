@@ -43,7 +43,7 @@ CommManager::processMessage(uint8_t* msg, uint8_t length){
 	switch(type){
 		case STANDARD: {
 			if (subtype == COMMAND){
-				handleCommand(commandType(msg[2]), msg[3]);
+				handleCommand(commandType(msg[1]), msg[2]);
 			}
 		} break;
 		case SETTINGS: {
@@ -52,14 +52,14 @@ CommManager::processMessage(uint8_t* msg, uint8_t length){
 				break;
 			}
 			byteConv conv;
-			for(int i=0; i<4; i++) conv.bytes[i] = msg[2+i];
+			for(int i=0; i<4; i++) conv.bytes[3-i] = msg[2+i];
 			inputSetting(msg[1], conv.f);
 		} break;
 		case WAYPOINT: {
 			byteConv lat, lon;
 			for(int i=0; i<4; i++){
-				lat.bytes[i] = msg[1+i];
-				lon.bytes[i] = msg[5+i];
+				lat.bytes[3-i] = msg[1+i];
+				lon.bytes[3-i] = msg[5+i];
 			}
 			uint16_t alt = (((uint16_t)msg[9])<<8) | msg[10];
 			uint8_t  pos = msg[11];
@@ -162,6 +162,16 @@ CommManager::setSetting(uint8_t id,   float input){
 	storage->updateRecord(id, input);
 	sendSetting(id, input);
 }
+void
+CommManager::sendTelem(uint8_t id, float value){
+	byteConv data;
+	data.f = value;
+	byte tmp[6] = {	buildMessageLabel(standardSubtype(TELEMETRY), 6),
+					id,
+					data.bytes[3], data.bytes[2],
+					data.bytes[1], data.bytes[0], };
+	Protocol::sendMessage(tmp, 6, stream);
+}
 //Functions below are private
 void
 CommManager::inputSetting(uint8_t id, float input){
@@ -173,8 +183,8 @@ CommManager::sendSetting(uint8_t id, float value){
 	data.f = value;
 	byte tmp[6] = {	buildMessageLabel(settingsSubtype(SET), 6),
 					id,
-					data.bytes[0], data.bytes[1],
-					data.bytes[2], data.bytes[3], };
+					data.bytes[3], data.bytes[2],
+					data.bytes[1], data.bytes[0], };
 	Protocol::sendMessage(tmp, 6, stream);
 }
 float
@@ -190,6 +200,10 @@ CommManager::setConnectCallback(void (*call)(void)){
 	connectCallback = call;
 }
 void
+CommManager::setEStopCallback(void (*call)(void)){
+	eStopCallback = call;
+}
+void
 CommManager::onConnect(){
 	for(int i=0; i<MAX_SETTINGS; i++){
 		sendSetting(i, getSetting(i));
@@ -198,7 +212,20 @@ CommManager::onConnect(){
 }
 void
 CommManager::handleCommand(commandType command, uint8_t data){
-
+	switch(command){
+		case ESTOP:
+			if(eStopCallback != NULL) eStopCallback();
+			break;
+		case TARGET:
+			setTargetIndex(data);
+			break;
+		case LOOPING:
+			waypointsLooped = data!=0;
+			break;
+		case CLEAR_WAYPOINTS:
+			clearWaypointList();
+			break;
+	}
 }
 void
 CommManager::sendSync(){

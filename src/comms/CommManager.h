@@ -56,10 +56,12 @@ class CommManager{
 	uint16_t 			targetIndex;
 	bool				waypointsLooped;
 	void (*connectCallback)(void);
+	void (*eStopCallback)(void);
 public:
 	CommManager(HardwareSerial *inStream, Storage<float> *settings);
 	void  	update();
 	void  	requestResync();
+	void	sendTelem(uint8_t id, float value);
 	void    setSetting(uint8_t id,   float input);
 	float   getSetting(uint8_t id);
 	Point 	getWaypoint(int index);
@@ -72,6 +74,7 @@ public:
 	void    advanceTargetIndex();
 	void    retardTargetIndex();
 	void	setConnectCallback(void (*call)(void));
+	void	setEStopCallback(void (*call)(void));
 private:
 	void	onConnect();
 	void	handleCommand(commandType command, uint8_t data);
