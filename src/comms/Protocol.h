@@ -40,8 +40,9 @@ namespace Protocol{
 	enum settingsSubtype{	SET		= 0,
 							POLL	= 1 };
 
-	enum protocolSubtype{	SYNC	= 0,
-							CONFIRM	= 1 };
+	enum protocolSubtype{	SYNC	  = 0,
+							CONFIRM	  = 1,
+							SYNC_RESP = 2 };
 
 	enum telemetryType{ LATITUDE	= 0,
 						LONGITUDE	= 1,

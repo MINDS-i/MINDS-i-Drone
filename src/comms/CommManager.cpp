@@ -3,8 +3,10 @@
 using namespace Protocol;
 
 CommManager::CommManager(HardwareSerial *inStream, Storage<float> *settings):
-		stream(inStream), bufPos(0), cachedTarget(0,0), storage(settings){
+		stream(inStream), bufPos(0), cachedTarget(0,0), storage(settings),
+		connectCallback(NULL) {
 	waypoints = new SRAMlist<Point>(MAX_WAYPOINTS);
+	sendSync();
 }
 void
 CommManager::update(){
@@ -35,7 +37,7 @@ CommManager::rightMatch(const uint8_t* lhs, const uint8_t llen,
 void //the subtype split is a bit ugly right now
 CommManager::processMessage(uint8_t* msg, uint8_t length){
 	if(!fletcher(msg, length)) return;
-	if(length != getMessageLength(msg[0])) return; //debug this?
+	//if(length != getMessageLength(msg[0])) return; //debug this
 	messageType type = getMessageType(msg[0]);
 	uint8_t subtype  = getSubtype(msg[0]);
 	switch(type){
@@ -46,7 +48,7 @@ CommManager::processMessage(uint8_t* msg, uint8_t length){
 		} break;
 		case SETTINGS: {
 			if (subtype == POLL) {
-				sendSetting(msg[1]);
+				sendSetting(msg[1], getSetting(msg[1]));
 				break;
 			}
 			byteConv conv;
@@ -67,7 +69,11 @@ CommManager::processMessage(uint8_t* msg, uint8_t length){
 		case PROTOCOL:{
 			if (subtype == SYNC){
 				onConnect();
-				sendSync();
+				sendSyncResponse();
+				break;
+			}
+			if (subtype == SYNC_RESP){
+				onConnect();
 				break;
 			}
 			//only other case is confirmation type - not responded to on drone
@@ -151,24 +157,25 @@ Point
 CommManager::getTargetWaypoint(){
 	return cachedTarget;
 }
+void
+CommManager::setSetting(uint8_t id,   float input){
+	storage->updateRecord(id, input);
+	sendSetting(id, input);
+}
 //Functions below are private
 void
-CommManager::inputSetting(uint8_t id, int32_t input){
-	storage->updateRecord(id, (((float)input)/Protocol::FIXED_POINT_FACTOR));
+CommManager::inputSetting(uint8_t id, float input){
+	storage->updateRecord(id, input);
 }
 void
-CommManager::sendSetting(uint8_t id){
+CommManager::sendSetting(uint8_t id, float value){
 	byteConv data;
-	data.f = storage->getRecord(id);
-	byte tmp[6] = {	buildMessageLabel(settingsSubtype(POLL), 6),
+	data.f = value;
+	byte tmp[6] = {	buildMessageLabel(settingsSubtype(SET), 6),
 					id,
 					data.bytes[0], data.bytes[1],
 					data.bytes[2], data.bytes[3], };
 	Protocol::sendMessage(tmp, 6, stream);
-}
-void
-CommManager::setSetting(uint8_t id,   float input){
-	storage->updateRecord(id, input);
 }
 float
 CommManager::getSetting(uint8_t id){
@@ -179,8 +186,15 @@ CommManager::requestResync(){
 	sendSync();
 }
 void
+CommManager::setConnectCallback(void (*call)(void)){
+	connectCallback = call;
+}
+void
 CommManager::onConnect(){
-
+	for(int i=0; i<MAX_SETTINGS; i++){
+		sendSetting(i, getSetting(i));
+	}
+	if(connectCallback != NULL) connectCallback();
 }
 void
 CommManager::handleCommand(commandType command, uint8_t data){
@@ -189,6 +203,11 @@ CommManager::handleCommand(commandType command, uint8_t data){
 void
 CommManager::sendSync(){
 	byte datum[1] = {buildMessageLabel(protocolSubtype(SYNC),1)};
+	sendMessage(datum, 1, stream);
+}
+void
+CommManager::sendSyncResponse(){
+	byte datum[1] = {buildMessageLabel(protocolSubtype(SYNC_RESP),1)};
 	sendMessage(datum, 1, stream);
 }
 void //Serial port and commands specific to stock 3DR UBLOX GPS
