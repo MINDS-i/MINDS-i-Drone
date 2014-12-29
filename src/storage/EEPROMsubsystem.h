@@ -55,14 +55,14 @@ eeprom::enableInterrupt(){
 void
 eeprom::write(EEaddr addr, uint8_t val){
 	if(addr == eeprom::EENULL || addr >= eeprom::EE_MAX) return;
-	_eepromWriteQueue.push(eepromWrite(addr,val));
 	eeprom::enableInterrupt();
+	_eepromWriteQueue.push(eepromWrite(addr,val));
 }
 void
 eeprom::safeWrite(EEaddr addr, uint8_t val){
 	if(addr == eeprom::EENULL || addr >= eeprom::EE_MAX) return;
-	while( !_eepromWriteQueue.push(eepromWrite(addr,val)) );
 	eeprom::enableInterrupt();
+	while( !_eepromWriteQueue.push(eepromWrite(addr,val)) );
 }
 void
 eeprom::writeLong(EEaddr addr, uint32_t val){
@@ -91,7 +91,8 @@ eeprom::read(EEaddr addr){
 uint8_t
 eeprom::safeRead(EEaddr addr){
 	if(addr == eeprom::EENULL || addr >= eeprom::EE_MAX) return 0;
-	while( !eeprom::safeToRead() ); //wait for chance to Read
+	//wait for chance to Read
+	while( !eeprom::safeToRead() ) eeprom::enableInterrupt();
 	EEAR = addr;
 	bitSet(EECR, EERE); //start read; takes 4 cycles
 	return EEDR;
@@ -110,13 +111,13 @@ eeprom::readFloat(EEaddr addr){
 }
 ISR(EE_READY_vect){
 	//cycle queue through writing process and write
+	uint8_t oldSREG = SREG;
 	if(_eepromWriteQueue.isEmpty()){
 		eeprom::disableInterrupt();
+		SREG = oldSREG;
 		return;
 	}
 	eepromWrite write = _eepromWriteQueue.pop();
-	uint8_t oldSREG = SREG;
-	cli();
 	EEAR = write.addr;
 	EEDR = write.data;
 	EECR = (EECR & 0xf8)|0x04; //write 1 to EEMPE and 0 to EEPE

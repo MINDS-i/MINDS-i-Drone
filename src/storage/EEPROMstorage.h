@@ -17,8 +17,8 @@ const EEaddr EEsanityLoc = eeprom::EE_MAX - 1;
 class eeStorage : public Storage<float> {
 private:
 	static eeStorage* m_instance;
-	eeStorage();
 	void (*callback[NUM_STORED_RECORDS])(float);
+	eeStorage();
 public:
 	static eeStorage* getInstance(){
 		if(m_instance == NULL) m_instance = new eeStorage();

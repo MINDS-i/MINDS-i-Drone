@@ -18,7 +18,6 @@ private:
 	volatile float 	 desiredState[4];
 	OutputDevice** 	 output;
 	PIDparameters 	 PID[2];
-	float 			 Integrand[2];
 	float 			 RMS;
 	boolean			 stopped;
 public:
@@ -87,6 +86,16 @@ void OutputManager::update(OrientationEngine &orientation){
 	int impulses[4];
 	int outThrottle[4];
 
+	//stop here if the outputs should all be off
+	if(stopped || (impulses[3]<.00001)){
+		for(int i=0; i<4; i++){
+			output[i]->set(0.0);
+		}
+		PID[0].acc = 0;
+		PID[1].acc = 0;
+		return;
+	}
+
 	//Set useful variables
 	math::quaternion state = orientation.getLastAttitude();
 	double q0 = (state.Scalar());
@@ -103,9 +112,9 @@ void OutputManager::update(OrientationEngine &orientation){
 	float PIDout[2];
 	for(int i=0; i<2; i++){
 		float error   = (desiredState[i]-angles[i]);
-		Integrand[i] += error;
+		PID[i].acc += error;
 		float val =   PID[i].P*error
-					+ PID[i].I*Integrand[i]
+					+ PID[i].I*PID[i].acc
 					+ PID[i].D*angleRate[i];
 		PIDout[i] = val*LINEAR_SCALE_FACTOR;
 	}
@@ -117,17 +126,11 @@ void OutputManager::update(OrientationEngine &orientation){
 	//run generated LU output calculation code
 	solveOutputs(impulses, outThrottle);
 
-	//clean outputs for Sanity, then pass to motors
-	if(!stopped){
-		for(int i=0; i<4; i++){
-			constrain(0, outThrottle[i], (int)LINEAR_SCALE_FACTOR);
-			float out = ((float)outThrottle[i])/LINEAR_SCALE_FACTOR;
-			output[i]->set(out);
-		}
-	} else {
-		for(int i=0; i<4; i++){
-			output[i]->set(0.0);
-		}
+	//set motor outputs
+	for(int i=0; i<4; i++){
+		constrain(0, outThrottle[i], (int)LINEAR_SCALE_FACTOR);
+		float out = ((float)outThrottle[i])/LINEAR_SCALE_FACTOR;
+		output[i]->set(out);
 	}
 
 	//inform OrientationEnigne of output's predicted effects
