@@ -12,7 +12,7 @@ OutputManager -Manages four OutputDevices (North, East, West, South)
 */
 class OutputManager{
 private:
-	static const float LINEAR_SCALE_FACTOR = 4096; //180*32; or LSF < 2^13
+	static const float LINEAR_SCALE_FACTOR = 4096; //180*32; LSF < 2^13
 
 	volatile boolean enabled;
 	volatile float 	 desiredState[4];
@@ -108,7 +108,7 @@ void OutputManager::update(OrientationEngine &orientation){
 	angleRate[0] = orientation.getRate().y;
 	angleRate[1] = orientation.getRate().x;
 
-	//calculate PID values
+	//calculate PID based impulses
 	float PIDout[2];
 	for(int i=0; i<2; i++){
 		float error   = (desiredState[i]-angles[i]);
