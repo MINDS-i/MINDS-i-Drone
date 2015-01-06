@@ -32,6 +32,7 @@ HLA				highFilter(    10, 0);//10 milliseconds
 HLA 			pitch( 100, 0);
 HLA 			roll ( 100, 0);
 Servo			servo[3]; //drive, steer, backSteer
+PIDcontroller   cruise;
 		//scheduler, navigation, obstacle, stop times
 uint32_t uTime = 0, nTime = 0, oTime = 0, sTime = 0;
 uint32_t gpsHalfTime = 0, gpsTime = 0;
@@ -74,9 +75,18 @@ void writeDefaults(){
 	settings->updateRecord( 8, 1400.);//pingWeight
 	settings->updateRecord( 9, 1500); //coastTime
 	settings->updateRecord(10, 800);  //Minumum Backup Time
+	settings->updateRecord(11, 0.1);  //Cruise control P
+	settings->updateRecord(12, .0001);//Cruise control I
+	settings->updateRecord(13, 0.0);  //Cruine control D
 	settings->updateRecord(STORAGE_VER_IDX, STORAGE_VER);
 }
 void dangerTimeCallback(float in){ dangerTime = coastTime+in; }
+void newPIDparam(float x){
+	PIDparameters newPID = PIDparameters(settings->getRecord(11),
+										 settings->getRecord(12),
+										 settings->getRecord(13) );
+	cruise.setPID(newPID);
+}
 void setCallbacks(){
 	settings->attachCallback( 0, callback<float, &lineGravity>	);
 	settings->attachCallback( 1, callback<int  , &steerThrow>	);
@@ -89,6 +99,9 @@ void setCallbacks(){
 	settings->attachCallback( 8, callback<float, &pingWeight>	);
 	settings->attachCallback( 9, callback<int  , &coastTime>	);
 	settings->attachCallback(10, &dangerTimeCallback);
+	settings->attachCallback(11, &newPIDparam);
+	settings->attachCallback(12, &newPIDparam);
+	settings->attachCallback(13, &newPIDparam);
 }
 
 void setup() {

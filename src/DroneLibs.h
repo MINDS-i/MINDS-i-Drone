@@ -55,6 +55,7 @@
 #include "util/callbackTemplate.h"
 #include "util/HLAverage.h"
 #include "util/PIDparameters.h"
+#include "util/PIDcontroller.h"
 #include "util/profile.h"
 #include "util/UM7.h"
 
