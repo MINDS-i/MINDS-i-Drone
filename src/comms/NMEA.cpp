@@ -266,8 +266,8 @@ bool NMEA::overlap(char* buffer, String input){
 	return tmp;
 }
 
-Point NMEA::getLocation(){
+Waypoint NMEA::getLocation(){
 	isNew = false;
-	return Point(latitude,longitude);
+	return Waypoint(latitude,longitude);
 }
 

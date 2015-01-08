@@ -60,6 +60,7 @@ namespace Protocol{
 	const uint8_t  MAX_WAYPOINTS	= 64;
 	const uint8_t  MAX_SETTINGS		= 32;
 	const uint16_t BAUD_RATE		= 9600;
+	const uint16_t U16_FIXED_FACTOR = 256;
 
 	const boolean STANDARD_CONFIRM_REQ = false;
 	const boolean SETTINGS_CONFIRM_REQ = true;

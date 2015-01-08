@@ -6,6 +6,8 @@
 #include "DroneLibs.h"
 #include "util/callbackTemplate.h"
 
+#define useEncoder true
+
 const uint8_t STORAGE_VER_IDX	= 31;
 const uint8_t STORAGE_VER		= 17;
 
@@ -26,14 +28,13 @@ const float MilesPerRev   = (((PI)/12.f)/5280.f) * (13.f/37.f);
 							//hours per min      rev per mile
 const float MPHvRPM       = (1.f/60.f)        * (1.f/MilesPerRev);
 
-
 //Global variables used throught the program
 HardwareSerial *commSerial	= &Serial;
 Storage<float> *settings	= eeStorage::getInstance();
 CommManager		manager(commSerial, settings);
 NMEA			nmea(Serial1);
-Point			location(0,0);
-Point			backWaypoint(0,0);
+Waypoint		location(0,0);
+Waypoint		backWaypoint(0,0);
 HLA				lowFilter (600000, 0);//10 minutes
 HLA				highFilter(    10, 0);//10 milliseconds
 HLA 			pitch( 100, 0);
@@ -311,7 +312,7 @@ void positionChanged(){
 		double AL    = calcHeading(backWaypoint, location);
 		double d     = cos(toRad(AL-AB))*calcDistance(backWaypoint, location);
 		double D     = d + (full-d)*(1.l-lineGravity);
-		Point target = extrapPosition(backWaypoint, AB, D);
+		Waypoint target = extrapPosition(backWaypoint, AB, D);
 		pathHeading  = calcHeading(location, target);
 	}
 }
@@ -346,6 +347,7 @@ void calibrateGyro(){ //takes one second
 }
 
 void output(float mph, uint8_t steer){
+#if useEncoder
 	if(abs(mph)<0.5f){
 		cruise.stop();
 	} else {
@@ -353,6 +355,9 @@ void output(float mph, uint8_t steer){
 	}
 	float outputval = cruise.calc(encoder::getRPM());
 	servo[0].write(90+outputval);
+#else
+	servo[0].write(90+mph*6);
+#endif
 	servo[1].write(steer);
 	servo[2].write(180-steer);
 }

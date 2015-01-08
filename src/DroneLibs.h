@@ -58,5 +58,6 @@
 #include "util/PIDcontroller.h"
 #include "util/profile.h"
 #include "util/UM7.h"
+#include "util/Waypoint.h"
 
 #endif

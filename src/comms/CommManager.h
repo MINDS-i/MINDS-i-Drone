@@ -11,6 +11,7 @@
 #include "storage/SRAMlist.h"
 #include "storage/Storage.h"
 #include "util/byteConv.h"
+#include "util/Waypoint.h"
 
 using namespace Protocol;
 
@@ -50,22 +51,22 @@ class CommManager{
 	uint8_t 			buf[BUFF_LEN];
 	uint8_t 			bufPos;
 	boolean 			isLooped;
-	List<Point>*		waypoints;
+	List<Waypoint>*		waypoints;
 	Storage<float>*		storage;
-	Point   			cachedTarget;
+	Waypoint   			cachedTarget;
 	uint16_t 			targetIndex;
 	bool				waypointsLooped;
 	void (*connectCallback)(void);
 	void (*eStopCallback)(void);
 public:
 	CommManager(HardwareSerial *inStream, Storage<float> *settings);
+	Waypoint getWaypoint(int index);
+	Waypoint getTargetWaypoint();
 	void  	update();
 	void  	requestResync();
 	void	sendTelem(uint8_t id, float value);
 	void    setSetting(uint8_t id,   float input);
 	float   getSetting(uint8_t id);
-	Point 	getWaypoint(int index);
-	Point   getTargetWaypoint();
 	int     getTargetIndex();
 	void    setTargetIndex(int index);
 	int 	numWaypoints();
@@ -87,7 +88,7 @@ private:
 	void    sendConfirm(uint16_t digest);
 	boolean rightMatch(const uint8_t* lhs, const uint8_t llen,
 					   const uint8_t* rhs, const uint8_t rlen);
-	boolean recieveWaypoint(waypointSubtype type, uint8_t index, Point point);
+	boolean recieveWaypoint(waypointSubtype type, uint8_t index, Waypoint point);
 };
 
 void sendGPSMessage(uint8_t Type, uint8_t ID, uint16_t len, const uint8_t* buf);

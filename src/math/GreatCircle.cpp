@@ -1,70 +1,6 @@
 #include "GreatCircle.h"
 
-double _eRad = 3963.1676; //earth's radius in miles
-
-Point::Point(): Rlat(0), Rlng(0), altitude(0){
-}
-
-Point::Point(double latitude,double longitude){
-	Rlat = toRad(latitude);
-	Rlng = toRad(longitude);
-}
-
-Point::Point(double latitude, double longitude, bool rad){
-	if(rad){
-		Rlat = latitude;
-		Rlng = longitude;
-	}else{
-		Rlat = toRad(latitude);
-		Rlng = toRad(longitude);
-	}
-}
-
-Point::Point(double latitude, double longitude, uint16_t alt){
-	Rlat = toRad(latitude);
-	Rlng = toRad(longitude);
-	altitude = alt;
-}
-
-void
-Point::update(double latitude,double longitude){
-	Rlat = toRad(latitude);
-	Rlng = toRad(longitude);
-}
-void
-Point::update(double latitude, double longitude, bool rad){
-	if(rad){
-		Rlat = latitude;
-		Rlng = longitude;
-	}else{
-		Rlat = toRad(latitude);
-		Rlng = toRad(longitude);
-	}
-}
-double
-Point::radLatitude(){
-	return Rlat;
-}
-double
-Point::radLongitude(){
-	return Rlng;
-}
-double
-Point::degLatitude(){
-	return toDeg(Rlat);
-}
-double
-Point::degLongitude(){
-	return toDeg(Rlng);
-}
-uint16_t
-Point::getAltitude(){
-	return altitude;
-}
-void
-Point::setAltitude(uint16_t alt){
-	altitude = alt;
-}
+const float _eRad = 3963.1676; //earth's radius in miles
 
 float trunkAngle(float angle){
 	return trunkAngle(double(angle));//float and double are the same on arduino
@@ -81,42 +17,52 @@ trunkAngle(int 	angle){
 	while(angle < 0) angle += 360;
 	return (angle%360)-180;
 }
-double
-toRad(double degrees){
+float
+toRad(float degrees){
 	degrees /= 180.l;
 	degrees *= PI;
 	return degrees;
 }
-double
-toDeg(double radians){
+float
+toDeg(float radians){
 	radians /= PI;
 	radians *= 180.l;
 	return radians;
 }
-double
-calcHeading(Point a, Point b){
-	double y = sin(b.Rlng - a.Rlng) * cos(b.Rlat);
-	double x = cos(a.Rlat)*sin(b.Rlat)
-								 - sin(a.Rlat)*cos(b.Rlat)*cos(b.Rlng - a.Rlng);
+float
+calcHeading(Waypoint a, Waypoint b){
+	float aRlat = a.radLatitude();
+	float aRlng = a.radLongitude();
+	float bRlat = b.radLatitude();
+	float bRlng = b.radLongitude();
+	float y = sin(bRlng - aRlng) * cos(bRlat);
+	float x = cos(aRlat)*sin(bRlat)
+					- sin(aRlat)*cos(bRlat)*cos(bRlng - aRlng);
 	return toDeg(  atan2(y,x)  );
 }
-double
-calcDistance(Point a, Point b){
-	double sinlat = sin((a.Rlat - b.Rlat)/2.);
-	double sinlng = sin((a.Rlng - b.Rlng)/2.);
-	double chord = sinlat*sinlat + sinlng*sinlng*cos(a.Rlat)*cos(b.Rlat);
+float
+calcDistance(Waypoint a, Waypoint b){
+	float aRlat = a.radLatitude();
+	float aRlng = a.radLongitude();
+	float bRlat = b.radLatitude();
+	float bRlng = b.radLongitude();
+	float sinlat = sin((aRlat - bRlat)/2.);
+	float sinlng = sin((aRlng - bRlng)/2.);
+	float chord = sinlat*sinlat + sinlng*sinlng*cos(aRlat)*cos(bRlat);
 	return 2. * _eRad * atan2( sqrt(chord), sqrt(1.-chord) );
 }
 
-Point
-extrapPosition(Point position, double bearing, double distance){ //degrees,miles
-	Point destination(0,0);
-
-	destination.Rlat = asin(sin(position.Rlat)*cos(distance/_eRad) +
-					 cos(position.Rlat)*sin(distance/_eRad)*cos(toRad(bearing)));
-	destination.Rlng = position.Rlng+
-		atan2(	(sin(toRad(bearing))*sin(distance/_eRad)*cos(position.Rlat)),
-				(cos(distance/_eRad)-sin(position.Rlat)*sin(destination.Rlat)) );
+Waypoint
+extrapPosition(Waypoint position, float bearing, float distance){ //degrees,miles
+	float rlat, rlng;
+	float pRlat = position.radLatitude();
+	float pRlng = position.radLongitude();
+	rlat = asin(sin(pRlat)*cos(distance/_eRad) +
+					 cos(pRlat)*sin(distance/_eRad)*cos(toRad(bearing)));
+	rlng = pRlng+
+		atan2(	(sin(toRad(bearing))*sin(distance/_eRad)*cos(pRlat)),
+				(cos(distance/_eRad)-sin(pRlat)*sin(rlat)) );
+	Waypoint destination(rlat, rlng, true);
 	return destination;
 }
 

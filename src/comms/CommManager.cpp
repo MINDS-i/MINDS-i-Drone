@@ -5,7 +5,7 @@ using namespace Protocol;
 CommManager::CommManager(HardwareSerial *inStream, Storage<float> *settings):
 		stream(inStream), bufPos(0), cachedTarget(0,0), storage(settings),
 		connectCallback(NULL) {
-	waypoints = new SRAMlist<Point>(MAX_WAYPOINTS);
+	waypoints = new SRAMlist<Waypoint>(MAX_WAYPOINTS);
 	sendSync();
 }
 void
@@ -64,7 +64,7 @@ CommManager::processMessage(uint8_t* msg, uint8_t length){
 			uint16_t alt = (((uint16_t)msg[9])<<8) | msg[10];
 			uint8_t  pos = msg[11];
 			recieveWaypoint(waypointSubtype(subtype),
-							pos, Point(lat.f, lon.f, alt) );
+							pos, Waypoint(lat.f, lon.f, alt) );
 		} break;
 		case PROTOCOL:{
 			if (subtype == SYNC){
@@ -96,7 +96,7 @@ CommManager::sendConfirm(uint16_t digest){
 	sendMessage(datum, 3, stream);
 }
 boolean
-CommManager::recieveWaypoint(waypointSubtype type, uint8_t index, Point point){
+CommManager::recieveWaypoint(waypointSubtype type, uint8_t index, Waypoint point){
 	switch(type){
 		case ADD:
 			if(index > waypoints->size()) return false;
@@ -113,14 +113,14 @@ CommManager::recieveWaypoint(waypointSubtype type, uint8_t index, Point point){
 			if(index >= waypoints->size()) return false;
 			waypoints->remove(index);
 			if(index <= getTargetIndex()) retardTargetIndex();
-			if(waypoints->size()==0) cachedTarget = Point();
+			if(waypoints->size()==0) cachedTarget = Waypoint();
 			break;
 	}
 	return true;
 }
-inline Point
+inline Waypoint
 CommManager::getWaypoint(int index){
-	if(index >= waypoints->size()) return Point(0,0);
+	if(index >= waypoints->size()) return Waypoint();
 	return waypoints->get(index);
 }
 int
@@ -153,7 +153,7 @@ int
 CommManager::getTargetIndex(){
 	return targetIndex;
 }
-Point
+Waypoint
 CommManager::getTargetWaypoint(){
 	return cachedTarget;
 }

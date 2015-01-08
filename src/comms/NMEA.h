@@ -2,6 +2,7 @@
 #define NMEA_H
 #include "Arduino.h"
 #include "math/GreatCircle.h"
+#include "util/Waypoint.h"
 
 class NMEA{
 public:
@@ -9,8 +10,8 @@ public:
 	void newStream(Stream&);
 	void update();
 	bool newData();
-	#ifdef GREATCIRCLE_H
-	Point getLocation();
+	#ifdef WAYPOINT_H
+	Waypoint getLocation();
 	#endif
 	float getLatitude();
 	float getLongitude();
