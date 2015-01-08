@@ -2,23 +2,30 @@
 #include "SPI.h"
 #include "Wire.h"
 #include "MINDSi.h"
+#include "Encoder.h"
 #include "DroneLibs.h"
 #include "util/callbackTemplate.h"
 
 const uint8_t STORAGE_VER_IDX	= 31;
-const uint8_t STORAGE_VER		=  1;
+const uint8_t STORAGE_VER		= 17;
 
 //Constants that should never change during driving and never/rarely tuned
 const uint8_t VoltagePin  = 67;
 const uint8_t LEDpin[]    = {25, 26, 27}; //blue, yellow, red
-const uint8_t PingPin[]	  = {A4, A1, A0, A2, A3}; //left to right
+const uint8_t PingPin[]	  = {A0, A1, A2, A3, A4}; //left to right
 const uint8_t ServoPin[]  = {12, 11,  8};//drive, steer, backS; APM 1,2,3 resp.
-const uint8_t RadioPin[]  = {0, 1, 2}; //auto switch, drive, steer
+const uint8_t RadioPin[]  = {0, 7, 6}; //auto switch, drive, steer
+const uint8_t EncoderPin[]= {2, 3};
 const double  pAngle[5]   = { 79.27, 36.83, 0.0, -36.83, -79.27};
 const double  dplsb       = 4.f/float(0xffff); //dps Per leastSigBit for gyro
 const int ScheduleDelay   = 22;
 const uint16_t warn[]     = {1000, 1600, 2500, 1600, 1000};
 const double PointRadius  = .001; //in miles, margin for error in rover location
+							//tire circ in miles per inch diameter * diff ratio
+const float MilesPerRev   = (((PI)/12.f)/5280.f) * (13.f/37.f);
+							//hours per min      rev per mile
+const float MPHvRPM       = (1.f/60.f)        * (1.f/MilesPerRev);
+
 
 //Global variables used throught the program
 HardwareSerial *commSerial	= &Serial;
@@ -58,26 +65,31 @@ void (*schedule[])(void) = {	extrapPosition,
 float	lineGravity;
 int		steerThrow, steerStyle;
 float	steerFactor;
-int		minFwd, maxFwd;
-int		revThrow, revSpeed;
+float	minFwd, maxFwd;
+int		revThrow;
+float	revSpeed;
 float	pingWeight;
 int		coastTime, dangerTime; //danger should include coastTime
+float	tireDiameter;
+int		steerCenter;
 
 void writeDefaults(){
 	settings->updateRecord( 0, .50);  //lineGravity
 	settings->updateRecord( 1, 45);   //steerThrow
 	settings->updateRecord( 2, 1);    //steerStyle
 	settings->updateRecord( 3, 1.0);  //steerFactor
-	settings->updateRecord( 4, 107);  //minFwd
-	settings->updateRecord( 5, 115);  //maxFwd
+	settings->updateRecord( 4, 1.0);  //minFwd
+	settings->updateRecord( 5, 6.0);  //maxFwd
 	settings->updateRecord( 6, 20);   //REVERSE_STEER_THROW
-	settings->updateRecord( 7, 75);   //REVERSE_SPEED
+	settings->updateRecord( 7, -1.5); //REVERSE_SPEED
 	settings->updateRecord( 8, 1400.);//pingWeight
 	settings->updateRecord( 9, 1500); //coastTime
 	settings->updateRecord(10, 800);  //Minumum Backup Time
-	settings->updateRecord(11, 0.1);  //Cruise control P
-	settings->updateRecord(12, .0001);//Cruise control I
+	settings->updateRecord(11, 0.05); //Cruise control P
+	settings->updateRecord(12, 0.1);  //Cruise control I
 	settings->updateRecord(13, 0.0);  //Cruine control D
+	settings->updateRecord(14, 5.85); //tire Diameter
+	settings->updateRecord(15, 90);   //steer Center
 	settings->updateRecord(STORAGE_VER_IDX, STORAGE_VER);
 }
 void dangerTimeCallback(float in){ dangerTime = coastTime+in; }
@@ -85,23 +97,25 @@ void newPIDparam(float x){
 	PIDparameters newPID = PIDparameters(settings->getRecord(11),
 										 settings->getRecord(12),
 										 settings->getRecord(13) );
-	cruise.setPID(newPID);
+	cruise.tune(newPID);
 }
 void setCallbacks(){
 	settings->attachCallback( 0, callback<float, &lineGravity>	);
 	settings->attachCallback( 1, callback<int  , &steerThrow>	);
 	settings->attachCallback( 2, callback<int  , &steerStyle>	);
 	settings->attachCallback( 3, callback<float, &steerFactor>	);
-	settings->attachCallback( 4, callback<int  , &minFwd>		);
-	settings->attachCallback( 5, callback<int  , &maxFwd>		);
+	settings->attachCallback( 4, callback<float, &minFwd>		);
+	settings->attachCallback( 5, callback<float, &maxFwd>		);
 	settings->attachCallback( 6, callback<int  , &revThrow>		);
-	settings->attachCallback( 7, callback<int  , &revSpeed>		);
+	settings->attachCallback( 7, callback<float, &revSpeed>		);
 	settings->attachCallback( 8, callback<float, &pingWeight>	);
 	settings->attachCallback( 9, callback<int  , &coastTime>	);
 	settings->attachCallback(10, &dangerTimeCallback);
 	settings->attachCallback(11, &newPIDparam);
 	settings->attachCallback(12, &newPIDparam);
 	settings->attachCallback(13, &newPIDparam);
+	settings->attachCallback(14, callback<float , &tireDiameter>);
+	settings->attachCallback(15, callback<int   , &steerCenter> );
 }
 
 void setup() {
@@ -115,7 +129,7 @@ void setup() {
 	pinMode(40, OUTPUT); digitalWrite(40, HIGH); //SPI select pin
 	for(int i=0; i<3; i++) pinMode(LEDpin[i], OUTPUT);
 	for(int i=0; i<3; i++) servo[i].attach(ServoPin[i]);
-	output(90,90);
+	output(0.0f,steerCenter);
 
 	sendGPSMessage(0x06, 0x01, 0x0003, GPRMC_On);
 	sendGPSMessage(0x06, 0x17, 0x0004, CFG_NMEA);
@@ -126,6 +140,7 @@ void setup() {
 	calibrateGyro(); //this also takes one second
 
 	setupAPM2radio();
+	encoder::begin(EncoderPin[0], EncoderPin[1]);
 	manager.requestResync();
 	uTime = millis();
 }
@@ -144,17 +159,20 @@ void loop(){
 }
 
 void navigate(){
-	if (getAPM2Radio(RadioPin[0]) > 120) {
-		output(getAPM2Radio(RadioPin[1]), getAPM2Radio(RadioPin[2]));
+	float   mph = ((getAPM2Radio(RadioPin[1])-90) / 90.f)*maxFwd;
+	uint8_t steer = getAPM2Radio(RadioPin[2]);
+	if (abs(steer-steerCenter) > 5 || fabs(mph)>0.8f ) {
+			//(getAPM2Radio(RadioPin[0]) > 120) {
+		output(mph, steer);
 	} else if (oTime != 0) {
 		//Back Up
 		if(sTime == 0){
-			output(90, 90);
+			output(0, steerCenter);
 			sTime = millis();
 			backDir = ping[0]<ping[4];
 		} else if(sTime+coastTime < millis()){
-			if(backDir) output(revSpeed, 90-revThrow);
-			else 		output(revSpeed, 90+revThrow);
+			if(backDir) output(revSpeed, steerCenter-revThrow);
+			else 		output(revSpeed, steerCenter+revThrow);
 		}
 
 		if(oTime+dangerTime < millis()){
@@ -166,7 +184,7 @@ void navigate(){
 		double x,y;
 		double angularError = trunkAngle(pathHeading - trueHeading);
 		double outputAngle;
-		switch(steerStyle		){
+		switch(steerStyle){
 			case 0:
 				outputAngle = atan( angularError*PI/180.l )*(2*steerThrow/PI);
 				break;
@@ -190,17 +208,19 @@ void navigate(){
 			y += sin(toRad(pAngle[i]))/tmp;
 		}
 
-		outputAngle = toDeg(atan2(y,x))+90;
-		bound(double(90-steerThrow), outputAngle, double(90+steerThrow));
+		outputAngle = toDeg(atan2(y,x))+steerCenter;
+		bound(double(steerCenter-steerThrow),
+							outputAngle,
+			  double(steerCenter+steerThrow));
 
-		//try slowing down on steep turns
-		int disp = steerThrow - abs(90-outputAngle);
-		int speed = (distance*5280.l);
-		speed = min(speed, disp);
-		speed += 90;
+		float disp  = steerThrow - abs(steerCenter-outputAngle);
+		float speed = (distance*5280.l);
+		speed = min(speed, disp)/6.f; //logical speed clamps
+		float targetApproachSpeed = manager.getTargetWaypoint().getExtra();
+		speed = min(speed, targetApproachSpeed); //put in target approach speed
 		bound(minFwd, speed, maxFwd);
 
-		if(stop) output(90 ,90);
+		if(stop) output(0 , steerCenter);
 		else     output(speed, outputAngle);
 	}
 }
@@ -311,7 +331,7 @@ void reportLocation(){
 	manager.sendTelem(Protocol::telemetryType(HEADING),   trueHeading);
 	manager.sendTelem(Protocol::telemetryType(PITCH),     pitch.get()*180/PI);
 	manager.sendTelem(Protocol::telemetryType(ROLL),      roll.get()*180/PI);
-	manager.sendTelem(Protocol::telemetryType(SPEED),     nmea.getGroundSpeed());
+	manager.sendTelem(Protocol::telemetryType(SPEED),     RPMtoMPH(encoder::getRPM()));
 	manager.sendTelem(Protocol::telemetryType(VOLTAGE),   voltage);
 }
 
@@ -325,8 +345,20 @@ void calibrateGyro(){ //takes one second
 	lowFilter.set(tmp);
 }
 
-void output(uint8_t drive, uint8_t steer){
-	servo[0].write(drive);
+void output(float mph, uint8_t steer){
+	if(abs(mph)<0.5f){
+		cruise.stop();
+	} else {
+		setMPH(mph);
+	}
+	float outputval = cruise.calc(encoder::getRPM());
+	servo[0].write(90+outputval);
 	servo[1].write(steer);
 	servo[2].write(180-steer);
 }
+
+void setMPH(float mph){
+	cruise.set(MPHtoRPM(mph));
+}
+inline float MPHtoRPM(float mph){ return (mph*MPHvRPM)/tireDiameter; }
+inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
