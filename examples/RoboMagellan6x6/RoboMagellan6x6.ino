@@ -6,12 +6,11 @@
 #include "DroneLibs.h"
 #include "util/callbackTemplate.h"
 
-#define useEncoder true
-
 const uint8_t STORAGE_VER_IDX	= 31;
 const uint8_t STORAGE_VER		= 17;
 
 //Constants that should never change during driving and never/rarely tuned
+#define useEncoder true
 const uint8_t VoltagePin  = 67;
 const uint8_t LEDpin[]    = {25, 26, 27}; //blue, yellow, red
 const uint8_t PingPin[]	  = {A0, A1, A2, A3, A4}; //left to right
@@ -79,7 +78,7 @@ void writeDefaults(){
 	settings->updateRecord( 1, 45);   //steerThrow
 	settings->updateRecord( 2, 1);    //steerStyle
 	settings->updateRecord( 3, 1.0);  //steerFactor
-	settings->updateRecord( 4, 1.0);  //minFwd
+	settings->updateRecord( 4, 1.5);  //minFwd
 	settings->updateRecord( 5, 6.0);  //maxFwd
 	settings->updateRecord( 6, 20);   //REVERSE_STEER_THROW
 	settings->updateRecord( 7, -1.5); //REVERSE_SPEED
@@ -217,8 +216,8 @@ void navigate(){
 		float disp  = steerThrow - abs(steerCenter-outputAngle);
 		float speed = (distance*5280.l);
 		speed = min(speed, disp)/6.f; //logical speed clamps
-		float targetApproachSpeed = manager.getTargetWaypoint().getExtra();
-		speed = min(speed, targetApproachSpeed); //put in target approach speed
+		float approachSpeed = manager.getTargetWaypoint().getApproachSpeed();
+		speed = min(speed, approachSpeed); //put in target approach speed
 		bound(minFwd, speed, maxFwd);
 
 		if(stop) output(0 , steerCenter);
@@ -348,6 +347,8 @@ void calibrateGyro(){ //takes one second
 
 void output(float mph, uint8_t steer){
 #if useEncoder
+	//the one wire encoder would need to feed fabs(mph) to cruise
+	//and the output's sign would need to be flipped based on sign(mph)
 	if(abs(mph)<0.5f){
 		cruise.stop();
 	} else {
@@ -356,7 +357,7 @@ void output(float mph, uint8_t steer){
 	float outputval = cruise.calc(encoder::getRPM());
 	servo[0].write(90+outputval);
 #else
-	servo[0].write(90+mph*6);
+	servo[0].write(90+mph*(90.0f/maxFwd));
 #endif
 	servo[1].write(steer);
 	servo[2].write(180-steer);
