@@ -20,7 +20,7 @@ const uint8_t EncoderPin[]= {2, 3};
 const double  pAngle[5]   = { 79.27, 36.83, 0.0, -36.83, -79.27};
 const double  dplsb       = 4.f/float(0xffff); //dps Per leastSigBit for gyro
 const int ScheduleDelay   = 22;
-const uint16_t warn[]     = {1000, 1600, 2500, 1600, 1000};
+const uint16_t warn[]     = {1000, 1600, 3000, 1600, 1000};
 const double PointRadius  = .001; //in miles, margin for error in rover location
 							//tire circ in miles per inch diameter * diff ratio
 const float MilesPerRev   = (((PI)/12.f)/5280.f) * (13.f/37.f);
@@ -183,6 +183,7 @@ void navigate(){
 		//drive based on pathHeading and side ping sensors
 		double x,y;
 		double angularError = trunkAngle(pathHeading - trueHeading);
+
 		double outputAngle;
 		switch(steerStyle){
 			case 0:

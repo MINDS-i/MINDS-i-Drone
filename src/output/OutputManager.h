@@ -87,7 +87,7 @@ void OutputManager::update(OrientationEngine &orientation){
 	int outThrottle[4];
 
 	//stop here if the outputs should all be off
-	if(stopped || (impulses[3]<.00001)){
+	if(stopped /*|| (impulses[3]<.00001)*/){
 		for(int i=0; i<4; i++){
 			output[i]->set(0.0);
 		}
