@@ -76,7 +76,7 @@ MpuSensor::update(InertialManager& man){
 	float accl[3];
 
 	//get gyro data
-	double gyro[3];
+	float gyro[3];
 	gyro[0] = MPU_Gx();
 	gyro[1] = MPU_Gy();
 	gyro[2] = MPU_Gz();
