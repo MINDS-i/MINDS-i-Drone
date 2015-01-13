@@ -34,6 +34,7 @@ public:
 
 	void start();
 	void calibrate();
+	void update();
 	void update(OrientationEngine &orientation);
 	void stop();
 	void print(HardwareSerial* output);
@@ -52,10 +53,14 @@ InertialManager::calibrate(){
 	for(int i=0; i<numSensors; i++) sensor[i]->calibrate();
 }
 void
-InertialManager::update(OrientationEngine &orientation){
+InertialManager::update(){
 	for(int i=0; i<numSensors; i++){
 		sensor[i]->update(*this);
 	}
+}
+void
+InertialManager::update(OrientationEngine &orientation){
+	update();
 
 	math::vector3d gyro = math::vector3d( -rotRates[1],
 										  -rotRates[0],
