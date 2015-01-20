@@ -43,7 +43,7 @@ void
 eeStorage::attachCallback(uint8_t dataNum, void (*call)(float)){
 	if(dataNum >= NUM_STORED_RECORDS) return;
 	callback[dataNum] = call;
-	callback[dataNum](getRecord(dataNum));
+	if(call != NULL) call(getRecord(dataNum));
 }
 void
 eeStorage::updateRecord(uint8_t dataNum, float value){

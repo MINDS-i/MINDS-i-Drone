@@ -41,9 +41,11 @@
 #include "output/OutputSolverCross.h"
 #include "output/ServoOutputDevice.h"
 
+#include "storage/AirSettings.h"
 #include "storage/EEPROMlist.h"
 #include "storage/EEPROMstorage.h"
 #include "storage/EEPROMsubsystem.h"
+#include "storage/GroundSettings.h"
 #include "storage/List.h"
 #include "storage/locations.h"
 #include "storage/queue.h"
