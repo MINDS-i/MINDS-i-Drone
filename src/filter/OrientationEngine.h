@@ -1,6 +1,7 @@
 #ifndef ORIENTATION_ENGINE_H
 #define ORIENTATION_ENGINE_H
 
+#include "input/InertialManager.h"
 #include "math/quaternion.h"
 #include "math/vector.h"
 
@@ -18,9 +19,10 @@
 
 class OrientationEngine{
 public:
-	virtual void update(math::vector3d z, math::quaternion Z,
+/*	virtual void update(math::vector3d z, math::quaternion Z,
 						float rateMSE, float attitudeMSE,
-						boolean relativeYaw);
+						boolean relativeYaw);*/ //depreciated
+	virtual void update(InertialManager* sensors);
 	virtual void updateRate(math::vector3d z, float MSE); //rps euler angles
 	virtual void updateAttitude(math::quaternion Z, float MSE); //quaternion
 	virtual math::vector3d   getRate();

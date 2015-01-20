@@ -1,6 +1,7 @@
 #ifndef DualErrorFilter_H
 #define DualErrorFilter_H
 
+#include "input/InertialManager.h"
 #include "filter/OrientationEngine.h"
 #include "math/quaternion.h"
 #include "math/SpatialMath.h"
@@ -42,8 +43,9 @@ public:
 		estimateMSE[RATE] 		= 1;
 		estimateMSE[ATTITUDE] 	= 1;
 	}
-	void update(math::vector3d z, math::quaternion Z,
-				float rateMSE, float attitudeMSE, boolean relativeYaw);
+/*	void update(math::vector3d z, math::quaternion Z,
+				float rateMSE, float attitudeMSE, boolean relativeYaw);*/
+	void update(InertialManager* sensors);
 	void updateRate(	math::vector3d z,   float rms);
 	void updateAttitude(math::quaternion Z, float rms);
 	math::vector3d   getRate();
@@ -88,7 +90,7 @@ DualErrorFilter::updateStateModel(){
 	}
 	oldRate = rate;
 }
-void
+/*void
 DualErrorFilter::update(math::vector3d   z,
 						math::quaternion Z,
 						float rateMSE,
@@ -110,6 +112,10 @@ DualErrorFilter::update(math::vector3d   z,
 	}
 
 	attitude = nlerp(Z, attitude, computeGain(ATTITUDE, attitudeMSE));
+}*/
+void
+DualErrorFilter::update(InertialManager* sensors){
+	
 }
 void
 DualErrorFilter::updateRate(math::vector3d z, float rateMSE){

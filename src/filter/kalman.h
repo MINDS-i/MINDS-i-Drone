@@ -1,6 +1,7 @@
 #ifndef KalmanFilter_H
 #define KalmanFilter_H
 
+#include "input/InertialManager.h"
 #include "filter/OrientationEngine.h"
 #include "math/matrix.h"
 #include "math/quaternion.h"
@@ -24,8 +25,9 @@ public:
 	KalmanFilter(math::matrix2d errorGrowth, math::matrix2d initialError):
 					gainTime(0), stateTime(0),
 					Attitude(1,0,0,0), rate(0,0,0), Q(errorGrowth), P(initialError) {}
-	void update(math::vector3d z, math::quaternion Z,
-				float rateMSE, float attitudeMSE, boolean relativeYaw);
+/*	void update(math::vector3d z, math::quaternion Z,
+				float rateMSE, float attitudeMSE, boolean relativeYaw);*/
+	void update(InertialManager* sensors);
 	void updateRate(	math::vector3d z,   float MSE);
 	void updateAttitude(math::quaternion Z, float MSE);
 	math::vector3d   getRate();
@@ -73,7 +75,7 @@ KalmanFilter::updateStateModel(){
 	}
 	oldRate = rate;
 }
-void
+/*void
 KalmanFilter::update(math::vector3d   z,
 					 math::quaternion Z,
 					 float rateRMS,
@@ -91,6 +93,10 @@ KalmanFilter::update(math::vector3d   z,
 	}
 	rate 	 =  lerp(z, rate, K(0,0));
 	Attitude = nlerp(Z, Attitude, K(1,1));
+}*/
+void
+KalmanFilter::update(InertialManager* sensors){
+	
 }
 void
 KalmanFilter::updateRate(math::vector3d z, float rms){

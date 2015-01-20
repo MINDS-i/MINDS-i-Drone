@@ -29,8 +29,8 @@ const float MPHvRPM       = (1.f/60.f)        * (1.f/MilesPerRev);
 
 //Global variables used throught the program
 HardwareSerial *commSerial	= &Serial;
-Storage<float> *settings	= eeStorage::getInstance();
 CommManager		manager(commSerial, settings);
+Storage<float> *settings	= eeStorage::getInstance();
 NMEA			nmea(Serial1);
 Waypoint		location(0,0);
 Waypoint		backWaypoint(0,0);

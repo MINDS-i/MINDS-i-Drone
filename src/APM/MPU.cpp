@@ -35,6 +35,8 @@ void MPUWrite(byte reg, byte data)
 
 void InitMPU()
 {
+    pinMode(40, OUTPUT); 
+    digitalWrite(40, HIGH); //SPI select pin on APM
     SPI.begin();
     MPUWrite(REG_PWR_MGMT_1, BIT_H_RESET); //chip reset
     delay(100);

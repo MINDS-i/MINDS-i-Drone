@@ -6,6 +6,8 @@ const int address = 0x1E;
 
 void beginCompass(){
 	Wire.begin();
+	Wire.setClock(800000L);
+	delay(10);
 
 	Wire.beginTransmission(address);
 	Wire.write((uint8_t) 0x00);

@@ -1,10 +1,11 @@
 #ifndef INERTIAL_MANAGER_H
 #define INERTIAL_MANAGER_H
-
-#include "math/SpatialMath.h"
-#include "math/quaternion.h"
-#include "math/vector.h"
+class InertialManager;
+#include "filter/OrientationEngine.h"
 #include "input/InertialSensor.h"
+#include "math/quaternion.h"
+#include "math/SpatialMath.h"
+#include "math/vector.h"
 
 /*
 -Inertial Manager is given an array of Inertial Sensors on intialization.
@@ -43,6 +44,11 @@ public:
 	void updateLinAccel(float  x, float  y, float  z, float MSE);//G's
 	void updateMagField(float  x, float  y, float  z, float MSE);//Gauss
 	void updatePressure(float  p, float MSE);					 //Pascals
+	
+	void getRotRates(float& dx, float& dy, float& dz, float& MSE);//rad per sec
+	void getLinAccel(float&  x, float&  y, float&  z, float& MSE);//G's
+	void getMagField(float&  x, float&  y, float&  z, float& MSE);//Gauss
+	void getPressure(float&  p, float& MSE);					  //Pascals
 };
 void
 InertialManager::start(){
@@ -58,7 +64,7 @@ InertialManager::update(){
 		sensor[i]->update(*this);
 	}
 }
-void
+/*void
 InertialManager::update(OrientationEngine &orientation){
 	update();
 
@@ -79,6 +85,11 @@ InertialManager::update(OrientationEngine &orientation){
 				//atan2(magField[0],magField[1]));//orientation.getYaw() );
 
 	orientation.update(gyro, accl, rotRates[3], linAccel[3], true);
+}*/
+void
+InertialManager::update(OrientationEngine &orientation){
+	update();
+	orientation.update(this);
 }
 void
 InertialManager::print(HardwareSerial* output){
@@ -126,5 +137,31 @@ void
 InertialManager::updatePressure(float p, float MSE){
 	pressure[0] = p;
 	pressure[1] = MSE;
+}
+void
+InertialManager::getRotRates(float& dx, float& dy, float& dz, float& MSE){
+	dx  = rotRates[0];
+	dy  = rotRates[1];
+	dz  = rotRates[2];
+	MSE = rotRates[3];
+}
+void
+InertialManager::getLinAccel(float&  x, float&  y, float&  z, float& MSE){
+	x   = linAccel[0];
+	y   = linAccel[1];
+	z   = linAccel[2];
+	MSE = linAccel[3];
+}
+void
+InertialManager::getMagField(float&  x, float&  y, float&  z, float& MSE){
+	x   = magField[0];
+	y   = magField[1];
+	z   = magField[2];
+	MSE = magField[3];
+}
+void
+InertialManager::getPressure(float& p, float& MSE){
+	p   = pressure[0];
+	MSE = pressure[1];
 }
 #endif
