@@ -6,16 +6,14 @@ protected:
 	static const uint16_t CAL_SAMPLE_SIZE = 100;
 	static const double dPlsb = 4.f/65535.f;
 	static const double GYRO_CONVERSION_FACTOR =  (4.f/65535.f)*PI/180.l;
-	float acclShifts[3] = { 0, 0, 0};
-	float acclScalar[3] = { 1, 1, 1};
 	float gyroMSE, acclMSE;
+	LTATune LTA;
 public:
 	MpuSensor()
 		: gyroMSE(1.),  acclMSE(100.) {}
 	MpuSensor(float gMSE, float aMSE)
 		: gyroMSE(gMSE), acclMSE(aMSE)  {}
-	void tuneAccl(float xs, float ys, float zs,
-				  float xb, float yx, float zb);
+	void tuneAccl(LTATune t);
 	void init();
 	void stop();
 	bool status();
@@ -27,15 +25,8 @@ public:
 	float getAcclMSE() { return acclMSE; }
 };
 void
-MpuSensor::tuneAccl(float xs, float ys, float zs,
-					float xb, float yb, float zb){
-	acclShifts[0] = xs;
-	acclShifts[1] = ys;
-	acclShifts[2] = zs;
-
-	acclScalar[0] = xb;
-	acclScalar[1] = yb;
-	acclScalar[2] = zb;
+MpuSensor::tuneAccl(LTATune t){
+	LTA = t;
 }
 void
 MpuSensor::init(){
@@ -84,8 +75,8 @@ MpuSensor::update(InertialManager& man){
 	accl[1] = MPU_Ay();
 	accl[2] = MPU_Az();
 	for(int i=0; i<3; i++){
-		accl[i] += acclShifts[i];
-		accl[i] *= acclScalar[i];
+		accl[i] += LTA.values.shift[i];
+		accl[i] *= LTA.values.scalar[i];
 	}
 
 	man.updateRotRates(rate[0], rate[1], rate[2], gyroMSE);

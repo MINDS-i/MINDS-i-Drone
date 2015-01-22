@@ -3,7 +3,7 @@
 #include "Servo.h"
 #include "DroneLibs.h"
 
-const char *names[] = {"+X","-X","+Y","-Y","+Z","-Z"};
+const char *names[] = {"-X","+X","-Y","+Y","-Z","+Z"};
 const uint16_t AVSIZE		= 25;
 const uint32_t UPDATE_DELAY	= 75;
 const int Z_VAL = 550;
@@ -15,11 +15,15 @@ very steadily on each axis. The progress indicator will \n\
 show if the sensor is ligned up with an axis; just \n\
 hold it on any axis long enough to get a good reading, \n\
 and then move to the rest \n\n\
-Ready to to start the calibration?";
+Tune now (yes) or skip straight to streaming sensor data (no)?";
 int facingDir;
-int accelMax[3][2];
-int magVert[3][2];
+float accelMax[3][2];
+float magVert[3][2];
 int state = 0;
+
+/*
+use Settings and EEStorage w/ LTATune to store the cooked values in EEPROM
+*/
 
 MpuSensor  mpu;
 APMCompass cmp;
@@ -28,19 +32,19 @@ InertialManager sensors(sens, 2);
 
 class datastream{
 private:
-	int average[AVSIZE];
-	int* avloc;
-	int der;
-	int value;
-	int goodSamples;
-	void pushAverage(int v){
+	float average[AVSIZE];
+	float* avloc;
+	float der;
+	float value;
+	float goodSamples;
+	void pushAverage(float v){
 		*avloc = v;
 		avloc++;
 		if(avloc >= &average[AVSIZE]) avloc = &average[0];
 	}
 public:
 	datastream(): avloc(&average[0]) {}
-	void update(int v){
+	void update(float v){
 		der = v-value;
 		value = v;
 		pushAverage(value);
@@ -56,27 +60,26 @@ public:
 	boolean stable(){
 		return goodSamples >= AVSIZE;
 	}
-	int getAverage(){
+	float getAverage(){
 		float sum;
 		for(int i=0; i<AVSIZE; i++){
 			sum += average[i];
 		}
-		int av = sum/((float)AVSIZE);
+		float av = sum/((float)AVSIZE);
 		return av;
 	}
-	int getValue(){
+	float getValue(){
 		return value;
 	}
 };
-datastream data[3];
+datastream accl[3];
 datastream  mag[3];
 
 void setup(){
 	Serial.begin(57600);
 	sensors.start();
 	delay(1000);
-	sensors.calibrate(); //ummmmmmm
-	//beginCompass();
+	sensors.calibrate();
 }
 
 void loop(){
@@ -88,7 +91,9 @@ void loop(){
 			case 0:
 				Serial.println(startMessage);
 				if(getTrueFalseResponse()){
-					state++;
+					state = 1;
+				} else {
+					state = 3;
 				}
 				time = millis();
 				break;
@@ -102,14 +107,20 @@ void loop(){
 				printTuningData();
 				Serial.println("would you like to store these values?");
 				if (getTrueFalseResponse()) {
-					//write to eeprom
+					writeTuningData();
+					Serial.println("Done Writing");
 				}
 				time = millis();
-				state = -1;
+				state++;
 				break;
 			case 3:
+				Serial.println("The sensors tuned by EEPROM will now be streamed:");
+				tuneAcclandMag();
+				state++;
+				break;
+			case 4:
 				updateSensorData();
-				printTunedMag();
+				printRawVectors();
 				//show magnetometer values
 				break;
 			default:
@@ -156,7 +167,7 @@ void updateSensorData(){
 	float val[4];
 	sensors.getLinAccel(val[0], val[1], val[2], val[3]);
 	for(int i=0; i<3; i++){
-		data[i].update(val[i]);
+		accl[i].update(val[i]);
 	}
 	
 	sensors.getMagField(val[0], val[1], val[2], val[3]);
@@ -169,13 +180,13 @@ void tuneAccelerometer(){
 	//grab good values		
 	facingDir = -1;
 	for(int i=0; i<3; i++){
-		if (data[i].zero() && data[(i+1)%3].zero()) {
+		if (accl[i].zero() && accl[(i+1)%3].zero()) {
 			int idx = (i+2)%3;
-			facingDir = idx*2 + (data[idx].getValue() > 0);
-			if(data[idx].stable()){
-				int prospect = data[idx].getAverage();
+			facingDir = idx*2 + (accl[idx].getValue() > 0);
+			if(accl[idx].stable()){
+				float prospect = accl[idx].getAverage();
 				accelMax[idx][(prospect>0)] = prospect;
-				magVert[idx][(prospect>0)] = mag[idx].getAverage();
+				 magVert[idx][(prospect>0)] = mag[idx].getAverage();
 			}
 		}
 	}
@@ -199,9 +210,9 @@ void printAccelerometerStatus(){
 		Serial.print(names[i]);
 		Serial.print(" [");
 		if( accelMax[i/2][i%2] !=0){
-			Serial.print( (int) accelMax[i/2][i%2] );
+			Serial.print( accelMax[i/2][i%2] );
 		} else {
-			Serial.print("nan");
+			Serial.print( "nan");
 		}
 		Serial.print("]");
 		
@@ -214,28 +225,15 @@ void printAccelerometerStatus(){
 	Serial.print("\n");
 }
 
-void printTunedMag(){
-	float m[3];
-	float length = 0;
+void printRawVectors(){
 	for(int i=0; i<3; i++){
-		m[i]  = mag[i].getValue();
-		m[i] -= (magVert[i][1]+magVert[i][0])/2.f;
-		m[i] /= (magVert[i][1]-magVert[i][0])/2.f;
-		length += m[i]*m[i];
+		Serial.print(accl[i].getValue());
+		Serial.print("\t");	
 	}
-	length = sqrt(length);
-	
-	Serial.print("|");
-	Serial.print(length);
-	Serial.print("|\t");
 	for(int i=0; i<3; i++){
-		Serial.print(m[i]);
-		Serial.print("\t");
+		Serial.print(mag[i].getValue());
+		Serial.print("\t");	
 	}
-
-	Serial.print(atan2(m[0], m[1]));
-	Serial.print("\t");
-
 	Serial.print("\n");
 }
 
@@ -261,4 +259,22 @@ void printTuningData(){
 		Serial.print("\n");
 	}
 	Serial.print("\n");
+}
+
+void writeTuningData(){
+	Settings::useStorage(eeStorage::getInstance());
+	LTATune accl, mag;
+	for(int i=0; i<3; i++){
+		accl.values.shift[i]  = -(accelMax[i][1]+accelMax[i][0])/2.f;
+		mag.values.shift[i]   = -( magVert[i][1]+ magVert[i][0])/2.f;
+		accl.values.scalar[i] = (2.f)/((float)(accelMax[i][1]-accelMax[i][0]));
+		mag.values.scalar[i]  = (2.f)/((float)( magVert[i][1]- magVert[i][0]));
+	}
+	Settings::writeTuningValues(accl, mag);
+}
+
+void tuneAcclandMag(){
+	Settings::useStorage(eeStorage::getInstance());
+	mpu.tuneAccl(Settings::getAccelTune());
+	cmp.tune(Settings::getMagTune());
 }
