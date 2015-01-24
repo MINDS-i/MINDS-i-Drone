@@ -29,6 +29,7 @@ MpuSensor  mpu;
 APMCompass cmp;
 InertialSensor* sens[2] = {&mpu, &cmp};
 InertialManager sensors(sens, 2);
+Settings set(eeStorage::getInstance());
 
 class datastream{
 private:
@@ -262,7 +263,6 @@ void printTuningData(){
 }
 
 void writeTuningData(){
-	Settings::useStorage(eeStorage::getInstance());
 	LTATune accl, mag;
 	for(int i=0; i<3; i++){
 		accl.values.shift[i]  = -(accelMax[i][1]+accelMax[i][0])/2.f;
@@ -270,11 +270,10 @@ void writeTuningData(){
 		accl.values.scalar[i] = (2.f)/((float)(accelMax[i][1]-accelMax[i][0]));
 		mag.values.scalar[i]  = (2.f)/((float)( magVert[i][1]- magVert[i][0]));
 	}
-	Settings::writeTuningValues(accl, mag);
+	set.writeTuningValues(accl, mag);
 }
 
 void tuneAcclandMag(){
-	Settings::useStorage(eeStorage::getInstance());
-	mpu.tuneAccl(Settings::getAccelTune());
-	cmp.tune(Settings::getMagTune());
+	mpu.tuneAccl(set.getAccelTune());
+	cmp.tune(set.getMagTune());
 }

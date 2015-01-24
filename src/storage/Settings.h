@@ -49,16 +49,12 @@ namespace groundSettings{
 		UNUSED_A	= 17
 	};
 }
-namespace Settings{
-	//uses minutes and seconds of build time to generate a different
-	//version (for the most part) every time the code is compiled
+namespace commonSettings{
 	static const uint16_t VERSION =	 __TIME__[6]
 									+__TIME__[7]*10
 									+__TIME__[3]*100
 									+__TIME__[4]*1000;
-								
 	static const uint16_t CALIBRATION_VERSON = 7;
-	//enum of established settings -- NUM_SETTINGS is 32
 	enum Common{
 		ACCL_X_SHFT	= 18,
 		ACCL_Y_SHFT	= 19,
@@ -75,20 +71,30 @@ namespace Settings{
 		CALIB_VER	= 30,
 		STORAGE_VER	= 31
 	};
-	static Storage<setting_t> *storage = NULL;
-	static bool validFormat = false;
-	static bool validCalib  = false;
-	static void checkStorageFormat(){
+}
+using namespace commonSettings;
+class Settings{ 
+	// makes the usage of Storage for settings easier to top level sketches
+	// attach is a single action
+	// keeps track of weather or not storage was initialized
+	// structured and safe retreival of 2 LTATunes from memory
+private:
+	Storage<setting_t> *storage = NULL;
+	bool formatChecked = false;
+	bool validFormat = false;
+	bool validCalib  = false;
+public:
+	Settings(Storage<setting_t> *str) : storage(str) {
+	}
+	void checkStorageFormat(){
 		if(storage == NULL) return;
 		validCalib  = (storage->getRecord(CALIB_VER  ) == CALIBRATION_VERSON);
 		validFormat = (storage->getRecord(STORAGE_VER) == VERSION);
 		if (!validFormat) storage->updateRecord(STORAGE_VER, VERSION);
-	}
-	void useStorage(Storage<setting_t> *str){
-		storage = str;
-		checkStorageFormat();
+		formatChecked = true;
 	}
 	bool attach(int type, setting_t def, void (*call)(setting_t)){
+		if(!formatChecked) checkStorageFormat();
 		if(storage == NULL) return false;
 		uint8_t index = (int)type;
 		
@@ -110,6 +116,7 @@ namespace Settings{
 		writeCalibrationVersion();
 	}
 	LTATune getTuneAt(int startIndex){
+		if(!formatChecked) checkStorageFormat();
 		LTATune output;
 		if(!validCalib) return output;
 		for(int i=0; i<6; i++){
@@ -118,11 +125,13 @@ namespace Settings{
 		return output;
 	}
 	LTATune getAccelTune(){
+		if(!formatChecked) checkStorageFormat();
 		return getTuneAt(ACCL_X_SHFT);
 	}
 	LTATune getMagTune(){
+		if(!formatChecked) checkStorageFormat();
 		return getTuneAt( MAG_X_SHFT);
 	}
-}
+};
 
 #endif
