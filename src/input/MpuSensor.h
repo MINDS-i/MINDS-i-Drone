@@ -3,11 +3,13 @@
 
 class MpuSensor : public InertialSensor{
 protected:
-	static const uint16_t CAL_SAMPLE_SIZE = 100;
-	static const double dPlsb = 4.f/65535.f;
-	static const double GYRO_CONVERSION_FACTOR =  (4.f/65535.f)*PI/180.l;
+	static const uint16_t CAL_SAMPLE_SIZE = 200;
+							//+- 2000 dps per least sig bit, in ms
+	static const float dPlsb = 2.f*(2.f/65535.f); 
+	static const float GYRO_CONVERSION_FACTOR =  2.f*(2.f/65535.f) *PI/180.l;
 	float gyroMSE, acclMSE;
 	LTATune LTA;
+	float gCal[3];
 public:
 	MpuSensor()
 		: gyroMSE(1.),  acclMSE(100.) {}
@@ -42,19 +44,15 @@ MpuSensor::status(){
 }
 void
 MpuSensor::calibrate(){
-/*	double Gx, Gy, Gz;
-	double tmp[3];
-	for(int i=0; i<3; i++) tmp[i] = 0;
+	float av[3];
+	for(int i=0; i<3; i++) av[i] = 0;
 	for(int i=0; i<CAL_SAMPLE_SIZE; i++){
-		Gx = MPU_Gx();
-		Gy = MPU_Gy();
-		Gz = MPU_Gz();
-		tmp[0] += ((float)Gx)/((float)CAL_SAMPLE_SIZE);
-		tmp[1] += ((float)Gy)/((float)CAL_SAMPLE_SIZE);
-		tmp[2] += ((float)Gz)/((float)CAL_SAMPLE_SIZE);
+		av[0] += (float) MPU_Gx();
+		av[1] += (float) MPU_Gy();
+		av[2] += (float) MPU_Gz();
 		delay(1000/CAL_SAMPLE_SIZE);
 	}
-	for(int i=0; i<3; i++) lowPass[i] = tmp[i];*/
+	for(int i=0; i<3; i++) gCal[i] = -(av[i]/CAL_SAMPLE_SIZE);
 }
 void
 MpuSensor::update(InertialManager& man){
@@ -67,6 +65,8 @@ MpuSensor::update(InertialManager& man){
 	gyro[1] = MPU_Gy();
 	gyro[2] = MPU_Gz();
 	for(int i=0; i<3; i++){
+		rate[i] = gyro[i] + gCal[i];
+		rate[i]*= GYRO_CONVERSION_FACTOR;
 		//apply static rate shifts from calibration
 	}
 

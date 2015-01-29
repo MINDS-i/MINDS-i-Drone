@@ -4,7 +4,7 @@
 #include <SPI.h>
 
 #define MPU6000_CHIP_SELECT_PIN 53 //53 pin on megas, would be 4 on an uno
-#define SAMPLE_RATE 50
+#define SAMPLE_RATE 200
 
 #define REG_WHOAMI 			0x75
 #define REG_SMPLRT_DIV 		0x19

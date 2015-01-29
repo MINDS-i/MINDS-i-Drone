@@ -93,16 +93,6 @@ public:
 		if (!validFormat) storage->updateRecord(STORAGE_VER, VERSION);
 		formatChecked = true;
 	}
-	bool attach(int type, setting_t def, void (*call)(setting_t)){
-		if(!formatChecked) checkStorageFormat();
-		if(storage == NULL) return false;
-		uint8_t index = (int)type;
-		
-		if (!validFormat) {
-			storage->updateRecord(index, def);
-		}
-		storage->attachCallback(index, call);
-	}
 	void writeCalibrationVersion(){
 		if(storage == NULL) return;
 		storage->updateRecord(CALIB_VER, CALIBRATION_VERSON);
@@ -115,8 +105,19 @@ public:
 		}
 		writeCalibrationVersion();
 	}
+	bool attach(int type, setting_t def, void (*call)(setting_t)){
+		if(!formatChecked) checkStorageFormat();
+		if(storage == NULL) return false;
+		uint8_t index = (int)type;
+		
+		if (!validFormat) {
+			storage->updateRecord(index, def);
+		}
+		storage->attachCallback(index, call);
+	}
 	LTATune getTuneAt(int startIndex){
 		if(!formatChecked) checkStorageFormat();
+		if(storage == NULL) return LTATune();
 		LTATune output;
 		if(!validCalib) return output;
 		for(int i=0; i<6; i++){

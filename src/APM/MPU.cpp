@@ -40,12 +40,12 @@ void InitMPU()
     SPI.begin();
     MPUWrite(REG_PWR_MGMT_1, BIT_H_RESET); //chip reset
     delay(100);
-    MPUWrite(REG_PWR_MGMT_1, MPU_CLK_SEL_PLLGYROZ); //set GyroZ clock (Necessary?)
+    MPUWrite(REG_PWR_MGMT_1, MPU_CLK_SEL_PLLGYROZ); //set GyroZ clock
     MPUWrite(REG_USER_CTRL, BIT_I2C_DIS); //Disable I2C as recommended on datasheet
     MPUWrite(REG_SMPLRT_DIV, ((1000/SAMPLE_RATE)-1) ); // Set Sample rate; 1khz/(value+1) = (rate)Hz
-    MPUWrite(REG_CONFIG, BITS_DLPF_CFG_20HZ); //set low pass filter to 20hz
-    MPUWrite(REG_GYRO_CONFIG, BITS_FS_2000DPS); //Gyro scale 2000º/s
-    MPUWrite(REG_ACCEL_CONFIG, 0x08); //Accel scale 4g (Make Define)
+    MPUWrite(REG_CONFIG, BITS_DLPF_CFG_42HZ); //set low pass filter to 20hz
+    MPUWrite(REG_GYRO_CONFIG, BITS_FS_2000DPS); //Gyro scale 1000º/s
+    MPUWrite(REG_ACCEL_CONFIG, 0x08); //Accel scale 4g
 }
 
 void MPU_Read6(int* Ax, int* Ay, int* Az, int* Gx, int* Gy, int* Gz)
