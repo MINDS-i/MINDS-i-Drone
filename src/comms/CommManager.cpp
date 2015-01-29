@@ -133,21 +133,18 @@ CommManager::loopWaypoints(){
 }
 void
 CommManager::setTargetIndex(int index){
-	if(index >= waypoints->size()) return;
+	if(index >= waypoints->size() || index < 0) return;
 	targetIndex = index;
 	cachedTarget = getWaypoint(index);
+	sendCommand(commandType(TARGET), targetIndex);
 }
 void
 CommManager::advanceTargetIndex(){
-	if(targetIndex+1 >= waypoints->size()) return;
-	targetIndex++;
-	cachedTarget = getWaypoint(targetIndex);
+	setTargetIndex(getTargetIndex()+1);
 }
 void
 CommManager::retardTargetIndex(){
-	if(targetIndex <= 0) return;
-	targetIndex--;
-	cachedTarget = getWaypoint(targetIndex);
+	setTargetIndex(getTargetIndex()-1);
 }
 int
 CommManager::getTargetIndex(){
@@ -209,6 +206,11 @@ CommManager::onConnect(){
 		sendSetting(i, getSetting(i));
 	}
 	if(connectCallback != NULL) connectCallback();
+}
+void
+CommManager::sendCommand(uint8_t id, uint8_t data){
+	byte tmp[3] = { buildMessageLabel(standardSubtype(COMMAND), 3), id, data };
+	Protocol::sendMessage(tmp, 3, stream);
 }
 void
 CommManager::handleCommand(commandType command, uint8_t data){

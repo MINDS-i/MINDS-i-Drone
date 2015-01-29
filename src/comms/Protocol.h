@@ -29,7 +29,8 @@ namespace Protocol{
 						SETTINGS = 1,
 						WAYPOINT = 2,
 						PROTOCOL = 3 };
-
+	
+	//subtypes get 2 bits
 	enum standardSubtype{	TELEMETRY	= 0,
 							COMMAND		= 1 };
 

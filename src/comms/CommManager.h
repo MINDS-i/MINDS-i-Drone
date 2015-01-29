@@ -78,6 +78,7 @@ public:
 	void	setEStopCallback(void (*call)(void));
 private:
 	void	onConnect();
+	void	sendCommand(uint8_t id, uint8_t data);
 	void	handleCommand(commandType command, uint8_t data);
 	void	sendSync();
 	void	sendSyncResponse();
