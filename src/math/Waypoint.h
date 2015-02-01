@@ -2,7 +2,9 @@
 #define WAYPOINT_H
 
 #include "SpatialMath.h"
-#include "comms/Protocol.h"
+#ifndef STAND_ALONE_MATH
+	#include "comms/Protocol.h"
+#endif
 
 class Waypoint{
 public:
@@ -46,12 +48,14 @@ public:
 	float degLongitude(){
 		return lng;
 	}
+#ifndef STAND_ALONE_MATH
 	float getAltitude(){
 		return ((double)extra)/((double)Protocol::U16_FIXED_FACTOR);
 	}
 	float getApproachSpeed(){
 		return ((double)extra)/((double)Protocol::U16_FIXED_FACTOR);
 	}
+#endif
 	void setExtra(uint16_t alt){
 		extra = alt;
 	}
