@@ -2,7 +2,7 @@
 #define NMEA_H
 #include "Arduino.h"
 #include "math/GreatCircle.h"
-#include "util/Waypoint.h"
+#include "math/Waypoint.h"
 
 class NMEA{
 public:

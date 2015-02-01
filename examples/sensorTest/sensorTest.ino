@@ -40,7 +40,7 @@ void loop(){
 		
 		//Serial.print( ((long)time) - ((long)millis()) );
 		Serial.print(time);
-		Serial.print("\t");		
+		Serial.print("\t");
 		for(int i=0; i<3; i++) display(accl[i]*10000.0f);
 		for(int i=0; i<3; i++) display(gyro[i]*1000000.0f);
 		for(int i=0; i<3; i++) display(magn[i]*10000.0f);

@@ -7,11 +7,11 @@
 #include "comms/NMEA.h"
 #include "comms/Protocol.h"
 #include "math/GreatCircle.h"
+#include "math/Waypoint.h"
 #include "storage/List.h"
 #include "storage/SRAMlist.h"
 #include "storage/Storage.h"
 #include "util/byteConv.h"
-#include "util/Waypoint.h"
 
 using namespace Protocol;
 

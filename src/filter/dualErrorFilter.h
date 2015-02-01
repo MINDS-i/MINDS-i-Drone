@@ -5,7 +5,6 @@
 #include "filter/OrientationEngine.h"
 #include "math/quaternion.h"
 #include "math/SpatialMath.h"
-#include "math/SpatialMath.h"
 #include "math/vector.h"
 
 class DualErrorFilter : public OrientationEngine {

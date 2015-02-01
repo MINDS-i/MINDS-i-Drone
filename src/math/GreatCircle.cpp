@@ -18,18 +18,6 @@ trunkAngle(int 	angle){
 	return (angle%360)-180;
 }
 float
-toRad(float degrees){
-	degrees /= 180.l;
-	degrees *= PI;
-	return degrees;
-}
-float
-toDeg(float radians){
-	radians /= PI;
-	radians *= 180.l;
-	return radians;
-}
-float
 calcHeading(Waypoint a, Waypoint b){
 	float aRlat = a.radLatitude();
 	float aRlng = a.radLongitude();

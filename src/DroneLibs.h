@@ -34,6 +34,7 @@
 #include "math/quaternion.h"
 #include "math/SpatialMath.h"
 #include "math/vector.h"
+#include "math/Waypoint.h"
 
 #include "output/HK_ESCOutputDevice.h"
 #include "output/OutputDevice.h"
@@ -60,6 +61,5 @@
 #include "util/PIDparameters.h"
 #include "util/profile.h"
 #include "util/UM7.h"
-#include "util/Waypoint.h"
 
 #endif

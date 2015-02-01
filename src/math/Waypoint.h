@@ -1,7 +1,7 @@
 #ifndef WAYPOINT_H
 #define WAYPOINT_H
 
-#include "math/GreatCircle.h"
+#include "SpatialMath.h"
 #include "comms/Protocol.h"
 
 class Waypoint{
