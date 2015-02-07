@@ -26,8 +26,8 @@ invSqrt(float x){
 	return 1./sqrt(x);
 #endif
 }
-void inline
-normalize(math::quaternion &q){
+void //was inlined
+normalize(math::quaternion &q){ 
 	q *= invSqrt( q.Scalar()  *q.Scalar()   +
 				  q.Vector().x*q.Vector().x +
 				  q.Vector().y*q.Vector().y +
@@ -37,17 +37,17 @@ void
 normalize(math::vector3d &v){
 	v *= invSqrt(v.x*v.x + v.y*v.y + v.z*v.z);
 }
-float inline
+float //was inlined
 saSin(float t){
 	if(fabs(t) >= .22) return sin(t);
 	return t;
 }
-float inline
+float //was inlined
 saCos(float t){
 	if(fabs(t) >= .64) return cos(t);
 	return 1.l-((t*t)/2);
 }
-math::quaternion inline
+math::quaternion //was inlined 
 fromEuler(float pitch, float roll, float yaw){
 	float c1 = saCos(pitch/2.);
 	float s1 = saSin(pitch/2.);

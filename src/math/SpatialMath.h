@@ -16,7 +16,7 @@ float invSqrt(float x);
 float saSin(float t); //was inlined
 float saCos(float t); //was inlined
 math::quaternion fromEuler(float pitch, float roll, float yaw); //was inlined
-math::vector3d lerp(math::vector3d a, math::vector3d b, float p);
+math::vector3d	lerp(math::vector3d a, math::vector3d b, float p);
 math::quaternion lerp(math::quaternion const &a, math::quaternion const &b, float p);
 math::quaternion nlerp(math::quaternion const &a, math::quaternion const &b, float p);
 
