@@ -5,6 +5,7 @@
 #ifndef STAND_ALONE_MATH
 	#include "comms/Protocol.h"
 #endif
+#include <stdint.h>
 
 class Waypoint{
 public:
