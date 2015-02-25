@@ -7,24 +7,16 @@ protected:
 							//+- 2000 dps per least sig bit, in ms
 	static const float dPlsb = 2.f*(2.f/65535.f); 
 	static const float GYRO_CONVERSION_FACTOR =  2.f*(2.f/65535.f) *PI/180.l;
-	float gyroMSE, acclMSE;
 	LTATune LTA;
 	float gCal[3];
 public:
-	MpuSensor()
-		: gyroMSE(1.),  acclMSE(100.) {}
-	MpuSensor(float gMSE, float aMSE)
-		: gyroMSE(gMSE), acclMSE(aMSE)  {}
+	MpuSensor(){}
 	void tuneAccl(LTATune t);
 	void init();
 	void stop();
 	bool status();
 	void calibrate();
 	void update(InertialManager& man);
-	void setGyroMSE(float mse) { gyroMSE = mse; }
-	void setAcclMSE(float mse) { acclMSE = mse; }
-	float getGyroMSE() { return gyroMSE; }
-	float getAcclMSE() { return acclMSE; }
 };
 void
 MpuSensor::tuneAccl(LTATune t){
@@ -79,7 +71,7 @@ MpuSensor::update(InertialManager& man){
 		accl[i] *= LTA.values.scalar[i];
 	}
 
-	man.updateRotRates(rate[0], rate[1], rate[2], gyroMSE);
-	man.updateLinAccel(accl[0], accl[1], accl[2], acclMSE);
+	man.updateRotRates(rate[0], rate[1], rate[2]);
+	man.updateLinAccel(accl[0], accl[1], accl[2]);
 }
 #endif

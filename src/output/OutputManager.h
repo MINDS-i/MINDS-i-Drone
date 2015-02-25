@@ -1,6 +1,8 @@
 #ifndef OUTPUT_MANAGER_H
 #define OUTPUT_MANAGER_H
 
+#include "math/Quaternion.h"
+#include "math/Vec3.h"
 #include "output/OutputSolverCross.h"
 #include "util/PIDparameters.h"
 
@@ -97,16 +99,12 @@ void OutputManager::update(OrientationEngine &orientation){
 	}
 
 	//Set useful variables
-	math::quaternion state = orientation.getLastAttitude();
-	double q0 = (state.Scalar());
-	double q1 = (state.Vector().x);
-	double q2 = (state.Vector().y);
-	double q3 = (state.Vector().z);
 	float angles[2], angleRate[2];
-	angles[0]    = orientation.getRoll ();
-	angles[1]    = orientation.getPitch();
-	angleRate[0] = orientation.getRate().y;
-	angleRate[1] = orientation.getRate().x;
+	Quaternion attitude = orientation.getAttitude();
+	angles[0]    = attitude.getRoll ();
+	angles[1]    = attitude.getPitch();
+	angleRate[0] = orientation.getRate()[1];
+	angleRate[1] = orientation.getRate()[0];
 
 	//calculate PID based impulses
 	float PIDout[2];
@@ -135,7 +133,7 @@ void OutputManager::update(OrientationEngine &orientation){
 
 	//inform OrientationEnigne of output's predicted effects
 	if(RMS > 0.) {
-		math::vector3d prediction(PIDout[0], PIDout[1], desiredState[2]);
+		Vec3 prediction(PIDout[0], PIDout[1], desiredState[2]);
 		orientation.updateRate(prediction, RMS);
 	}
 }

@@ -29,11 +29,8 @@ private:
 	static const uint8_t TEMP_OUT_H              = 0x2C;
 	static const uint8_t TEMP_OUT_L              = 0x2B;
 	static const uint8_t WHO_AM_I                = 0x0F;
-
-	float MSE;
 public:
-	LPS25H()			: STMtwiDev(0x5D, false), MSE(1.)  {}
-	LPS25H(float mse)	: STMtwiDev(0x5D, false), MSE(mse) {}
+	LPS25H(): STMtwiDev(0x5D, false) {}
 	~LPS25H() { stop(); }
 	void init();
 	void stop();
@@ -64,7 +61,7 @@ void
 LPS25H::update(InertialManager& man){
 	int32_t pressure = getRawPressure();
 	float pascals = (100.f/4096.f)*((float)pressure);
-	man.updatePressure(pascals, MSE);
+	man.updatePressure(pascals);
 }
 int32_t
 LPS25H::getRawPressure(){

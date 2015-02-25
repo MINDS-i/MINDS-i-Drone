@@ -1,8 +1,10 @@
 #ifndef GREATCIRCLE_H
 #define GREATCIRCLE_H
 #include "math.h"
-#include "Waypoint.h" //uuuuuuuuggh. Waypoint needs toRad and toDeg
-#include <stdint.h>
+#include "Waypoint.h"
+#ifdef STAND_ALONE_MATH
+	#include <stdint.h>
+#endif
 
 float		trunkAngle(float	angle);
 double		trunkAngle(double	angle);

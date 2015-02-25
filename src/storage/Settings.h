@@ -4,6 +4,11 @@
 #include "storage/Storage.h"
 #include "util/LTATune.h"
 
+/*
+These enumerations fill up all 32 settings slots (some are named unused_[alpha])
+To make more settings, one would need to stretch the default number of storage
+records in the passed in storage object
+*/
 typedef float setting_t;
 namespace AirSettings{	
 	enum Air{
@@ -105,15 +110,19 @@ public:
 		}
 		writeCalibrationVersion();
 	}
-	bool attach(int type, setting_t def, void (*call)(setting_t)){
+	bool attach(int type, setting_t defaul, void (*call)(setting_t)){
 		if(!formatChecked) checkStorageFormat();
 		if(storage == NULL) return false;
 		uint8_t index = (int)type;
 		
 		if (!validFormat) {
-			storage->updateRecord(index, def);
+			storage->updateRecord(index, defaul);
 		}
 		storage->attachCallback(index, call);
+	}
+	float get(int type){
+		uint8_t index = (int)type;
+		return storage->getRecord(index);
 	}
 	LTATune getTuneAt(int startIndex){
 		if(!formatChecked) checkStorageFormat();

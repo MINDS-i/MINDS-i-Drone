@@ -1,12 +1,8 @@
 #ifndef INERTIAL_MANAGER_H
 #define INERTIAL_MANAGER_H
-class InertialManager;
 #include "filter/OrientationEngine.h"
 #include "input/InertialSensor.h"
-#include "math/quaternion.h"
-#include "math/SpatialMath.h"
-#include "math/vector.h"
-
+#include "Arduino.h"
 /*
 -Inertial Manager is given an array of Inertial Sensors on intialization.
 -It will propogate commands to all the sensors it owns
@@ -25,143 +21,30 @@ class InertialManager{
 private:
 	InertialSensor** sensor;
 	uint8_t numSensors;
-	float rotRates[4]; //X,Y,Z, MSE (Mean Square Error)
-	float linAccel[4];
-	float magField[4];
-	float pressure[2];
+	float rotRates[3]; //X,Y,Z
+	float linAccel[3];
+	float magField[3];
+	float pressure[1];
 public:
 	InertialManager(InertialSensor** s, uint8_t num)
 		: sensor(s), numSensors(num) {}
 
-	void start();
-	void calibrate();
 	void update();
 	void update(OrientationEngine &orientation);
+	
+	void start();
+	void calibrate();
 	void stop();
 	void print(HardwareSerial* output);
 
-	void updateRotRates(float dx, float dy, float dz, float MSE);//rad per sec
-	void updateLinAccel(float  x, float  y, float  z, float MSE);//G's
-	void updateMagField(float  x, float  y, float  z, float MSE);//Gauss
-	void updatePressure(float  p, float MSE);					 //Pascals
+	void updateRotRates(float dx, float dy, float dz);//rad per sec
+	void updateLinAccel(float  x, float  y, float  z);//G's
+	void updateMagField(float  x, float  y, float  z);//Gauss
+	void updatePressure(float  p);					  //Pascals
 	
-	void getRotRates(float& dx, float& dy, float& dz, float& MSE);//rad per sec
-	void getLinAccel(float&  x, float&  y, float&  z, float& MSE);//G's
-	void getMagField(float&  x, float&  y, float&  z, float& MSE);//Gauss
-	void getPressure(float&  p, float& MSE);					  //Pascals
+	void getRotRates(float& dx, float& dy, float& dz);//rad per sec
+	void getLinAccel(float&  x, float&  y, float&  z);//G's
+	void getMagField(float&  x, float&  y, float&  z);//Gauss
+	void getPressure(float&  p);					  //Pascals
 };
-void
-InertialManager::start(){
-	for(int i=0; i<numSensors; i++) sensor[i]->init();
-}
-void
-InertialManager::calibrate(){
-	for(int i=0; i<numSensors; i++) sensor[i]->calibrate();
-}
-void
-InertialManager::update(){
-	for(int i=0; i<numSensors; i++){
-		sensor[i]->update(*this);
-	}
-}
-/*void
-InertialManager::update(OrientationEngine &orientation){
-	update();
-
-	math::vector3d gyro = math::vector3d( -rotRates[1],
-										  -rotRates[0],
-										   rotRates[2]);
-	//make accelerometer quaternion
-	float mag = invSqrt(linAccel[0]*linAccel[0] +
-						linAccel[1]*linAccel[1] +
-						linAccel[2]*linAccel[2]   );
-	float x = ((float)linAccel[0]) * mag;
-	float y = ((float)linAccel[1]) * mag;
-
-	math::quaternion accl = fromEuler(
-				(fabs(x)>1.) ? copysign(M_PI_2,  x) : asin( x),
-				(fabs(y)>1.) ? copysign(M_PI_2, -y) : asin(-y),
-															  0);
-				//atan2(magField[0],magField[1]));//orientation.getYaw() );
-
-	orientation.update(gyro, accl, rotRates[3], linAccel[3], true);
-}*/
-void
-InertialManager::update(OrientationEngine &orientation){
-	update();
-	orientation.update(this);
-}
-void
-InertialManager::print(HardwareSerial* output){
-	for(int i=0; i<3; i++){
-		output->print(rotRates[i]);
-		output->print('\t');
-	}
-	for(int i=0; i<3; i++){
-		output->print(linAccel[i]);
-		output->print('\t');
-	}
-	for(int i=0; i<3; i++){
-		output->print(magField[i]);
-		output->print('\t');
-	}
-	output->print(pressure[0]);
-	output->print('\n');
-}
-void
-InertialManager::stop(){
-	for(int i=0; i<numSensors; i++) sensor[i]->stop();
-}
-void
-InertialManager::updateRotRates(float dx, float dy, float dz, float MSE){
-	rotRates[0] = dx;
-	rotRates[1] = dy;
-	rotRates[2] = dz;
-	rotRates[3] = MSE;
-}
-void
-InertialManager::updateLinAccel(float  x, float  y, float  z, float MSE){
-	linAccel[0] = x;
-	linAccel[1] = y;
-	linAccel[2] = z;
-	linAccel[3] = MSE;
-}
-void
-InertialManager::updateMagField(float  x, float  y, float  z, float MSE){
-	magField[0] = x;
-	magField[1] = y;
-	magField[2] = z;
-	magField[3] = MSE;
-}
-void
-InertialManager::updatePressure(float p, float MSE){
-	pressure[0] = p;
-	pressure[1] = MSE;
-}
-void
-InertialManager::getRotRates(float& dx, float& dy, float& dz, float& MSE){
-	dx  = rotRates[0];
-	dy  = rotRates[1];
-	dz  = rotRates[2];
-	MSE = rotRates[3];
-}
-void
-InertialManager::getLinAccel(float&  x, float&  y, float&  z, float& MSE){
-	x   = linAccel[0];
-	y   = linAccel[1];
-	z   = linAccel[2];
-	MSE = linAccel[3];
-}
-void
-InertialManager::getMagField(float&  x, float&  y, float&  z, float& MSE){
-	x   = magField[0];
-	y   = magField[1];
-	z   = magField[2];
-	MSE = magField[3];
-}
-void
-InertialManager::getPressure(float& p, float& MSE){
-	p   = pressure[0];
-	MSE = pressure[1];
-}
 #endif

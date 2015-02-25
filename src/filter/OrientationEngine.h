@@ -1,9 +1,10 @@
 #ifndef ORIENTATION_ENGINE_H
 #define ORIENTATION_ENGINE_H
 
+class InertialManager;
 #include "input/InertialManager.h"
-#include "math/quaternion.h"
-#include "math/vector.h"
+#include "math/Quaternion.h"
+#include "math/Vec3.h"
 
 /*
 -Abstract Base Class for methods of sensor integration and state tracking
@@ -19,21 +20,15 @@
 
 class OrientationEngine{
 public:
-/*	virtual void update(math::vector3d z, math::quaternion Z,
-						float rateMSE, float attitudeMSE,
-						boolean relativeYaw);*/ //depreciated
-	virtual void update(InertialManager* sensors);
-	virtual void updateRate(math::vector3d z, float MSE); //rps euler angles
-	virtual void updateAttitude(math::quaternion Z, float MSE); //quaternion
-	virtual math::vector3d   getRate();
-	virtual math::quaternion getAttitude();
-	virtual math::quaternion getLastAttitude();
-	virtual math::quaternion getRateQuaternion();
-	virtual float getRoll();  //These functions output radians
-	virtual float getPitch();
-	virtual float getYaw();
-	virtual float getRollRate();
-	virtual float getPitchRate();
-	virtual float getYawRate();
+	virtual void update(InertialManager* sensors)=0;
+	virtual void updateRate(Vec3 z, float MSE)=0; //pry apparent angle
+	virtual void updateAttitude(Quaternion Z, float MSE)=0;
+	virtual Quaternion	getAttitude()=0;
+	virtual Quaternion	getLastAttitude()=0;
+	virtual Quaternion	getRateQuaternion()=0;
+	virtual Vec3		getRate()=0;
+	virtual float getRollRate()=0;
+	virtual float getPitchRate()=0;
+	virtual float getYawRate()=0;
 };
 #endif

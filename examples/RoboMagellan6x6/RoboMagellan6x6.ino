@@ -29,8 +29,9 @@ const float MPHvRPM       = (1.f/60.f)        * (1.f/MilesPerRev);
 
 //Global variables used throught the program
 HardwareSerial *commSerial	= &Serial;
-CommManager		manager(commSerial, settings);
-Storage<float> *settings	= eeStorage::getInstance();
+Storage<float> *storage	= eeStorage::getInstance();
+CommManager		manager(commSerial, storage);
+Settings		settings(storage);
 NMEA			nmea(Serial1);
 Waypoint		location(0,0);
 Waypoint		backWaypoint(0,0);
@@ -59,8 +60,9 @@ void (*schedule[])(void) = {	extrapPosition,
 								reportLocation,
 								};
 
-//These parameters are loaded from eeprom in STORAGE_VER is valid
-//the dashboard can update records in the storage passed into manager
+//These parameters are loaded from eeprom if the code has not been reuploaded
+//since when they were last set.
+//the dashboard can update records in the storage instance passed into manager
 //The callbacks keep them up to date while the code is running
 float	lineGravity;
 int		steerThrow, steerStyle;
@@ -72,56 +74,37 @@ float	pingWeight;
 int		coastTime, dangerTime; //danger should include coastTime
 float	tireDiameter;
 int		steerCenter;
-
-void writeDefaults(){
-	settings->updateRecord( 0, .50);  //lineGravity
-	settings->updateRecord( 1, 45);   //steerThrow
-	settings->updateRecord( 2, 1);    //steerStyle
-	settings->updateRecord( 3, 1.0);  //steerFactor
-	settings->updateRecord( 4, 1.5);  //minFwd
-	settings->updateRecord( 5, 6.0);  //maxFwd
-	settings->updateRecord( 6, 20);   //REVERSE_STEER_THROW
-	settings->updateRecord( 7, -1.5); //REVERSE_SPEED
-	settings->updateRecord( 8, 1400.);//pingWeight
-	settings->updateRecord( 9, 1500); //coastTime
-	settings->updateRecord(10, 800);  //Minumum Backup Time
-	settings->updateRecord(11, 0.05); //Cruise control P
-	settings->updateRecord(12, 0.1);  //Cruise control I
-	settings->updateRecord(13, 0.0);  //Cruine control D
-	settings->updateRecord(14, 5.85); //tire Diameter
-	settings->updateRecord(15, 90);   //steer Center
-	settings->updateRecord(STORAGE_VER_IDX, STORAGE_VER);
-}
 void dangerTimeCallback(float in){ dangerTime = coastTime+in; }
 void newPIDparam(float x){
-	PIDparameters newPID = PIDparameters(settings->getRecord(11),
-										 settings->getRecord(12),
-										 settings->getRecord(13) );
+	using namespace groundSettings;
+	PIDparameters newPID = PIDparameters(settings.get(CRUISE_P),
+										 settings.get(CRUISE_I),
+										 settings.get(CRUISE_D) );
 	cruise.tune(newPID);
 }
-void setCallbacks(){
-	settings->attachCallback( 0, callback<float, &lineGravity>	);
-	settings->attachCallback( 1, callback<int  , &steerThrow>	);
-	settings->attachCallback( 2, callback<int  , &steerStyle>	);
-	settings->attachCallback( 3, callback<float, &steerFactor>	);
-	settings->attachCallback( 4, callback<float, &minFwd>		);
-	settings->attachCallback( 5, callback<float, &maxFwd>		);
-	settings->attachCallback( 6, callback<int  , &revThrow>		);
-	settings->attachCallback( 7, callback<float, &revSpeed>		);
-	settings->attachCallback( 8, callback<float, &pingWeight>	);
-	settings->attachCallback( 9, callback<int  , &coastTime>	);
-	settings->attachCallback(10, &dangerTimeCallback);
-	settings->attachCallback(11, &newPIDparam);
-	settings->attachCallback(12, &newPIDparam);
-	settings->attachCallback(13, &newPIDparam);
-	settings->attachCallback(14, callback<float , &tireDiameter>);
-	settings->attachCallback(15, callback<int   , &steerCenter> );
+
+void setupSettings(){
+	using namespace groundSettings;
+	settings.attach( LINE_GRAV	, .50  , callback<float, &lineGravity>	);
+	settings.attach( STEER_THROW, 45   , callback<int  , &steerThrow>	);
+	settings.attach( STEER_STYLE, 1    , callback<int  , &steerStyle>	);
+	settings.attach( STEER_FAC	, 1.0  , callback<float, &steerFactor>	);
+	settings.attach( MIN_FWD_SPD, 1.5  , callback<float, &minFwd>		);
+	settings.attach( MAX_FWD_SPD, 6.0  , callback<float, &maxFwd>		);
+	settings.attach( REV_STR_THR, 20   , callback<int  , &revThrow>		);
+	settings.attach( MAX_REV_SPD, -1.5 , callback<float, &revSpeed>		);
+	settings.attach( PING_WEIGHT, 1400 , callback<float, &pingWeight>	);
+	settings.attach( COAST_TIME	, 1500 , callback<int  , &coastTime>	);
+	settings.attach( MIN_REV_T	, 800  , &dangerTimeCallback			);
+	settings.attach( CRUISE_P	, 0.05 , &newPIDparam					);
+	settings.attach( CRUISE_I	, 0.1  , &newPIDparam					);
+	settings.attach( CRUISE_D	, 0.0  , &newPIDparam					);
+	settings.attach( TIRE_DIAM	, 5.85 , callback<float , &tireDiameter>);
+	settings.attach( STR_CENTER	, 90   , callback<int   , &steerCenter> );
 }
 
 void setup() {
-	if(settings->getRecord(STORAGE_VER_IDX) != STORAGE_VER)
-		writeDefaults();
-	setCallbacks();
+	setupSettings();
 
 	Serial1.begin(38400);
 	commSerial->begin(Protocol::BAUD_RATE);
@@ -210,16 +193,16 @@ void navigate(){
 		}
 
 		outputAngle = toDeg(atan2(y,x))+steerCenter;
-		bound(double(steerCenter-steerThrow),
-							outputAngle,
-			  double(steerCenter+steerThrow));
+		constrain(outputAngle,
+				  double(steerCenter-steerThrow),
+			 	  double(steerCenter+steerThrow));
 
 		float disp  = steerThrow - abs(steerCenter-outputAngle);
 		float speed = (distance*5280.l);
 		speed = min(speed, disp)/6.f; //logical speed clamps
 		float approachSpeed = manager.getTargetWaypoint().getApproachSpeed();
 		speed = min(speed, approachSpeed); //put in target approach speed
-		bound(minFwd, speed, maxFwd);
+		constrain(speed, minFwd, maxFwd);
 
 		if(stop) output(0 , steerCenter);
 		else     output(speed, outputAngle);

@@ -66,13 +66,8 @@ private:
 	static const uint8_t TEMP_OUT_H 		= 0x06;
 	static const uint8_t TEMP_OUT_L 		= 0x05;
 	static const uint8_t WHO_AM_I 			= 0x0F;
-
-	float acclMSE, magMSE;
 public:
-	LSM303D()
-		: STMtwiDev(0x1D, true), acclMSE(100.), magMSE(1.)   {}
-	LSM303D(float aMSE, float mMSE)
-		: STMtwiDev(0x1D, true), acclMSE(aMSE), magMSE(mMSE) {}
+	LSM303D(): STMtwiDev(0x1D, true) {}
 	~LSM303D() { stop(); }
 	void init();
 	void stop();
@@ -115,8 +110,8 @@ LSM303D::update(InertialManager& man){
 		 mag[i] = ((float)rM[i])*MAG_CONVERSION_FACTOR;
 	}
 
-	man.updateLinAccel(accl[0], accl[1], accl[2], acclMSE);
-	man.updateMagField( mag[0],  mag[1],  mag[2], magMSE);
+	man.updateLinAccel(accl[0], accl[1], accl[2]);
+	man.updateMagField( mag[0],  mag[1],  mag[2]);
 }
 void
 LSM303D::getRawAccl(int16_t* buf){

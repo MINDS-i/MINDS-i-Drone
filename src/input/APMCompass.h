@@ -8,18 +8,14 @@
 
 class APMCompass : public InertialSensor{
 protected:
-	float 	MSE;
 	LTATune	LTA;
 public:
-	APMCompass(): MSE(1) {}
-	APMCompass(float mse): MSE(mse) {}
+	APMCompass(){}
 	void init();
 	void stop();
 	bool status();
 	void calibrate();
 	void update(InertialManager& man);
-	void setMSE(float mse){ MSE = mse; }
-	float getMSE() { return MSE; }
 	void tune(LTATune t);
 };
 void
@@ -51,7 +47,7 @@ APMCompass::update(InertialManager& man){
 		M[i] += LTA.values.shift[i];
 		M[i] *= LTA.values.scalar[i];
 	}
-	man.updateMagField(M[0],M[1],M[2], MSE);
+	man.updateMagField(M[0],M[1],M[2]);
 }
 
 #endif

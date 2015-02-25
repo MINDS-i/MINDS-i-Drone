@@ -43,14 +43,11 @@ private:
 
 	float LPfac;
 	float lowPass[3];
-	float MSE;
 public:
 	L3GD20H()
-		: STMtwiDev(0x6B, true), LPfac(.9999), MSE(1.)  {}
+		: STMtwiDev(0x6B, true), LPfac(.9999)  {}
 	L3GD20H(float LP)
-		: STMtwiDev(0x6B, true), LPfac(LP),    MSE(1.)  {}
-	L3GD20H(float LP, float mse)
-		: STMtwiDev(0x6B, true), LPfac(LP),    MSE(mse) {}
+		: STMtwiDev(0x6B, true), LPfac(LP)     {}
 	~L3GD20H() { stop(); }
 	void init();
 	void stop();
@@ -98,7 +95,7 @@ L3GD20H::update(InertialManager& man){
 		rate[i]    = ((float)data[i])-lowPass[i];
 		rate[i]   *= OUTPUT_CONVERSION_FACTOR;//convert to rps
 	}
-	man.updateRotRates(rate[0], rate[1], rate[2], MSE);
+	man.updateRotRates(rate[0], rate[1], rate[2]);
 }
 void
 L3GD20H::getRawGyro(int16_t* buf){

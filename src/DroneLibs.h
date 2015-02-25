@@ -11,8 +11,8 @@
 #include "comms/NMEA.h"
 #include "comms/Protocol.h"
 
-#include "filter/dualErrorFilter.h"
-#include "filter/kalman.h"
+#include "filter/DualErrorFilter.h"
+#include "filter/DualErrorParams.h"
 #include "filter/OrientationEngine.h"
 
 #include "input/altIMU/L3GD20H.h"
@@ -25,15 +25,10 @@
 #include "input/InertialSensor.h"
 #include "input/MpuSensor.h"
 
-#include "math/fixed.h"
-#include "math/fixed_t.h"
 #include "math/GreatCircle.h"
-#include "math/matrix.h"
-#include "math/plane.h"
-#include "math/precision.h"
-#include "math/quaternion.h"
+#include "math/Quaternion.h"
 #include "math/SpatialMath.h"
-#include "math/vector.h"
+#include "math/Vec3.h"
 #include "math/Waypoint.h"
 
 #include "output/HK_ESCOutputDevice.h"
@@ -46,7 +41,6 @@
 #include "storage/EEPROMstorage.h"
 #include "storage/EEPROMsubsystem.h"
 #include "storage/List.h"
-#include "storage/locations.h"
 #include "storage/queue.h"
 #include "storage/Settings.h"
 #include "storage/SRAMlist.h"

@@ -165,13 +165,13 @@ boolean getTrueFalseResponse(){
 void updateSensorData(){	
 	sensors.update();
 	
-	float val[4];
-	sensors.getLinAccel(val[0], val[1], val[2], val[3]);
+	float val[3];
+	sensors.getLinAccel(val[0], val[1], val[2]);
 	for(int i=0; i<3; i++){
 		accl[i].update(val[i]);
 	}
 	
-	sensors.getMagField(val[0], val[1], val[2], val[3]);
+	sensors.getMagField(val[0], val[1], val[2]);
 	for(int i=0; i<3; i++){
 		mag[i].update(val[i]);
 	}

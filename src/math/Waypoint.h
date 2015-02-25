@@ -4,8 +4,9 @@
 #include "SpatialMath.h"
 #ifndef STAND_ALONE_MATH
 	#include "comms/Protocol.h"
+#else
+	#include <stdint.h>
 #endif
-#include <stdint.h>
 
 class Waypoint{
 public:

@@ -6,8 +6,10 @@
 #include "math/Quaternion.h"
 #include "math/Vec3.h"
 #include "math/SpatialMath.h"
-#include "micros.h"
 #include "DualErrorParams.h"
+#ifdef STAND_ALONE_MATH
+	#include "micros.h"
+#endif
 
 class DualErrorFilter : public OrientationEngine {
 private:
@@ -92,20 +94,16 @@ DualErrorFilter::update(InertialManager* sensors){
 	//calculate adjusted accelerometer MSE
 	float aMSE = params.sensorMSE[params.ACCL]
 				+params.acclErrorFac*fabs(log(tmag));
-	std::cout << fabs(log(tmag)) << '\t' << aMSE << '\t';
 	
 	//calculate gains
 	float acclGain = computeGain(ATTITUDE, aMSE);
 	float gyroGain = computeGain(RATE, params.sensorMSE[params.GYRO]);
-	
-	std::cout << acclGain << '\t' << gyroGain << '\t';
 	
 	//run model and lerp
 	rate.lerpWith(gyro, gyroGain);
 	updateStateModel();	
 	if(attitude.error()) attitude = accl;
 	else 				 attitude.nlerpWith(accl, acclGain);
-	std::cout << std::endl;
 }
 void
 DualErrorFilter::updateRate(Vec3 z, float rateMSE){

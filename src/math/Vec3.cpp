@@ -13,7 +13,7 @@ Vec3::dot(const Vec3& l) const {
 }
 bool
 Vec3::error() const {
-	return !(isnormal(x) && isnormal(y) && isnormal(z));
+	return !(isfinite(x) && isfinite(y) && isfinite(z));
 }
 void
 Vec3::crossWith(const Vec3& l) {

@@ -62,7 +62,7 @@ Quaternion::getYaw() const {
 }
 bool
 Quaternion::error() const {
-	return !(isnormal(x) && isnormal(y) && isnormal(z) && isnormal(w));
+	return !(isfinite(x) && isfinite(y) && isfinite(z) && isfinite(w));
 }
 void
 Quaternion::nlerpWith(const Quaternion& l, float percentNew){
