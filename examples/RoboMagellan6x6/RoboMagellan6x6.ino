@@ -6,9 +6,6 @@
 #include "DroneLibs.h"
 #include "util/callbackTemplate.h"
 
-const uint8_t STORAGE_VER_IDX	= 31;
-const uint8_t STORAGE_VER		= 17;
-
 //Constants that should never change during driving and never/rarely tuned
 #define useEncoder true
 const uint8_t VoltagePin  = 67;
