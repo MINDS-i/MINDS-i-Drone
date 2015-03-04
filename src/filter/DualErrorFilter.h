@@ -57,19 +57,15 @@ DualErrorFilter::updateStateModel(){
 	//propogate process errors
 	estimateMSE[ATTITUDE] += dt*dt*estimateMSE[RATE];
 	for(int i=0; i<2; i++) estimateMSE[i] += params.systemMSE[i]*dt*dt;
-
-	//apply midpoint rule to rates and intergrate to find new attitude
-	dt /= 2;
-	Vec3 gyro( -(rate[1]+oldRate[1])*dt,
-			   -(rate[0]+oldRate[0])*dt,
-			    (rate[2]+oldRate[2])*dt);
-
-	//attitude.rotateByFast(gyro);	
-	Quaternion tmp = Quaternion(gyro);
-	tmp.rotateBy(attitude);
-	attitude = tmp;
 	
-	oldRate = rate;
+	//integrate to find new attitude
+    Quaternion delta(0,
+    		           (rate[0]),
+			           (rate[1]),
+			           (rate[2]) );
+	delta/=2;
+	delta.rotateBy(attitude);
+	attitude = delta;
 }
 void
 DualErrorFilter::update(InertialManager* sensors){
@@ -100,7 +96,8 @@ DualErrorFilter::update(InertialManager* sensors){
 	float gyroGain = computeGain(RATE, params.sensorMSE[params.GYRO]);
 	
 	//run model and lerp
-	rate.lerpWith(gyro, gyroGain);
+	//rate.lerpWith(gyro, gyroGain);
+	rate = gyro;
 	updateStateModel();	
 	if(attitude.error()) attitude = accl;
 	else 				 attitude.nlerpWith(accl, acclGain);
