@@ -27,7 +27,7 @@ public:
 	//mutating methods
 	void		nlerpWith(const Quaternion& l, float percentNew);
 	void		rotateBy(const Quaternion& l);
-	void		rotateByFast(const Vec3& euler);
+	void		integrate(const Vec3& rotationalVelocity);
 	void		normalize();
 	//operotars
 	float&		operator[] (int x); //this should be avoided

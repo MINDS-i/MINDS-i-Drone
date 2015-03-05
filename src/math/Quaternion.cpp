@@ -85,17 +85,26 @@ Quaternion::rotateBy(const Quaternion& l){
 	z = W*l.z - X*l.y + Y*l.x - Z*l.w;
 }
 void
-Quaternion::rotateByFast(const Vec3& euler){
-	//uses small angle formulas implicitly
-	//might need to be reduced by a foctor of 2 first
-	float wi = (-x*euler.x - y*euler.y - z*euler.z);
-	float xi = ( w*euler.x + y*euler.z - z*euler.y);
-	float yi = ( w*euler.y - x*euler.z + z*euler.x);
-	float zi = ( w*euler.z + x*euler.y - y*euler.x);
-	w += wi;
-	x += xi;
-	y += yi;
-	z += zi;
+Quaternion::integrate(const Vec3& rotVel){
+	//integrates rotational velocities
+	/*
+	effectivly this:
+    Quaternion delta(0,
+		    	       (rate[0]),
+			           (rate[1]),
+			           (rate[2]) );
+	delta/=2;
+	delta.rotateBy(attitude); //gotta have the premultiply
+	attitude = delta;
+	*/
+	float W = w/2;
+	float X = x/2;
+	float Y = y/2;
+	float Z = z/2;
+	w = rotVel.x*X - rotVel.y*Y - rotVel.z*Z;
+	x = rotVel.x*W - rotVel.y*Z - rotVel.z*Y;
+	y = rotVel.x*Z + rotVel.y*W - rotVel.z*X;
+	z = rotVel.x*Y + rotVel.y*X - rotVel.z*W;
 }
 void
 Quaternion::normalize(){
