@@ -6,8 +6,8 @@
 const char *names[] = {"-X","+X","-Y","+Y","-Z","+Z"};
 const uint16_t AVSIZE		= 25;
 const uint32_t UPDATE_DELAY	= 75;
-const int Z_VAL = 550;
-const int ZPVAL =  50;
+const int Z_VAL = 550; //maximum accelerometer reading on "empty" axiz
+const int ZPVAL =  75; //maximum derivative of value to be "stable"
 const char startMessage[] = "\
 Hello! \n\
 To calibrate your APM2, you will need to hold the device \n\
