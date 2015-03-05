@@ -15,19 +15,16 @@
 
 class DualErrorFilter : public OrientationEngine {
 private:
-	static const uint8_t RATE = 0;
-	static const uint8_t ATTITUDE = 1;
-	DualErrorParams params;
-	Quaternion 		attitude;
-	Vec3 			rate, oldRate;//for midpoint intergration method
-	float 			estimateMSE[2];
-	volatile uint32_t 		stateTime;
-	float computeGain(uint8_t select, float MSE);
+	DualErrorParams   params;
+	Quaternion 		  attitude;
+	Vec3 			  rate;
+	float 			  estimateMSE;
+	volatile uint32_t stateTime;
+	float computeGain(float& estimate, float MSE);
 	void updateStateModel();
 public:
-	DualErrorFilter(): attitude(1,0,0,0), rate(0,0,0), params(1,1,1,1,0) {}
-	DualErrorFilter(DualErrorParams p):
-			attitude(1,0,0,0), rate(0,0,0), params(p) {}
+	DualErrorFilter():                  params(1,1,0) {}
+	DualErrorFilter(DualErrorParams p): params(p)     {}
 	void update(InertialManager* sensors);
 	void updateRate(	Vec3 z,   float rms);
 	void updateAttitude(Quaternion Z, float rms);
@@ -44,9 +41,9 @@ public:
 	void  setParams(DualErrorParams p){ params = p; }
 };
 float
-DualErrorFilter::computeGain(uint8_t select, float MSE){
-	float gain = estimateMSE[select]/(estimateMSE[select]+MSE);
-	estimateMSE[select] = (1.-gain)*estimateMSE[select];
+DualErrorFilter::computeGain(float& estimate, float MSE){
+	float gain = estimate/(estimate+MSE);
+	estimate = (1.-gain)*estimate;
 	return gain;
 }
 void
@@ -57,8 +54,7 @@ DualErrorFilter::updateStateModel(){
 	dt /= 1000.;
 
 	//propogate process errors
-	estimateMSE[ATTITUDE] += dt*dt*estimateMSE[RATE];
-	for(int i=0; i<2; i++) estimateMSE[i] += params.systemMSE[i]*dt*dt;
+	estimateMSE += dt*dt*params.sysMSE;
 		
 	attitude.integrate(rate);
 }
@@ -82,27 +78,27 @@ DualErrorFilter::update(InertialManager* sensors){
 	tmp.normalize();
 	Quaternion accl(tmp, acos(vmag));
 	//calculate adjusted accelerometer MSE
-	float aMSE = params.sensorMSE[params.ACCL]
-				+params.acclErrorFac*fabs(log(tmag));
+	float aMSE = params.acclMSE
+				+params.acclEF *fabs(log(tmag));
 	//calculate gains
-	float acclGain = computeGain(ATTITUDE, aMSE);
-	float gyroGain = computeGain(RATE, params.sensorMSE[params.GYRO]);
-	
+	float acclGain = computeGain(estimateMSE, aMSE);
+	std::cout << "\taG:" << acclGain << "\taEF:" << params.acclEF;
+	std::cout << "\aMSE:" << aMSE << "\test1:" << estimateMSE;
 	//run model and lerp
-	rate.lerpWith(gyro, gyroGain);
-	//rate = gyro;
+	rate = gyro;
 	updateStateModel();	
+	std::cout << "\test2:" << estimateMSE << std::endl;
 	if(attitude.error()) attitude = accl;
 	else 				 attitude.nlerpWith(accl, acclGain);
 }
 void
 DualErrorFilter::updateRate(Vec3 z, float rateMSE){
-	rate.lerpWith(z, computeGain(RATE, rateMSE));
+	//rate.lerpWith(z, computeGain(RATE, rateMSE));
 }
 void
 DualErrorFilter::updateAttitude(Quaternion Z, float attitudeMSE){
-	updateStateModel();
-	attitude.nlerpWith(Z, computeGain(ATTITUDE, attitudeMSE));
+	//updateStateModel();
+	//attitude.nlerpWith(Z, computeGain(ATTITUDE, attitudeMSE));
 }
 Vec3
 DualErrorFilter::getRate(){
