@@ -58,14 +58,7 @@ DualErrorFilter::updateStateModel(){
 	estimateMSE[ATTITUDE] += dt*dt*estimateMSE[RATE];
 	for(int i=0; i<2; i++) estimateMSE[i] += params.systemMSE[i]*dt*dt;
 	
-	//integrate to find new attitude
-    Quaternion delta(0,
-    		           (rate[0]),
-			           (rate[1]),
-			           (rate[2]) );
-	delta/=2;
-	delta.rotateBy(attitude);
-	attitude = delta;
+	attitude.integrate(rate);
 }
 void
 DualErrorFilter::update(InertialManager* sensors){
