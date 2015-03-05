@@ -9,6 +9,8 @@
 #include "DualErrorParams.h"
 #ifdef STAND_ALONE_MATH
 	#include "micros.h"
+#else
+	#include "util/profile.h"
 #endif
 
 class DualErrorFilter : public OrientationEngine {
@@ -57,7 +59,7 @@ DualErrorFilter::updateStateModel(){
 	//propogate process errors
 	estimateMSE[ATTITUDE] += dt*dt*estimateMSE[RATE];
 	for(int i=0; i<2; i++) estimateMSE[i] += params.systemMSE[i]*dt*dt;
-	
+		
 	attitude.integrate(rate);
 }
 void
@@ -79,18 +81,16 @@ DualErrorFilter::update(InertialManager* sensors){
 	tmp[2] = 0;
 	tmp.normalize();
 	Quaternion accl(tmp, acos(vmag));
-	
 	//calculate adjusted accelerometer MSE
 	float aMSE = params.sensorMSE[params.ACCL]
 				+params.acclErrorFac*fabs(log(tmag));
-	
 	//calculate gains
 	float acclGain = computeGain(ATTITUDE, aMSE);
 	float gyroGain = computeGain(RATE, params.sensorMSE[params.GYRO]);
 	
 	//run model and lerp
-	//rate.lerpWith(gyro, gyroGain);
-	rate = gyro;
+	rate.lerpWith(gyro, gyroGain);
+	//rate = gyro;
 	updateStateModel();	
 	if(attitude.error()) attitude = accl;
 	else 				 attitude.nlerpWith(accl, acclGain);
