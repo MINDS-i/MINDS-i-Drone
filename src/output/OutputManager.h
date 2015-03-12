@@ -120,7 +120,7 @@ void OutputManager::update(OrientationEngine &orientation){
 	impulses[1] = PIDout[1]*LINEAR_SCALE_FACTOR;
 	impulses[2] = desiredState[2]*LINEAR_SCALE_FACTOR;
 	impulses[3] = desiredState[3]*LINEAR_SCALE_FACTOR*4.;
-
+	
 	//run generated LU output calculation code
 	solveOutputs(impulses, outThrottle);
 

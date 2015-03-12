@@ -82,12 +82,10 @@ DualErrorFilter::update(InertialManager* sensors){
 				+params.acclEF *fabs(log(tmag));
 	//calculate gains
 	float acclGain = computeGain(estimateMSE, aMSE);
-	std::cout << "\taG:" << acclGain << "\taEF:" << params.acclEF;
-	std::cout << "\aMSE:" << aMSE << "\test1:" << estimateMSE;
+
 	//run model and lerp
 	rate = gyro;
 	updateStateModel();	
-	std::cout << "\test2:" << estimateMSE << std::endl;
 	if(attitude.error()) attitude = accl;
 	else 				 attitude.nlerpWith(accl, acclGain);
 }

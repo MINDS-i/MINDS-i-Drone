@@ -24,6 +24,7 @@
 #include "input/InertialManager.h"
 #include "input/InertialSensor.h"
 #include "input/MpuSensor.h"
+#include "input/MS5611.h"
 
 #include "math/GreatCircle.h"
 #include "math/Quaternion.h"
