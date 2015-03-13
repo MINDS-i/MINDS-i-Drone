@@ -17,7 +17,12 @@ void setup(){
     baro.calibrate();
 }
 void loop(){
-    Serial.print(baro.getTemp()); Serial.print("\t");
-    Serial.print(baro.getMilliBar()); Serial.print("\t");
+    float temp = baro.getCelsius();
+    float bar  = baro.getMilliBar();
+    float alt  = baro.getAltitude();
+    
+    TEST(temp);
+    TEST(bar);
+    TEST(alt);
     Serial.print("\n");
 }

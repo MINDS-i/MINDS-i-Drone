@@ -3,6 +3,9 @@
 
 #include "Arduino.h"
 
+//take this macro; it might come in handy
+#define TEST(a) Serial.print(#a);Serial.print(": ");Serial.print(a);Serial.print("\t");
+
 #include "APM/Compass.h"
 #include "APM/MegaInterrupts.h"
 #include "APM/MPU.h"

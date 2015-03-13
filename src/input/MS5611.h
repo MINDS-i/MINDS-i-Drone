@@ -61,7 +61,8 @@ public:
     void update();
     float getPascals();
     float getMilliBar();
-    float getTemp(); // returns celcius
+    float getCelsius(); // returns celsius
+    float getAltitude(); // return feet
 };
 void
 MS5611::sendCommand(uint8_t cmd){
@@ -122,14 +123,6 @@ MS5611::calibrate(){
     TCO      = get16from(ADDR_TCO     );
     T_REF    = get16from(ADDR_T_REF   );
     TEMPSENS = get16from(ADDR_TEMPSENS);
-    
-    Serial.print(SENS_T1 ); Serial.print("\t");
-    Serial.print(OFF_T1  ); Serial.print("\t");
-    Serial.print(TCS     ); Serial.print("\t");
-    Serial.print(TCO     ); Serial.print("\t");
-    Serial.print(T_REF   ); Serial.print("\t");
-    Serial.print(TEMPSENS); Serial.print("\t");
-    Serial.print("\n");   
 }
 void 
 MS5611::update(){
@@ -161,13 +154,14 @@ MS5611::calculateP (uint32_t D1){
         P = D1;
         return;
     }
-    int64_t OFF  = (int64_t)OFF_T1  * 65536 + (int64_t)TCO * dT / 128;
-    int64_t SENS = (int64_t)SENS_T1 * 32768 + (int64_t)TCS * dT / 256;
+    int64_t OFF  = ((int64_t)OFF_T1 ) * 65536 + ((int64_t)TCO) * dT / 128;
+    int64_t SENS = ((int64_t)SENS_T1) * 32768 + ((int64_t)TCS) * dT / 256;
     P = (D1 * SENS / 2097152 - OFF) / 32768;
 }
 void     
 MS5611::calculateDT(uint32_t D2){
-    dT = D2 - T_REF * 256;
+    //D2: 8289716 T_REF: 31345    dT: 8260788 297.29
+    dT = D2 - (((int32_t)T_REF) * 256);
 }
 float 
 MS5611::getPascals(){
@@ -179,10 +173,16 @@ MS5611::getMilliBar(){
     return getPascals()/100.f;
 }
 float 
-MS5611::getTemp(){
+MS5611::getCelsius(){
     update();
     int32_t temp = 2000 + ((int64_t) dT * TEMPSENS) / 8388608;
     return ((float) temp)/100.f;
+}
+float
+MS5611::getAltitude(){ // feet
+    float tmp = getPascals()/(101325);
+    float alt = (1-pow(tmp, 0.190284))*145366.45;
+    return alt;
 }
 void 
 MS5611::update(InertialManager& man){
