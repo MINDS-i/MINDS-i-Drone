@@ -5,4 +5,9 @@ union byteConv{
 	float 	 f;
 	uint8_t  bytes[4];
 };
+template<typename CTYPE>
+union convert {
+    CTYPE   data;
+    uint8_t bytes[sizeof(data)];
+};
 #endif

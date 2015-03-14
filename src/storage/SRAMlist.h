@@ -6,12 +6,13 @@
 	Nodes and a free list is necessary for stability
 */
 
-//change this to templated size
-template<typename T>
-struct Node{
-	T data;
-	Node<T> *next;
-};
+namespace{
+	template<typename T>
+	struct Node{
+		T data;
+		Node<T> *next;
+	};
+}
 template<typename T>
 class SRAMlist : public List<T>{
 public:

@@ -1,12 +1,11 @@
 #ifndef EEPROMSUBSYSTEM
 #define EEPROMSUBSYSTEM
+
 #include "Arduino.h"
 #include "avr/io.h"
-
+#include "storage/EEPROMconfig.h"
 #include "storage/queue.h"
 #include "util/byteConv.h"
-
-typedef uint16_t EEaddr;
 
 struct eepromWrite{
 	EEaddr  addr;
@@ -22,8 +21,6 @@ static SimpleQueue<eepromWrite> _eepromWriteQueue(QUEUE_DATA, QUEUE_SIZE);
 
 class eeprom{
 public:
-	static const EEaddr EENULL = 0;
-	static const EEaddr EE_MAX = 1024;
 	static void setup();
 	static void write(EEaddr addr, uint8_t val); //attempts to add to buffer
 	static void safeWrite(EEaddr addr, uint8_t val); //blocks till buff has room
@@ -54,13 +51,13 @@ eeprom::enableInterrupt(){
 }
 void
 eeprom::write(EEaddr addr, uint8_t val){
-	if(addr == eeprom::EENULL || addr >= eeprom::EE_MAX) return;
+	if(addr == EENULL || addr >= EE_MAX) return;
 	eeprom::enableInterrupt();
 	_eepromWriteQueue.push(eepromWrite(addr,val));
 }
 void
 eeprom::safeWrite(EEaddr addr, uint8_t val){
-	if(addr == eeprom::EENULL || addr >= eeprom::EE_MAX) return;
+	if(addr == EENULL || addr >= EE_MAX) return;
 	eeprom::enableInterrupt();
 	while( !_eepromWriteQueue.push(eepromWrite(addr,val)) );
 }
@@ -82,7 +79,7 @@ eeprom::safeToRead(){
 }
 uint8_t
 eeprom::read(EEaddr addr){
-	if(addr == eeprom::EENULL || addr >= eeprom::EE_MAX) return 0;
+	if(addr == EENULL || addr >= EE_MAX) return 0;
 	if( !eeprom::safeToRead() ) return 0; //don't block, just exit
 	EEAR = addr;
 	bitSet(EECR, EERE); //start read; takes 4 cycles
@@ -90,7 +87,7 @@ eeprom::read(EEaddr addr){
 }
 uint8_t
 eeprom::safeRead(EEaddr addr){
-	if(addr == eeprom::EENULL || addr >= eeprom::EE_MAX) return 0;
+	if(addr == EENULL || addr >= EE_MAX) return 0;
 	//wait for chance to Read
 	while( !eeprom::safeToRead() ) eeprom::enableInterrupt();
 	EEAR = addr;

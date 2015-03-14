@@ -1,6 +1,7 @@
 #ifndef AIR_SETTIGS_H
 #define AIR_SETTIGS_H
 
+#include "storage/EEPROMconfig.h"
 #include "storage/Storage.h"
 #include "util/LTATune.h"
 
@@ -9,7 +10,7 @@ These enumerations fill up all 32 settings slots (some are named unused_[alpha])
 To make more settings, one would need to stretch the default number of storage
 records in the passed in storage object
 */
-typedef float setting_t;
+
 namespace AirSettings{	
 	enum Air{
 		INT_PERIOD	=  0,
@@ -84,12 +85,12 @@ class Settings{
 	// keeps track of weather or not storage was initialized
 	// structured and safe retreival of 2 LTATunes from memory
 private:
-	Storage<setting_t> *storage = NULL;
+	Storage<EE_STORAGE_TYPE> *storage = NULL;
 	bool formatChecked = false;
 	bool validFormat = false;
 	bool validCalib  = false;
 public:
-	Settings(Storage<setting_t> *str) : storage(str) {
+	Settings(Storage<EE_STORAGE_TYPE> *str) : storage(str) {
 	}
 	void checkStorageFormat(){
 		if(storage == NULL) return;
@@ -110,7 +111,7 @@ public:
 		}
 		writeCalibrationVersion();
 	}
-	bool attach(int type, setting_t defaul, void (*call)(setting_t)){
+	bool attach(int type, EE_STORAGE_TYPE defaul, void (*call)(EE_STORAGE_TYPE)){
 		if(!formatChecked) checkStorageFormat();
 		if(storage == NULL) return false;
 		uint8_t index = (int)type;
