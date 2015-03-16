@@ -6,7 +6,7 @@ class Vec3;
 class Quaternion{
 private:
 	float w,x,y,z;
-public:	
+public:
 	Quaternion(): w(1.f), x(0.f), y(0.f), z(0.f) {}
 	Quaternion(float W, float X, float Y, float Z):
 				  w(W), x(X), y(Y), z(Z) {}
@@ -20,6 +20,7 @@ public:
 	float		distance(const Quaternion& l) const;
 	Vec3		axis() const;
 	Vec3		getEuler() const;
+	Vec3		getDerivative() const;
 	float		getPitch() const;
 	float		getRoll() const;
 	float		getYaw() const;

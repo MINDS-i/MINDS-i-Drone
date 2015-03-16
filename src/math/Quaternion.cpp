@@ -1,6 +1,6 @@
 #include "Quaternion.h"
 Quaternion::Quaternion(const Vec3& euler){
-	float c1 = cos(euler.x/2.f); //pitch 
+	float c1 = cos(euler.x/2.f); //pitch
 	float s1 = sin(euler.x/2.f);
 	float c3 = cos(euler.y/2.f); //roll
 	float s3 = sin(euler.y/2.f);
@@ -47,6 +47,10 @@ Quaternion::axis() const {
 Vec3
 Quaternion::getEuler() const {
 	return Vec3(getPitch(), getRoll(), getYaw());
+}
+Vec3
+Quaternion::getDerivative() const {
+	return Vec3();
 }
 float
 Quaternion::getPitch() const {
@@ -114,7 +118,7 @@ Quaternion::normalize(){
 	y *= inv;
 	z *= inv;
 }
-float& 
+float&
 Quaternion::operator[] (int index){
 	switch(index){
 		case 0: return w;
@@ -123,36 +127,36 @@ Quaternion::operator[] (int index){
 		case 3: return z;
 	}
 }
-Quaternion  
+Quaternion
 Quaternion::operator ~ (void) const{
 	return this->conjugate();
 }
-void		
+void
 Quaternion::operator*= (float s){
 	w *= s;
 	x *= s;
 	y *= s;
 	z *= s;
 }
-void		
+void
 Quaternion::operator/= (float s){
 	w /= s;
 	x /= s;
 	y /= s;
 	z /= s;
 }
-void		
+void
 Quaternion::operator*= (const Quaternion& r){
 	rotateBy(r);
 }
-void		
+void
 Quaternion::operator+= (const Quaternion& r){
 	w += r.w;
 	x += r.x;
 	y += r.y;
 	z += r.z;
 }
-void		
+void
 Quaternion::operator-= (const Quaternion& r){
 	w -= r.w;
 	x -= r.x;
