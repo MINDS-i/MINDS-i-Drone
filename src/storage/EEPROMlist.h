@@ -5,18 +5,12 @@
 #include "storage/EEPROMconfig.h"
 #include "storage/EEPROMsubsystem.h"
 #include "util/byteConv.h"
-//make sure this uses oldest first
-
-/*
-Change conversion unions over to just good old byte arrays and cast
-
-*/
 
 namespace{
     //node is EEaddr next EEaddr prev EE_LIST_TYPE data
     struct eeNodePtr{
     private:
-        template<typename T> 
+        template<typename T>
         void write(T newData, EEaddr address){
             byte data[sizeof(T)];
             *((T*)data) = newData;
@@ -69,14 +63,14 @@ void runEEListTest(){
     TEST(NODE_SIZE);
     TEST(MAX_NODES);
     Serial.print("\n");
-    
+
     eeNodePtr node(512);
     Waypoint point(1234.f, 4567.f, (uint16_t) 1337);
-        
+
     node.setData(point);
     node.setNext(12);
     node.setPrev(34);
-    
+
     Waypoint ret = node.getData();
     TEST( (node.getNext()).addr );
     TEST( (node.getPrev()).addr );
@@ -155,11 +149,11 @@ bool EEPROMlist::readList(EEaddr start){
                 break;
         }
     }
-    
+
     //check to make sure we found all our end nodes
     if (freelast.addr == 0 || datalast.addr == 0 ||
         freeroot.addr == 0 || dataroot.addr == 0 ) return false;
-    
+
     //traverse both lists to see if the addresses are valid
     uint16_t found = 2; //the two roots don't get counted otherwise
     eeNodePtr cur = freeroot;
@@ -167,7 +161,7 @@ bool EEPROMlist::readList(EEaddr start){
         eeNodePtr next = cur.getNext();
         if(next.getPrev() != cur.addr) return false;
         cur = next;
-        found++;   
+        found++;
         if(found > MAX_NODES) return false;
     }
     cur = dataroot;
@@ -175,10 +169,10 @@ bool EEPROMlist::readList(EEaddr start){
         eeNodePtr next = cur.getNext();
         if(next.getPrev() != cur.addr) return false;
         cur = next;
-        found++;   
+        found++;
         if(found > MAX_NODES) return false;
     }
-    
+
     //did we find the right number?
     return (found == MAX_NODES);
 }
