@@ -38,6 +38,10 @@ public:
 	float getRollRate();
 	float getPitchRate();
 	float getYawRate();
+	float gain;
+	float getAcclGain(){
+		return gain;
+	}
 	void  setParams(DualErrorParams p){ params = p; }
 };
 float
@@ -55,8 +59,8 @@ DualErrorFilter::updateStateModel(){
 
 	//propogate process errors
 	estimateMSE += dt*dt*params.sysMSE;
-		
-	attitude.integrate(rate);
+
+	attitude.integrate(rate*dt);
 }
 void
 DualErrorFilter::update(InertialManager* sensors){
@@ -64,12 +68,12 @@ DualErrorFilter::update(InertialManager* sensors){
 	float rawGyro[3], rawAccl[3];
 	sensors->getRotRates(rawGyro[0],rawGyro[1],rawGyro[2]);
 	sensors->getLinAccel(rawAccl[0],rawAccl[1],rawAccl[2]);
-	
+
 	//make gyro vector
-	Vec3 gyro = Vec3(rawGyro[0], 
+	Vec3 gyro = Vec3(rawGyro[0],
 					 rawGyro[1],
 					 rawGyro[2]);
-	
+
 	//make accelerometer quaternion
 	Vec3 tmp(-rawAccl[1], rawAccl[0], rawAccl[2]);
 	float tmag = tmp.length();
@@ -82,10 +86,11 @@ DualErrorFilter::update(InertialManager* sensors){
 				+params.acclEF *fabs(log(tmag));
 	//calculate gains
 	float acclGain = computeGain(estimateMSE, aMSE);
+	gain = acclGain;
 
 	//run model and lerp
 	rate = gyro;
-	updateStateModel();	
+	updateStateModel();
 	if(attitude.error()) attitude = accl;
 	else 				 attitude.nlerpWith(accl, acclGain);
 }
