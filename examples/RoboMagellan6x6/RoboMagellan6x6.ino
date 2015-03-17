@@ -100,6 +100,9 @@ void setupSettings(){
 	settings.attach( STR_CENTER	, 90   , callback<int   , &steerCenter> );
 }
 
+inline float MPHtoRPM(float mph){ return (mph*MPHvRPM)/tireDiameter; }
+inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
+
 void setup() {
 	setupSettings();
 
@@ -120,7 +123,9 @@ void setup() {
 	calibrateGyro(); //this also takes one second
 
 	setupAPM2radio();
-	encoder::begin(EncoderPin[0], EncoderPin[1]);
+	#if useEncoder
+		encoder::begin(EncoderPin[0], EncoderPin[1]);
+	#endif
 	manager.requestResync();
 	uTime = millis();
 }
@@ -306,7 +311,8 @@ void readAccelerometer(){
 }
 
 void reportLocation(){
-	float voltage = float(analogRead(67)/1024.l*5.l*10.1l);
+	float voltage  = float(analogRead(67)/1024.l*5.l*10.1f);
+	float amperage = float(analogRead(66)/1024.l*5.l*17.0f);
 	manager.sendTelem(Protocol::telemetryType(LATITUDE),  location.degLatitude());
 	manager.sendTelem(Protocol::telemetryType(LONGITUDE), location.degLongitude());
 	manager.sendTelem(Protocol::telemetryType(HEADING),   trueHeading);
@@ -333,7 +339,7 @@ void output(float mph, uint8_t steer){
 	if(abs(mph)<0.5f){
 		cruise.stop();
 	} else {
-		setMPH(mph);
+		cruise.set(MPHtoRPM(mph));
 	}
 	float outputval = cruise.calc(encoder::getRPM());
 	servo[0].write(90+outputval);
@@ -343,9 +349,3 @@ void output(float mph, uint8_t steer){
 	servo[1].write(steer);
 	servo[2].write(180-steer);
 }
-
-void setMPH(float mph){
-	cruise.set(MPHtoRPM(mph));
-}
-inline float MPHtoRPM(float mph){ return (mph*MPHvRPM)/tireDiameter; }
-inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
