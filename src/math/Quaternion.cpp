@@ -13,9 +13,6 @@ Quaternion::Quaternion(const Vec3& euler){
 	y =s1*c2*c3 + c1*s2*s3;
 	z =c1*s2*c3 - s1*c2*s3;
 }
-/*Quaternion::Quaternion(Vec3 reference, const Vec3& signal){
-	//is this worth it?
-}*/
 Quaternion::Quaternion(const Vec3& axis, float angle){
 	float s = sin(angle/2.f) / axis.length(); // built in normalization
 	w = cos(angle/2.f);
@@ -24,7 +21,7 @@ Quaternion::Quaternion(const Vec3& axis, float angle){
 	z = axis.z * s;
 }
 Quaternion
-Quaternion::conjugate() const {
+Quaternion::inverse() const {
 	return Quaternion(w, -x, -y, -z);
 }
 float
@@ -38,31 +35,47 @@ Quaternion::length() const {
 float
 Quaternion::distance(const Quaternion& l) const {
 	float d = dot(l);
+	float arg = 2.f*d*d-1.f;
+	if(fabs(arg)>=0.999999f) return 0;
 	return acos(2.f*d*d-1.f);
 }
 Vec3
 Quaternion::axis() const {
 	return Vec3(x,y,z);
 }
+/**
+ * The derivative from this to "l" if the time passed was one unit
+ * presented in inertial rotations (gyro angles)
+ * The angle between (*this) and l must be small
+ */
 Vec3
-Quaternion::getEuler() const {
-	return Vec3(getPitch(), getRoll(), getYaw());
+Quaternion::getDerivative(Quaternion l) const {
+	Quaternion der = l;
+	der.rotateBy(~(*this));
+	Vec3 rate(der[1],der[2],der[3]);
+	rate *= 2;
+	return rate;
 }
 Vec3
-Quaternion::getDerivative() const {
-	return Vec3();
+Quaternion::getDerivative(Quaternion l, float dt) const {
+	Quaternion der = l;
+	der.nlerpWith((*this), (1.f-dt));
+	der.rotateBy(~(*this));
+	Vec3 rate(der[1],der[2],der[3]);
+	rate *= 2;
+	return rate;
 }
 float
 Quaternion::getPitch() const {
-	return asin  (2 * ((w*y) - (z*x)));
+	return asin (2 * ((w*y) - (z*x)));
 }
 float
 Quaternion::getRoll() const {
-	return atan2 (2 * ((w*x) + (y*z)), 1 - 2 * ((x*x) + (y*y)));
+	return asin (2 * ((y*z) + (x*w)));
 }
 float
 Quaternion::getYaw() const {
-	return atan2 (2 * ((w*z) + (x*y)), 1 - 2 * ((y*y) + (z*z)));
+	return atan2 (2 * ((z*w) - (x*y)), 1 - 2 * ((z*z) + (y*y)));
 }
 bool
 Quaternion::error() const {
@@ -79,14 +92,15 @@ Quaternion::nlerpWith(const Quaternion& l, float percentNew){
 }
 void
 Quaternion::rotateBy(const Quaternion& l){
+	//the hamilton product
 	float W = w;
 	float X = x;
 	float Y = y;
 	float Z = z;
 	w = W*l.w - X*l.x - Y*l.y - Z*l.z;
-	x = W*l.x + X*l.w - Y*l.z - Z*l.y;
-	y = W*l.y + X*l.z + Y*l.w - Z*l.x;
-	z = W*l.z - X*l.y + Y*l.x - Z*l.w;
+	x = W*l.x + X*l.w + Y*l.z - Z*l.y;
+	y = W*l.y - X*l.z + Y*l.w + Z*l.x;
+	z = W*l.z + X*l.y - Y*l.x + Z*l.w;
 }
 void
 Quaternion::integrate(const Vec3& rotVel){
@@ -98,17 +112,17 @@ Quaternion::integrate(const Vec3& rotVel){
 			           (rate[1]),
 			           (rate[2]) );
 	delta/=2;
-	delta.rotateBy(attitude); //gotta have the premultiply
-	attitude = delta;
+	delta.rotateBy(attitude); //Must be premultiply
+	attitude += delta;
 	*/
 	float W = w/2;
 	float X = x/2;
 	float Y = y/2;
 	float Z = z/2;
-	w = rotVel.x*X - rotVel.y*Y - rotVel.z*Z;
-	x = rotVel.x*W - rotVel.y*Z - rotVel.z*Y;
-	y = rotVel.x*Z + rotVel.y*W - rotVel.z*X;
-	z = rotVel.x*Y + rotVel.y*X - rotVel.z*W;
+	w += -X*rotVel.x - Y*rotVel.y - Z*rotVel.z;
+	x +=  W*rotVel.x + Y*rotVel.z - Z*rotVel.y;
+	y +=  W*rotVel.y - X*rotVel.z + Z*rotVel.x;
+	z +=  W*rotVel.z + X*rotVel.y - Y*rotVel.x;
 }
 void
 Quaternion::normalize(){
@@ -129,7 +143,7 @@ Quaternion::operator[] (int index){
 }
 Quaternion
 Quaternion::operator ~ (void) const{
-	return this->conjugate();
+	return this->inverse();
 }
 void
 Quaternion::operator*= (float s){

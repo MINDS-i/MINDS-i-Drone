@@ -14,13 +14,13 @@ public:
 	//Quaternion(const Vec3& reference, const Vec3& signal);
 	Quaternion(const Vec3& axis, float angle);
 	//const methods
-	Quaternion	conjugate() const;
+	Quaternion	inverse() const;
 	float		dot(const Quaternion& l) const;
 	float		length() const;
 	float		distance(const Quaternion& l) const;
 	Vec3		axis() const;
-	Vec3		getEuler() const;
-	Vec3		getDerivative() const;
+	Vec3		getDerivative(Quaternion l) const;
+	Vec3		getDerivative(Quaternion l, float dt) const;
 	float		getPitch() const;
 	float		getRoll() const;
 	float		getYaw() const;
