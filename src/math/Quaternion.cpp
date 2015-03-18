@@ -21,6 +21,12 @@ Quaternion::Quaternion(const Vec3& axis, float angle){
 	z = axis.z * s;
 }
 Quaternion
+Quaternion::fromAccelerometer(Vec3 accl){
+	Vec3 tmp(-accl[1], accl[0], 0);
+	tmp.normalize();
+	return Quaternion(tmp, acos(accl[2]));
+}
+Quaternion
 Quaternion::inverse() const {
 	return Quaternion(w, -x, -y, -z);
 }
