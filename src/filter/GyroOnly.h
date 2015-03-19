@@ -58,6 +58,7 @@ GyroOnly::update(InertialManager* sensors){
 	rate = gyro;
 	updateStateModel();
 	if(attitude.error()) attitude = Quaternion();
+	attitude.normalize();
 }
 void
 GyroOnly::updateRate(Vec3 z, float rateMSE){

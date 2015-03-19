@@ -14,8 +14,10 @@
 #include "comms/NMEA.h"
 #include "comms/Protocol.h"
 
+#include "filter/AcclOnly.h"
 #include "filter/DualErrorFilter.h"
 #include "filter/DualErrorParams.h"
+#include "filter/GyroOnly.h"
 #include "filter/OrientationEngine.h"
 
 #include "input/altIMU/L3GD20H.h"

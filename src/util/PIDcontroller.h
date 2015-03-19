@@ -6,9 +6,9 @@ class PIDcontroller{
 private:
 	PIDparameters	param;
 	float 			setPoint;
-	uint32_t		time;
 	float			lastError;
 	boolean			stopped;
+	uint32_t		time;
 public:
 	PIDcontroller(){}
 	PIDcontroller(PIDparameters pid): param(pid) {}
