@@ -31,18 +31,18 @@ public:
 
 	void update();
 	void update(OrientationEngine &orientation);
-	
+
 	void start();
 	void calibrate();
 	void stop();
 	void print(HardwareSerial* output);
 
-	void updateRotRates(float dx, float dy, float dz);//rad per sec
+	void updateRotRates(float dx, float dy, float dz);//rad per millisecond
 	void updateLinAccel(float  x, float  y, float  z);//G's
 	void updateMagField(float  x, float  y, float  z);//Gauss
 	void updatePressure(float  p);					  //Pascals
-	
-	void getRotRates(float& dx, float& dy, float& dz);//rad per sec
+
+	void getRotRates(float& dx, float& dy, float& dz);//rad per millisecond
 	void getLinAccel(float&  x, float&  y, float&  z);//G's
 	void getMagField(float&  x, float&  y, float&  z);//Gauss
 	void getPressure(float&  p);					  //Pascals
