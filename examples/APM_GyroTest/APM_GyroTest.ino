@@ -30,31 +30,11 @@ void setup() {
 
 void loop(){
     Quaternion attitude = orientation.getAttitude();
-
-    uint8_t oldSREG = SREG;
-    cli();
-    uint32_t p = -micros();
     float pitch = attitude.getPitch();
-    float roll  = attitude.getRoll();
-    p += micros();
-
-    uint32_t q = -micros();
-    Vec3 ref(0,0,-1);
-    ref.rotateBy(attitude);
-    float vPitch = asin(ref[0]);
-    float vRoll  = asin(-ref[1]);
-    q += micros();
-    SREG = oldSREG;
-
-    Serial.print(p);
-    Serial.print("\t");
-    Serial.print(q);
-    Serial.print("\t");
     Serial.print(pitch);
-    Serial.print(roll);
-    Serial.print(vPitch);
+    Serial.print("\t");
+    Serial.print(integral);
     Serial.print("\n");
-
 
     integral += I*pitch;
     integral = constrain(integral, -90, 90);
