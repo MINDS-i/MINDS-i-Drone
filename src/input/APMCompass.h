@@ -11,12 +11,13 @@ protected:
 	LTATune	LTA;
 public:
 	APMCompass(){}
-	void init();
-	void stop();
-	bool status();
-	void calibrate();
-	void update(InertialManager& man);
-	void tune(LTATune t);
+	void  init();
+	void  stop();
+	bool  status();
+	void  calibrate();
+	void  update(InertialManager& man);
+	void  tune(LTATune t);
+	float getAzimuth();
 };
 void
 APMCompass::tune(LTATune t){
@@ -25,19 +26,19 @@ APMCompass::tune(LTATune t){
 void APMCompass::init(){
 	beginCompass();
 }
-void 
+void
 APMCompass::stop(){
-	
+
 }
-bool 
+bool
 APMCompass::status(){
 	return true;
 }
 void
 APMCompass::calibrate(){
-	
+
 }
-void 
+void
 APMCompass::update(InertialManager& man){
 	int m[3];
 	rawCompass(&m[0], &m[1], &m[2]);
@@ -48,6 +49,18 @@ APMCompass::update(InertialManager& man){
 		M[i] *= LTA.values.scalar[i];
 	}
 	man.updateMagField(M[0],M[1],M[2]);
+}
+float
+APMCompass::getAzimuth(){
+	int m[3];
+	rawCompass(&m[0], &m[1], &m[2]);
+	float M[3];
+	for(int i=0; i<3; i++){
+		M[i]  = m[i];
+		M[i] += LTA.values.shift[i];
+		M[i] *= LTA.values.scalar[i];
+	}
+	return atan2(M[0], M[1]);
 }
 
 #endif
