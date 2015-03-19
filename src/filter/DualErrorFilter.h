@@ -70,9 +70,9 @@ DualErrorFilter::update(InertialManager* sensors){
 	sensors->getLinAccel(rawAccl[0],rawAccl[1],rawAccl[2]);
 
 	//make gyro vector
-	Vec3 gyro = Vec3(rawGyro[0],
-					 rawGyro[1],
-					 rawGyro[2]);
+	Vec3 gyro = Vec3(-rawGyro[0],
+					 -rawGyro[1],
+					  rawGyro[2]);
 
 	//make accelerometer quaternion
 	Vec3 tmp(-rawAccl[1], rawAccl[0], rawAccl[2]);

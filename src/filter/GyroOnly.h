@@ -53,7 +53,7 @@ GyroOnly::update(InertialManager* sensors){
 	//make gyro vector
 	Vec3 gyro = Vec3(-rawGyro[0],
 					 -rawGyro[1],
-					 rawGyro[2]);
+					  rawGyro[2]);
 
 	rate = gyro;
 	updateStateModel();
