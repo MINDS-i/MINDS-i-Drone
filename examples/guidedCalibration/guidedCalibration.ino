@@ -16,7 +16,7 @@ show if the sensor is ligned up with an axis; just \n\
 hold it on any axis long enough to get a good reading, \n\
 and then move to the rest \n\n\
 Tune now (yes) or skip straight to streaming sensor data (no)?";
-int facingDir;
+int facingDir, isShaking;
 float accelMax[3][2];
 float magVert[3][2];
 int state = 0;
@@ -72,6 +72,9 @@ public:
 	float getValue(){
 		return value;
 	}
+	float isShaking(){
+		return (abs(der)<ZPVAL);
+	}
 };
 datastream accl[3];
 datastream  mag[3];
@@ -87,7 +90,7 @@ void loop(){
 	static uint32_t time = millis();
 	if( millis() > time){
 		time += UPDATE_DELAY;
-		
+
 		switch(state){
 			case 0:
 				Serial.println(startMessage);
@@ -126,8 +129,8 @@ void loop(){
 				break;
 			default:
 				for(;;);
-		}		
-		
+		}
+
 		Serial.flush();
 	}
 }
@@ -142,7 +145,7 @@ void burnInput(){
 
 boolean getTrueFalseResponse(){
 	Serial.print("\nEnter response [y]es, [n]o: ");
-	while(true){	
+	while(true){
 		if(Serial.available()){
 			char input = Serial.read();
 			burnInput(); //extra should be ignored
@@ -162,15 +165,15 @@ boolean getTrueFalseResponse(){
 	}
 }
 
-void updateSensorData(){	
+void updateSensorData(){
 	sensors.update();
-	
+
 	float val[3];
 	sensors.getLinAccel(val[0], val[1], val[2]);
 	for(int i=0; i<3; i++){
 		accl[i].update(val[i]);
 	}
-	
+
 	sensors.getMagField(val[0], val[1], val[2]);
 	for(int i=0; i<3; i++){
 		mag[i].update(val[i]);
@@ -178,12 +181,14 @@ void updateSensorData(){
 }
 
 void tuneAccelerometer(){
-	//grab good values		
+	//grab good values
 	facingDir = -1;
+	isShaking = -1;
 	for(int i=0; i<3; i++){
 		if (accl[i].zero() && accl[(i+1)%3].zero()) {
 			int idx = (i+2)%3;
 			facingDir = idx*2 + (accl[idx].getValue() > 0);
+			isShaking = !(accl[idx].isShaking());
 			if(accl[idx].stable()){
 				float prospect = accl[idx].getAverage();
 				accelMax[idx][(prospect>0)] = prospect;
@@ -202,12 +207,14 @@ boolean accelTuned(){
 void printAccelerometerStatus(){
 	for(int i=0; i<6; i++){
 		boolean facing = (facingDir==i);
-		if(facing){
-			Serial.print('*');
-		} else {
-			Serial.print(' ');
+		char delim = ' ';
+		if(facing && isShaking){
+			delim = '!';
+		} else if (facing){
+			delim = '*';
 		}
-		
+		Serial.print(delim);
+
 		Serial.print(names[i]);
 		Serial.print(" [");
 		if( accelMax[i/2][i%2] !=0){
@@ -216,12 +223,8 @@ void printAccelerometerStatus(){
 			Serial.print( "nan");
 		}
 		Serial.print("]");
-		
-		if(facing){
-			Serial.print('*');
-		} else {
-			Serial.print(' ');
-		}
+
+		Serial.print(delim);
 	}
 	Serial.print("\n");
 }
@@ -229,11 +232,11 @@ void printAccelerometerStatus(){
 void printRawVectors(){
 	for(int i=0; i<3; i++){
 		Serial.print(accl[i].getValue());
-		Serial.print("\t");	
+		Serial.print("\t");
 	}
 	for(int i=0; i<3; i++){
 		Serial.print(mag[i].getValue());
-		Serial.print("\t");	
+		Serial.print("\t");
 	}
 	Serial.print("\n");
 }

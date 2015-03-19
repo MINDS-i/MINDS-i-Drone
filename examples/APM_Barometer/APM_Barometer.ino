@@ -11,7 +11,7 @@ MS5611 baro;
 
 void setup(){
     Serial.begin(9600);
-    
+
     baro.init();
     delay(100);
     baro.calibrate();
@@ -20,9 +20,14 @@ void loop(){
     float temp = baro.getCelsius();
     float bar  = baro.getMilliBar();
     float alt  = baro.getAltitude();
-    
-    TEST(temp);
-    TEST(bar);
-    TEST(alt);
-    Serial.print("\n");
+
+    Serial.print("temp: ");
+    Serial.print(temp);
+    Serial.print("\t");
+    Serial.print("mbar: ");
+    Serial.print(bar);
+    Serial.print("\t");
+    Serial.print("alt: ");
+    Serial.print(alt);
+    Serial.println();
 }

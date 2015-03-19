@@ -2,10 +2,8 @@
 #include "SPI.h"
 #include "Servo.h"
 #include "DroneLibs.h"
-/*
-Example to just send telemetry to the dashboard
-*/
-const int UPDATE_INTERVAL = 1000; //ms between transmits
+
+const int UPDATE_INTERVAL = 100; //ms between transmits
 HardwareSerial *commSerial  = &Serial;
 Storage<float> *storage = eeStorage::getInstance();
 CommManager     manager(commSerial, storage);
@@ -19,13 +17,13 @@ void setup(){
     commSerial->begin(Protocol::BAUD_RATE);
     InitMPU();
     pinMode(40, OUTPUT); digitalWrite(40, HIGH); //SPI select pin
-    
+
     //configure GPS
     sendGPSMessage(0x06, 0x01, 0x0003, GPRMC_On);
     sendGPSMessage(0x06, 0x17, 0x0004, CFG_NMEA);
     sendGPSMessage(0x06, 0x00, 0x0014, CFG_PRT);
     sendGPSMessage(0x06, 0x24, 0x0024, Pedestrian_Mode);
-    
+
     manager.requestResync();
 }
 void loop(){
@@ -52,12 +50,13 @@ void updateGPS(){
     }
 }
 void reportTelemetry(){
+    using namespace Protocol;
     float voltage = float(analogRead(67)/1024.l*5.l*10.1l);
-    manager.sendTelem(Protocol::telemetryType(LATITUDE),  location.degLatitude());
-    manager.sendTelem(Protocol::telemetryType(LONGITUDE), location.degLongitude());
-    manager.sendTelem(Protocol::telemetryType(HEADING),   nmea.getCourse());
-    manager.sendTelem(Protocol::telemetryType(PITCH),     pitch.get()*180/PI);
-    manager.sendTelem(Protocol::telemetryType(ROLL),      roll.get()*180/PI);
-    manager.sendTelem(Protocol::telemetryType(SPEED),     nmea.getGroundSpeed());
-    manager.sendTelem(Protocol::telemetryType(VOLTAGE),   voltage);
+    manager.sendTelem(telemetryType(LATITUDE),  location.degLatitude());
+    manager.sendTelem(telemetryType(LONGITUDE), location.degLongitude());
+    manager.sendTelem(telemetryType(HEADING),   nmea.getCourse());
+    manager.sendTelem(telemetryType(PITCH),     pitch.get()*180/PI);
+    manager.sendTelem(telemetryType(ROLL),      roll.get()*180/PI);
+    manager.sendTelem(telemetryType(SPEED),     nmea.getGroundSpeed());
+    manager.sendTelem(telemetryType(VOLTAGE),   voltage);
 }

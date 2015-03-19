@@ -12,7 +12,6 @@ GyroOnly        orientation;
 
 const float I = 4.0f;
 float integral;
-
 Servo output;
 
 void isrCallback(){
