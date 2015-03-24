@@ -12,6 +12,7 @@ public:
 	virtual uint16_t size();
 	virtual uint16_t maxSize();
 	virtual bool add(uint16_t index, T item);
+	virtual bool add(T item);
 	virtual bool pushTop(T item);
 	virtual bool pushBottom(T item);
 	virtual bool set(uint16_t index, T item);
