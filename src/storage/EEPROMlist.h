@@ -61,28 +61,6 @@ namespace{
     const EEaddr FREE_TERM = 0x0000; //loose end address value of free list
     const EEaddr DATA_TERM = 0xffff; //loose end address value of data list
 }
-void runEEListTest(){
-    TEST(EE_LIST_START);
-    TEST(EE_LIST_LENGTH);
-    TEST(NODE_SIZE);
-    TEST(MAX_NODES);
-    Serial.print("\n");
-
-    eeNodePtr node(512);
-    Waypoint point(1234.f, 4567.f, (uint16_t) 1337);
-
-    node.setData(point);
-    node.setNext(12);
-    node.setPrev(34);
-
-    Waypoint ret = node.getData();
-    TEST( (node.getNext()).addr );
-    TEST( (node.getPrev()).addr );
-    TEST( ret.degLatitude()     );
-    TEST( ret.degLongitude()    );
-    TEST( ret.getExtra()        );
-    Serial.print("\n");
-}
 class EEPROMlist : public List<EE_LIST_TYPE>{
     /**
      * doubly linked list in arduino EEprom
@@ -119,66 +97,107 @@ private:
     void      pushFree(eeNodePtr eeNodePtr);
     eeNodePtr popFree();
     eeNodePtr getNode(uint16_t index);
+    friend void runEEListTest();
 };
 EEPROMlist* EEPROMlist::m_instance = NULL;
 EEPROMlist::EEPROMlist(): curSize(0) {
-    if(!readList()) constructList();
+    bool foundList = readList();
+    if(!foundList) {
+        Serial.println("constructing a new list; was");
+        constructList();
+    } else {
+        Serial.println("found an existing list");
+    }
 }
 /**
  * try and deduce the roots af lasts of free and data lists
  * return true if every node is accounted for
  * return false if a valid list could not be salvaged
  */
+#define FAIL(a) {Serial.print("\nERROR:>"); Serial.println(a); return false; }
 bool EEPROMlist::readList(){
+    dataRoot.addr = 0;
+    dataLast.addr = 0;
+    freeRoot.addr = 0;
+    freeLast.addr = 0;
+    
+    //search for end nodes
     for(int i=0; i<MAX_NODES; i++){
         eeNodePtr node(EE_LIST_START + i*NODE_SIZE);
         switch(node.getNext().addr){
             case FREE_TERM:
-                if(freeLast.addr != 0) return false;
+                if(freeLast.addr != 0) FAIL("Repeat freeLast Node");
                 freeLast = node;
                 break;
             case DATA_TERM:
-                if(dataLast.addr != 0) return false;
+                if(dataLast.addr != 0) FAIL("Repeat dataLast Node");
                 dataLast = node;
                 break;
         }
         switch(node.getPrev().addr){
             case FREE_TERM:
-                if(freeRoot.addr != 0) return false;
+                if(freeRoot.addr != 0) FAIL("Repeat freeRoot Node");
                 freeRoot = node;
                 break;
             case DATA_TERM:
-                if(dataRoot.addr != 0) return false;
+                if(dataRoot.addr != 0) FAIL("Repeat dataRoot Node");
                 dataRoot = node;
                 break;
         }
     }
 
-    //check to make sure we found all our end nodes
-    if (freeLast.addr == 0 || dataLast.addr == 0 ||
-        freeRoot.addr == 0 || dataRoot.addr == 0 ) return false;
-
+    //check data end nodes
+    if(dataRoot.addr == 0 && dataLast.addr == 0){ 
+        //data list was empty
+        dataRoot.addr = DATA_TERM;
+        dataLast.addr = DATA_TERM;
+    } else if (dataRoot.addr == 0 || dataLast.addr == 0) { 
+        //only one endpoint found; bad list
+        FAIL("Odd number of data Endpoints");
+    }
+    
+    //check free end nodes
+    if(freeRoot.addr == 0 && freeLast.addr == 0){ 
+        //free list was empty
+        freeRoot.addr = FREE_TERM;
+        freeLast.addr = FREE_TERM;
+    } else if (freeRoot.addr == 0 || freeLast.addr == 0) { 
+        //only one endpoint found; bad list
+        FAIL("Odd number of free Endpoints");
+    }
+    
     //traverse both lists to see if the addresses are valid
-    uint16_t found = 2; //the two roots don't get counted otherwise
+    uint16_t found = 0;
+    
     eeNodePtr cur = freeRoot;
+    if(freeRoot.addr != FREE_TERM) found++; //first node not counted below
     while (cur.addr != freeLast.addr) {
         eeNodePtr next = cur.getNext();
-        if(next.getPrev().addr != cur.addr) return false;
+        if(next.getPrev().addr != cur.addr) FAIL("Broken freelist Chain");
         cur = next;
         found++;
-        if(found > MAX_NODES) return false;
+        if(found > MAX_NODES) FAIL("Chain too long (free)");
     }
+    
     cur = dataRoot;
+    if(dataRoot.addr != DATA_TERM) {
+        found++; //first node not counted below
+        curSize++;
+    }
     while (cur.addr != dataLast.addr) {
         eeNodePtr next = cur.getNext();
-        if(next.getPrev().addr != cur.addr) return false;
+        if(next.getPrev().addr != cur.addr) FAIL("Broken dataList Chain");
         cur = next;
         found++;
-        if(found > MAX_NODES) return false;
+        curSize++;
+        if(found > MAX_NODES) FAIL("Chain too long (data)");
+    }
+    
+    if(found < MAX_NODES){
+        FAIL("Chain too short");
     }
 
-    //did we find the right number?
-    return (found == MAX_NODES);
+    return true;
 }
 /**
  * Construct a brand new list, 100% free
@@ -192,7 +211,7 @@ void EEPROMlist::constructList(){
 
     eeNodePtr here = freeRoot;
     eeNodePtr prev(FREE_TERM);
-    for (int i = 0; i < MAX_NODES-1; i++){
+    for (int i = 0; i < MAX_NODES; i++){
         eeNodePtr next = eeNodePtr(here.addr+NODE_SIZE);
         here.setNext(next);
         here.setPrev(prev);
@@ -206,20 +225,36 @@ void EEPROMlist::constructList(){
 void EEPROMlist::pushFree(eeNodePtr node){
     node.setNext(freeRoot);
     node.setPrev(FREE_TERM);
-    freeRoot.setPrev(node);
+    if (freeRoot.addr != FREE_TERM) freeRoot.setPrev(node);
+    
     freeRoot = node;
+    if (freeLast.addr == FREE_TERM) freeLast = node;
 }
 eeNodePtr EEPROMlist::popFree(){
-    eeNodePtr freed = freeRoot;
-    freeRoot = freeRoot.getNext();
-    freeRoot.setPrev(FREE_TERM);
+    if(freeLast.addr == FREE_TERM) return eeNodePtr(EENULL);    
+    
+    eeNodePtr freed = freeLast;
+    if(freeLast.addr == freeRoot.addr) {
+        freeLast.addr = FREE_TERM;
+        freeRoot.addr = FREE_TERM;
+    } else {
+        freeLast = freeLast.getPrev();
+        freeLast.setNext(FREE_TERM);    
+    }
     return freed;
 } inline
 eeNodePtr EEPROMlist::getNode(uint16_t index){
-    //use the previous chain if that is shorter
-    if(index > curSize) return false;
-    eeNodePtr cur = dataRoot;
-    for(int i=0; i<index; i++) cur = cur.getNext();
+    if(index > curSize) return eeNodePtr(EENULL);
+    
+    eeNodePtr cur;
+    if( index <= curSize/2 ){
+        cur = dataRoot;
+        for(int i=0; i<index; i++) cur = cur.getNext();
+    } else {
+        cur = dataLast;
+        for(int i=0; i<(curSize-index-1); i++) cur = cur.getPrev();
+    }
+    
     return cur;
 }
 //-- public from here on --//
@@ -249,35 +284,6 @@ bool EEPROMlist::add(uint16_t index, EE_LIST_TYPE item){
 }
 bool EEPROMlist::add(EE_LIST_TYPE item){
     return pushTop(item);
-}
-bool EEPROMlist::pushTop(EE_LIST_TYPE item){
-    if(curSize >= MAX_NODES) return false;
-
-    eeNodePtr newNode = popFree();
-    newNode.setNext(dataRoot);
-    newNode.setPrev(DATA_TERM);
-    newNode.setData(item);
-    dataRoot.setPrev(newNode);
-    dataRoot = newNode;
-
-    if(curSize == 0) dataLast = newNode;
-    curSize++;
-
-    return true;
-}
-bool EEPROMlist::pushBottom(EE_LIST_TYPE item){
-    if(curSize >= MAX_NODES) return false;
-
-    eeNodePtr newNode = popFree();
-    newNode.setData(item);
-    newNode.setPrev(dataLast);
-    newNode.setNext(DATA_TERM);
-    if(curSize == 0) dataRoot = newNode;
-    else dataLast.setNext(newNode);
-    dataLast = newNode;
-    curSize++;
-
-    return true;
 }
 bool EEPROMlist::set(uint16_t index, EE_LIST_TYPE item){
     if(index >= curSize || index < 0) return false;
@@ -310,12 +316,46 @@ EE_LIST_TYPE EEPROMlist::remove(uint16_t index){
 
     return data;
 }
+bool EEPROMlist::pushTop(EE_LIST_TYPE item){
+    if(curSize >= MAX_NODES) return false;
+
+    eeNodePtr newNode = popFree();
+    newNode.setNext(dataRoot);
+    newNode.setPrev(DATA_TERM);
+    newNode.setData(item);
+    if(dataRoot.addr != DATA_TERM) dataRoot.setPrev(newNode);
+    dataRoot = newNode;
+
+    if(curSize == 0) dataLast = dataRoot;
+    curSize++;
+
+    return true;
+}
+bool EEPROMlist::pushBottom(EE_LIST_TYPE item){
+    if(curSize >= MAX_NODES) return false;
+
+    eeNodePtr newNode = popFree();
+    newNode.setData(item);
+    newNode.setPrev(dataLast);
+    newNode.setNext(DATA_TERM);
+    if(curSize == 0) dataRoot = newNode;
+    else dataLast.setNext(newNode);
+    dataLast = newNode;
+    curSize++;
+
+    return true;
+}
 EE_LIST_TYPE EEPROMlist::popTop(){
     if(curSize <= 0) return EE_LIST_TYPE();
 
     eeNodePtr del = dataRoot;
-    dataRoot = dataRoot.getNext();
-    dataRoot.setPrev(DATA_TERM);
+    if(curSize > 1){
+        dataRoot = dataRoot.getNext();
+        dataRoot.setPrev(DATA_TERM);
+    } else {
+        dataRoot.addr = DATA_TERM;
+        dataLast.addr = DATA_TERM;
+    }
     EE_LIST_TYPE data = del.getData();
     curSize--;
     pushFree(del);
@@ -326,8 +366,13 @@ EE_LIST_TYPE EEPROMlist::popBottom(){
     if(curSize <= 0) return EE_LIST_TYPE();
 
     eeNodePtr del = dataLast;
-    dataLast = dataLast.getPrev();
-    dataLast.setNext(DATA_TERM);
+    if(curSize != 1) { //if this is not the last element
+        dataLast = dataLast.getPrev();
+        dataLast.setNext(DATA_TERM);
+    } else {
+        dataRoot.addr = DATA_TERM;
+        dataLast.addr = DATA_TERM;
+    }
     EE_LIST_TYPE data = del.getData();
     curSize--;
     pushFree(del);
@@ -345,5 +390,33 @@ void EEPROMlist::clear(){
     dataRoot = DATA_TERM;
     dataLast = DATA_TERM;
     curSize = 0;
+}
+void runEEListTest(){
+    EEPROMlist* list = (EEPROMlist::getInstance());
+    
+    TEST(EE_LIST_START);
+    TEST(EE_LIST_LENGTH);
+    TEST(NODE_SIZE);
+    TEST(MAX_NODES);
+    Serial.print("\n");
+    TEST(list->curSize);
+    Serial.print("\n");
+    
+
+    eeNodePtr here = eeNodePtr(EE_LIST_START);
+    for (int i = 0; i < MAX_NODES; i++){
+        uint16_t This = here.addr;
+        uint16_t Next = here.getNext().addr;
+        uint16_t Prev = here.getPrev().addr;
+        TEST(This);
+        TEST(Next);
+        TEST(Prev);
+        if(This == list->freeLast.addr) Serial.print(" <- Free End");
+        if(This == list->freeRoot.addr) Serial.print(" <- Free Start");
+        if(This == list->dataLast.addr) Serial.print(" <- Data End");
+        if(This == list->dataRoot.addr) Serial.print(" <- Data Start");
+        Serial.print("\n");
+        here = eeNodePtr(here.addr+NODE_SIZE);
+    }
 }
 #endif
