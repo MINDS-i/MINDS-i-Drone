@@ -103,10 +103,7 @@ EEPROMlist* EEPROMlist::m_instance = NULL;
 EEPROMlist::EEPROMlist(): curSize(0) {
     bool foundList = readList();
     if(!foundList) {
-        Serial.println("constructing a new list; was");
         constructList();
-    } else {
-        Serial.println("found an existing list");
     }
 }
 /**
