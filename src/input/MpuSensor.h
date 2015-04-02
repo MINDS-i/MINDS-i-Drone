@@ -5,7 +5,7 @@ class MpuSensor : public InertialSensor{
 protected:
 	static const uint16_t CAL_SAMPLE_SIZE = 200;
 							//+- 2000 dps per least sig bit, in ms
-	static const float dPlsb = 2.f*(2.f/65535.f); 
+	static const float dPlsb = 2.f*(2.f/65535.f);
 	static const float GYRO_CONVERSION_FACTOR =  2.f*(2.f/65535.f) *PI/180.l;
 	LTATune LTA;
 	float gCal[3];
@@ -17,6 +17,7 @@ public:
 	bool status();
 	void calibrate();
 	void update(InertialManager& man);
+	void getGCal(float&x, float&y, float&z);
 };
 void
 MpuSensor::tuneAccl(LTATune t){
@@ -45,6 +46,11 @@ MpuSensor::calibrate(){
 		delay(1000/CAL_SAMPLE_SIZE);
 	}
 	for(int i=0; i<3; i++) gCal[i] = -(av[i]/CAL_SAMPLE_SIZE);
+}
+void MpuSensor::getGCal(float&x, float&y, float&z){
+	x = gCal[0]*GYRO_CONVERSION_FACTOR;
+	y = gCal[1]*GYRO_CONVERSION_FACTOR;
+	z = gCal[2]*GYRO_CONVERSION_FACTOR;
 }
 void
 MpuSensor::update(InertialManager& man){
