@@ -52,11 +52,11 @@ void updateGPS(){
 void reportTelemetry(){
     using namespace Protocol;
     float voltage = float(analogRead(67)/1024.l*5.l*10.1l);
-    manager.sendTelem(telemetryType(LATITUDE),  location.degLatitude());
-    manager.sendTelem(telemetryType(LONGITUDE), location.degLongitude());
-    manager.sendTelem(telemetryType(HEADING),   nmea.getCourse());
-    manager.sendTelem(telemetryType(PITCH),     pitch.get()*180/PI);
-    manager.sendTelem(telemetryType(ROLL),      roll.get()*180/PI);
-    manager.sendTelem(telemetryType(SPEED),     nmea.getGroundSpeed());
-    manager.sendTelem(telemetryType(VOLTAGE),   voltage);
+    manager.sendTelem(telemetryType(LATITUDE),    location.degLatitude());
+    manager.sendTelem(telemetryType(LONGITUDE),   location.degLongitude());
+    manager.sendTelem(telemetryType(HEADING),     nmea.getCourse());
+    manager.sendTelem(telemetryType(PITCH),       pitch.get()*180/PI);
+    manager.sendTelem(telemetryType(ROLL),        roll.get()*180/PI);
+    manager.sendTelem(telemetryType(GROUNDSPEED), nmea.getGroundSpeed());
+    manager.sendTelem(telemetryType(VOLTAGE),     voltage);
 }

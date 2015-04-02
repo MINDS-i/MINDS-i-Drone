@@ -313,13 +313,13 @@ void readAccelerometer(){
 void reportLocation(){
 	float voltage  = float(analogRead(67)/1024.l*5.l*10.1f);
 	float amperage = float(analogRead(66)/1024.l*5.l*17.0f);
-	manager.sendTelem(Protocol::telemetryType(LATITUDE),  location.degLatitude());
-	manager.sendTelem(Protocol::telemetryType(LONGITUDE), location.degLongitude());
-	manager.sendTelem(Protocol::telemetryType(HEADING),   trueHeading);
-	manager.sendTelem(Protocol::telemetryType(PITCH),     pitch.get()*180/PI);
-	manager.sendTelem(Protocol::telemetryType(ROLL),      roll.get()*180/PI);
-	manager.sendTelem(Protocol::telemetryType(SPEED),     RPMtoMPH(encoder::getRPM()));
-	manager.sendTelem(Protocol::telemetryType(VOLTAGE),   voltage);
+	manager.sendTelem(Protocol::telemetryType(LATITUDE),    location.degLatitude());
+	manager.sendTelem(Protocol::telemetryType(LONGITUDE),   location.degLongitude());
+	manager.sendTelem(Protocol::telemetryType(HEADING),     trueHeading);
+	manager.sendTelem(Protocol::telemetryType(PITCH),       pitch.get()*180/PI);
+	manager.sendTelem(Protocol::telemetryType(ROLL),        roll.get()*180/PI);
+	manager.sendTelem(Protocol::telemetryType(GROUNDSPEED), RPMtoMPH(encoder::getRPM()));
+	manager.sendTelem(Protocol::telemetryType(VOLTAGE),     voltage);
 }
 
 void calibrateGyro(){ //takes one second

@@ -29,7 +29,7 @@ namespace Protocol{
 						SETTINGS = 1,
 						WAYPOINT = 2,
 						PROTOCOL = 3 };
-	
+
 	//subtypes get 2 bits
 	enum standardSubtype{	TELEMETRY	= 0,
 							COMMAND		= 1 };
@@ -50,7 +50,7 @@ namespace Protocol{
 						HEADING		= 2,
 						PITCH		= 3,
 						ROLL		= 4,
-						SPEED		= 5,
+						GROUNDSPEED	= 5,
 						VOLTAGE		= 6 };
 
 	enum commandType{	ESTOP			= 0,
