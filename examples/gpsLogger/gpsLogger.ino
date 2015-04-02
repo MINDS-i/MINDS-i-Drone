@@ -9,6 +9,7 @@ as a standalone device no telemetry.
 */
 List<Waypoint> *eeList;
 NMEA            nmea(Serial1);
+const uint32_t  UPDATE_INTERVAL = 50;
 
 void setup(){
     eeList = EEPROMlist::getInstance();
@@ -20,31 +21,42 @@ void setup(){
     sendGPSMessage(0x06, 0x00, 0x0014, CFG_PRT);
     sendGPSMessage(0x06, 0x24, 0x0024, Pedestrian_Mode);
 
-    Serial.println("Printing stored waypoints:");
-    for(int i=0; i<eeList->size(); i++){
-        Waypoint point = eeList->get(i);
-        display(point);
-    }
+    showList();
     Serial.println("Press C to clear");
 }
 void loop(){
-    /*if(Serial.available()){
-        float lat    = Serial.parseFloat();
-        float lng    = Serial.parseFloat();
-        uint16_t ext = Serial.parseInt();
-        Waypoint fresh(lat,lng,ext);
-        eeList->add(fresh);
-        display(fresh);
-    }*/
-
+    //Check if the list clear command is sent
     if(Serial.available()){
         char c = Serial.read();
         if(c=='C') eeList->clear();
+        if(c=='S') showList();
     }
 
+    //update the gps and store good readings periodically
     nmea.update();
     if(nmea.newData()){
-        eeList->add(nmea.getLocation());
+        Waypoint newPoint = nmea.getLocation();
+        static uint16_t count = 0;
+        newPoint.setExtra(count++);//nmea.getWarning());
+
+        static uint32_t intervalTimer;
+        if(millis()>intervalTimer){
+            intervalTimer += UPDATE_INTERVAL;
+            addToList(newPoint);
+        }
+    }
+}
+
+void addToList(Waypoint point){
+    if(eeList->size() == eeList->maxSize()) eeList->popTop();
+    eeList->pushBottom(point);
+}
+
+void showList(){
+    Serial.println("Printing all stored waypoints:");
+    for(int i=0; i<eeList->size(); i++){
+        Waypoint point = eeList->get(i);
+        display(point);
     }
 }
 
