@@ -2,7 +2,7 @@
 #define APMRADIOINPUT_H
 
 #include "Arduino.h"
-
+#if defined(__AVR_ATmega2560__)
 volatile uint16_t _pulse[8]; //APM2.* has 8 input channels
 volatile static uint16_t _pTime;
 
@@ -42,5 +42,5 @@ uint8_t getAPM2Radio(uint8_t num){
 uint16_t getAPM2RadioRaw(uint8_t num){
 	return _pulse[num];
 }
-
+#endif
 #endif
