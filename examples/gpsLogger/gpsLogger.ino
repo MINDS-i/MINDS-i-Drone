@@ -9,7 +9,7 @@ as a standalone device no telemetry.
 */
 List<Waypoint> *eeList;
 NMEA            nmea(Serial1);
-const uint32_t  UPDATE_INTERVAL = 50;
+const uint32_t  UPDATE_INTERVAL = 4000;
 
 void setup(){
     eeList = EEPROMlist::getInstance();
@@ -34,14 +34,13 @@ void loop(){
 
     //update the gps and store good readings periodically
     nmea.update();
-    if(nmea.newData()){
+    if(nmea.newData() && !nmea.getWarning()){
         Waypoint newPoint = nmea.getLocation();
-        static uint16_t count = 0;
-        newPoint.setExtra(count++);//nmea.getWarning());
-
         static uint32_t intervalTimer;
         if(millis()>intervalTimer){
-            intervalTimer += UPDATE_INTERVAL;
+            intervalTimer = millis()+UPDATE_INTERVAL;
+            static uint16_t count = 0;
+            newPoint.setExtra(count++);
             addToList(newPoint);
         }
     }
