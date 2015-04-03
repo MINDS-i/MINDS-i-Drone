@@ -30,7 +30,7 @@ public:
     void calibrate();
     void update();
     void update(InertialManager& man);
-    //expose interface provided by NMEA
+    //expose interface provided by NMEA parser
     bool  getWarning()    {return parser.getWarning();     }
     bool  newData()       {return parser.newData();        }
     float getCourse()     {return parser.getCourse();      }
