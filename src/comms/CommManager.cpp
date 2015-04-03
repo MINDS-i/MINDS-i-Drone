@@ -239,32 +239,4 @@ CommManager::sendSyncResponse(){
 	byte datum[1] = {buildMessageLabel(protocolSubtype(SYNC_RESP),1)};
 	sendMessage(datum, 1, stream);
 }
-void //Serial port and commands specific to stock 3DR UBLOX GPS
-sendGPSMessage(uint8_t Type, uint8_t ID, uint16_t len, const uint8_t* buf){
-  uint8_t header[4];
-  uint8_t check[2] = {0,0};
-  header[0] = Type;
-  header[1] = ID;
-  header[2] = (uint8_t) (len&0xff);
-  header[3] = (uint8_t) len>>8;
-
-  updateGPSchecksum(header, 4, check[0], check[1]);
-  if(len > 0) updateGPSchecksum(buf, len, check[0], check[1]);
-
-  //make this be ignored when using unos
-
-  Serial1.write((char)0xB5);
-  Serial1.write((char)0x62);
-  Serial1.write(header, 4);
-  if(len > 0) Serial1.write(buf, len);
-  Serial1.write(check, 2);
-}
-void
-updateGPSchecksum(const uint8_t *msg, uint8_t len, uint8_t &c_a, uint8_t &c_b){
-    while (len--) {
-        c_a += *msg;
-        c_b += c_a;
-        msg++;
-    }
-}
 

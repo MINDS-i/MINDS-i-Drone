@@ -8,7 +8,6 @@
 	A: handle all hardware communication code
 	B: Convert outputs to standard units
 	C: Do preliminary sensor filtering based on a sensor's native properties
-		eg: low pass filter on gyro to eliminate drift
 	D: Pass data into corresponding interface of InerialManager when updated
 */
 

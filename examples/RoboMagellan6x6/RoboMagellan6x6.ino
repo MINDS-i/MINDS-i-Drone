@@ -29,7 +29,7 @@ HardwareSerial *commSerial	= &Serial;
 Storage<float> *storage	= eeStorage::getInstance();
 CommManager		manager(commSerial, storage);
 Settings		settings(storage);
-NMEA			nmea(Serial1);
+LEA6H			gps;
 Waypoint		location(0,0);
 Waypoint		backWaypoint(0,0);
 HLA				lowFilter (600000, 0);//10 minutes
@@ -106,18 +106,13 @@ inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
 void setup() {
 	setupSettings();
 
-	Serial1.begin(38400);
+	gps.init();
 	commSerial->begin(Protocol::BAUD_RATE);
 	InitMPU();
 	pinMode(40, OUTPUT); digitalWrite(40, HIGH); //SPI select pin
 	for(int i=0; i<3; i++) pinMode(LEDpin[i], OUTPUT);
 	for(int i=0; i<3; i++) servo[i].attach(ServoPin[i]);
 	output(0.0f,steerCenter);
-
-	sendGPSMessage(0x06, 0x01, 0x0003, GPRMC_On);
-	sendGPSMessage(0x06, 0x17, 0x0004, CFG_NMEA);
-	sendGPSMessage(0x06, 0x00, 0x0014, CFG_PRT);
-	sendGPSMessage(0x06, 0x24, 0x0024, Pedestrian_Mode);
 
 	delay(2000);
 	calibrateGyro(); //this also takes one second
@@ -212,9 +207,9 @@ void navigate(){
 }
 
 void updateGPS(){
-	nmea.update();
-	if(nmea.newData()){
-		location = nmea.getLocation();
+	gps.update();
+	if(gps.newData()){
+		location = gps.getLocation();
 		waypointUpdated();
 		syncHeading();
 		positionChanged();
@@ -223,7 +218,7 @@ void updateGPS(){
 }
 
 void waypointUpdated(){
-	if(manager.numWaypoints() > 0 && !nmea.getWarning()){
+	if(manager.numWaypoints() > 0 && !gps.getWarning()){
 		stop = false;
  		distance = calcDistance(manager.getTargetWaypoint(), location);
 		if(distance > PointRadius)  return;
@@ -256,11 +251,11 @@ void updateGyro(){
 }
 
 void syncHeading(){
-	if(!nmea.getWarning() && nmea.getCourse()!=0){
+	if(!gps.getWarning() && gps.getCourse()!=0){
 		if(millis() - gpsTime < 1500) //dont use gyrohalf if it is too old
-			trueHeading = trunkAngle(nmea.getCourse() + trueHeading - gyroHalf);
+			trueHeading = trunkAngle(gps.getCourse() + trueHeading - gyroHalf);
 		else
-			trueHeading = trunkAngle(nmea.getCourse());
+			trueHeading = trunkAngle(gps.getCourse());
 		gpsHalfTime = millis()+(millis()-gpsTime)/2;
 	}
 	else if(stop) trueHeading = pathHeading;
@@ -275,9 +270,9 @@ void checkPing(){
 
 void extrapPosition(){
 	float dT = millis()-nTime;
-	if(dT < 1000 && !nmea.getWarning()){ //ignore irrational values
+	if(dT < 1000 && !gps.getWarning()){ //ignore irrational values
 		//3600000 = milliseconds per hour
-		float dTraveled = nmea.getGroundSpeed()*dT/3600000.f;
+		float dTraveled = gps.getGroundSpeed()*dT/3600000.f;
 		dTraveled *= (2.l/3.l);//purposly undershoot
 		location = extrapPosition(location, trueHeading, dTraveled);
 	}

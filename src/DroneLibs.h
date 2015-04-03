@@ -9,6 +9,7 @@
 #include "APM/Compass.h"
 #include "APM/MegaInterrupts.h"
 #include "APM/MPU.h"
+#include "APM/APMRadioInput.h"
 
 #include "comms/CommManager.h"
 #include "comms/NMEA.h"
@@ -24,12 +25,12 @@
 #include "input/altIMU/LPS25H.h"
 #include "input/altIMU/LSM303D.h"
 #include "input/altIMU/STMtwi.h"
-#include "input/APMCompass.h"
-#include "input/APMRadioInput.h"
+#include "input/APM/APMCompass.h"
+#include "input/APM/LEA6H.h"
+#include "input/APM/MS5611.h"
 #include "input/InertialManager.h"
 #include "input/InertialSensor.h"
 #include "input/MpuSensor.h"
-#include "input/MS5611.h"
 
 #include "math/GreatCircle.h"
 #include "math/Quaternion.h"
