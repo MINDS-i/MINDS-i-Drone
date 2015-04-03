@@ -33,7 +33,7 @@ MpuSensor::stop(){
 }
 bool
 MpuSensor::status(){
-	return true;
+	return STATUS_OK;
 }
 void
 MpuSensor::calibrate(){

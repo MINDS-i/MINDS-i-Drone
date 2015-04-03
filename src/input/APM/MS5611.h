@@ -6,7 +6,7 @@
 #include "util/byteConv.h"
 #include <SPI.h>
 
-//equations and spec pulled from datasheet at 
+//equations and spec pulled from datasheet at
 //http://www.daedalus.ei.tum.de/attachments/article/61/MS5611-01BA01.pdf
 
 class MS5611 : public InertialSensor{
@@ -25,26 +25,26 @@ protected:
     const static uint8_t TEMP_DUTY_CYCLE = 100;
 
     // OSR (Over Sampling Ratio) constants and calculation milliseconds
-    // 0x00, 0x02, 0x04, 0x06, 0x08 
+    // 0x00, 0x02, 0x04, 0x06, 0x08
     //    1,    2,    3,    5,   10
     const static uint8_t OSR_RATIO = 0x08;
     const static uint8_t OSR_DELAY =   10;
-    
+
     //calibration terms stored in ms5611 prom
-    uint16_t SENS_T1; 
-    uint16_t OFF_T1;  
-    uint16_t TCS;     
-    uint16_t TCO;     
-    uint16_t T_REF;   
+    uint16_t SENS_T1;
+    uint16_t OFF_T1;
+    uint16_t TCS;
+    uint16_t TCO;
+    uint16_t T_REF;
     uint16_t TEMPSENS;
-    
+
     //variables for use by program
     uint32_t readyTime;
     int32_t  dT, P;
     uint8_t  tempCycle;
     uint8_t  select;
     bool     newData;
-    
+
     void     sendCommand(uint8_t command);
     uint32_t get24from(uint8_t prom_addr);
     uint16_t get16from(uint8_t prom_addr);
@@ -70,7 +70,7 @@ MS5611::sendCommand(uint8_t cmd){
     SPI.transfer(cmd);
     digitalWrite(select, HIGH);
 }
-uint32_t 
+uint32_t
 MS5611::get24from(uint8_t prom_addr){
     digitalWrite(select, LOW);
     uint8_t tmp[4];
@@ -87,7 +87,7 @@ MS5611::get24from(uint8_t prom_addr){
     digitalWrite(select, HIGH);
     return value.l;
 }
-uint16_t 
+uint16_t
 MS5611::get16from(uint8_t prom_addr){
     digitalWrite(select, LOW);
     uint8_t tmp[3];
@@ -99,7 +99,7 @@ MS5611::get16from(uint8_t prom_addr){
     //tmp[0] is a crc checksum
     return ((uint16_t) tmp[1] << 8 ) | ( tmp[2] );
 }
-void 
+void
 MS5611::init(){
     pinMode(select, OUTPUT);
     digitalWrite(select, HIGH);
@@ -108,12 +108,12 @@ MS5611::init(){
     readyTime = millis();
     tempCycle = TEMP_DUTY_CYCLE; //get temperature first
 }
-void 
+void
 MS5611::stop(){
 }
-bool 
+bool
 MS5611::status(){
-    return true;
+    return STATUS_OK;
 }
 void
 MS5611::calibrate(){
@@ -124,9 +124,9 @@ MS5611::calibrate(){
     T_REF    = get16from(ADDR_T_REF   );
     TEMPSENS = get16from(ADDR_TEMPSENS);
 }
-void 
+void
 MS5611::update(){
-    if(millis() > readyTime){        
+    if(millis() > readyTime){
         //get data
         uint32_t tmp = get24from(ADC_READ_ADDR);
         if(tempCycle == 0){
@@ -135,7 +135,7 @@ MS5611::update(){
             calculateP(tmp);
         }
         newData = true;
-        
+
         //send new request
         if(tempCycle >= TEMP_DUTY_CYCLE){
             sendCommand(CMD_Temp + OSR_RATIO);
@@ -144,11 +144,11 @@ MS5611::update(){
             sendCommand(CMD_Pressure + OSR_RATIO);
             tempCycle++;
         }
-        
+
         readyTime = millis()+OSR_DELAY;
-    }  
+    }
 }
-void     
+void
 MS5611::calculateP (uint32_t D1){
     if(SENS_T1 == 0){ //not calibrated successfully
         P = D1;
@@ -158,21 +158,21 @@ MS5611::calculateP (uint32_t D1){
     int64_t SENS = ((int64_t)SENS_T1) * 32768 + ((int64_t)TCS) * dT / 256;
     P = (D1 * SENS / 2097152 - OFF) / 32768;
 }
-void     
+void
 MS5611::calculateDT(uint32_t D2){
     //D2: 8289716 T_REF: 31345    dT: 8260788 297.29
     dT = D2 - (((int32_t)T_REF) * 256);
 }
-float 
+float
 MS5611::getPascals(){
     update();
     return ((float) P);
 }
-float 
+float
 MS5611::getMilliBar(){
     return getPascals()/100.f;
 }
-float 
+float
 MS5611::getCelsius(){
     update();
     int32_t temp = 2000 + ((int64_t) dT * TEMPSENS) / 8388608;
@@ -184,7 +184,7 @@ MS5611::getAltitude(){ // feet
     float alt = (1-pow(tmp, 0.190284))*145366.45;
     return alt;
 }
-void 
+void
 MS5611::update(InertialManager& man){
     update();
     if(newData) {

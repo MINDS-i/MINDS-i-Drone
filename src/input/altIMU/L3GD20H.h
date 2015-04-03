@@ -69,7 +69,7 @@ L3GD20H::stop(){
 }
 bool
 L3GD20H::status(){
-	return true;
+	return STATUS_OK;
 }
 void
 L3GD20H::calibrate(){

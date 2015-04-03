@@ -91,7 +91,7 @@ LSM303D::stop(){
 }
 bool
 LSM303D::status(){
-	return true;
+	return STATUS_OK;
 }
 void
 LSM303D::calibrate(){

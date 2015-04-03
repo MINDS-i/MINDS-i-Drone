@@ -14,6 +14,9 @@
 //forward declare InertialManager
 class InertialManager;
 
+const bool STATUS_OK = true;
+const bool STATUS_BAD = false;
+
 class InertialSensor{
 protected:
 public:

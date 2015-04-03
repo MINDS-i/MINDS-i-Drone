@@ -32,7 +32,7 @@ APMCompass::stop(){
 }
 bool
 APMCompass::status(){
-	return true;
+	return STATUS_OK;
 }
 void
 APMCompass::calibrate(){
