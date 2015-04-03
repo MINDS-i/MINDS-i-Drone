@@ -7,7 +7,7 @@ const float INT_PERIOD = 5000;
 
 Settings        settings(eeStorage::getInstance());
 MpuSensor       mpu;
-InertialSensor* sens[1] = {&mpu};
+Sensor* sens[1] = {&mpu};
 InertialManager sensors(sens, 1);
 AcclOnly        orientation;
 

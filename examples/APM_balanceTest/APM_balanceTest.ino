@@ -6,7 +6,7 @@ const float INT_PERIOD = 5000;
 
 Settings        settings(eeStorage::getInstance());
 MpuSensor       mpu;
-InertialSensor* sens[1] = {&mpu};
+Sensor* sens[1] = {&mpu};
 InertialManager sensors(sens, 1);
 DualErrorParams params(1.0f, 1000.0f, 1000000.0f);
 DualErrorFilter orientation(params);

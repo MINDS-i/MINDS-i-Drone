@@ -4,8 +4,9 @@
 #include "Arduino.h"
 #include <inttypes.h>
 #include "comms/NMEA.h"
+#include "input/Sensor.h"
 
-class LEA6H{
+class LEA6H : public Sensor{
 protected:
     //GPS_SETUP messages
     const static uint8_t GPS_SETUP[];

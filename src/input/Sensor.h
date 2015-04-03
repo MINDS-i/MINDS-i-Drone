@@ -4,7 +4,7 @@
 /*
 -Abstract base class for sensors that will be managed by an Inertial Manager
 	Instance
--Inheritors of InertialSensor will
+-Inheritors of Sensor will
 	A: handle all hardware communication code
 	B: Convert outputs to standard units
 	C: Do preliminary sensor filtering based on a sensor's native properties
@@ -14,13 +14,13 @@
 //forward declare InertialManager
 class InertialManager;
 
-const bool STATUS_OK = true;
+const bool STATUS_OK  = true;
 const bool STATUS_BAD = false;
 
-class InertialSensor{
+class Sensor{
 protected:
 public:
-	virtual ~InertialSensor() {};
+	virtual ~Sensor() {};
 	virtual void init() = 0;
 	virtual void stop() = 0;
 	virtual bool status() = 0;

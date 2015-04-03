@@ -2,14 +2,14 @@
 #define MS5611_H
 
 #include "input/InertialManager.h"
-#include "input/InertialSensor.h"
+#include "input/Sensor.h"
 #include "util/byteConv.h"
 #include <SPI.h>
 
 //equations and spec pulled from datasheet at
 //http://www.daedalus.ei.tum.de/attachments/article/61/MS5611-01BA01.pdf
 
-class MS5611 : public InertialSensor{
+class MS5611 : public Sensor{
 protected:
     const static uint8_t ADDRESS         = 0x76;
     const static uint8_t ADDR_SENS_T1    = 0xA2;

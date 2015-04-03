@@ -2,9 +2,9 @@
 #define STMtwi_H
 
 #include "Wire.h"
-#include "input/InertialSensor.h"
+#include "input/Sensor.h"
 
-class STMtwiDev : public InertialSensor {
+class STMtwiDev : public Sensor {
 protected:
 	uint8_t 	ADDRESS;
 	bool 		READ_LINE_HOLD;

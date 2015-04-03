@@ -3,10 +3,10 @@
 
 #include "APM/Compass.h"
 #include "input/InertialManager.h"
-#include "input/InertialSensor.h"
+#include "input/Sensor.h"
 #include "util/LTATune.h"
 
-class APMCompass : public InertialSensor{
+class APMCompass : public Sensor{
 protected:
 	LTATune	LTA;
 public:

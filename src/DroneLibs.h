@@ -29,7 +29,7 @@
 #include "input/APM/LEA6H.h"
 #include "input/APM/MS5611.h"
 #include "input/InertialManager.h"
-#include "input/InertialSensor.h"
+#include "input/Sensor.h"
 #include "input/MpuSensor.h"
 
 #include "math/GreatCircle.h"

@@ -1,7 +1,7 @@
 #ifndef MPUSENSOR_H
 #define MPUSENSOR_H
 
-class MpuSensor : public InertialSensor{
+class MpuSensor : public Sensor{
 protected:
 	static const uint16_t CAL_SAMPLE_SIZE = 200;
 							//+- 2000 dps per least sig bit, in ms

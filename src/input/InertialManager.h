@@ -1,7 +1,7 @@
 #ifndef INERTIAL_MANAGER_H
 #define INERTIAL_MANAGER_H
 #include "filter/OrientationEngine.h"
-#include "input/InertialSensor.h"
+#include "input/Sensor.h"
 #include "Arduino.h"
 /*
 -Inertial Manager is given an array of Inertial Sensors on intialization.
@@ -19,14 +19,14 @@
 
 class InertialManager{
 private:
-	InertialSensor** sensor;
+	Sensor** sensor;
 	uint8_t numSensors;
 	float rotRates[3]; //X,Y,Z
 	float linAccel[3];
 	float magField[3];
 	float pressure[1];
 public:
-	InertialManager(InertialSensor** s, uint8_t num)
+	InertialManager(Sensor** s, uint8_t num)
 		: sensor(s), numSensors(num) {}
 
 	void update();
