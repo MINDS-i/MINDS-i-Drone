@@ -12,7 +12,7 @@ public:
 				  w(W), x(X), y(Y), z(Z) {}
 	Quaternion(const Vec3& euler);
 	Quaternion(const Vec3& axis, float angle);
-	static Quaternion fromAccelerometer(Vec3 accl);//should be normalized
+	Quaternion(const Vec3& ref, const Vec3& vec);
 	//const methods
 	Quaternion	inverse() const;
 	float		dot(const Quaternion& l) const;
@@ -33,6 +33,7 @@ public:
 	//operators
 	float&		operator[] (int x); //this should be avoided
 	Quaternion  operator ~ (void) const;
+	Quaternion  operator - (void) const;
 	void		operator*= (float s);
 	void		operator/= (float s);
 	void		operator*= (const Quaternion& r);

@@ -20,11 +20,30 @@ Quaternion::Quaternion(const Vec3& axis, float angle){
 	y = axis.y * s;
 	z = axis.z * s;
 }
-Quaternion
-Quaternion::fromAccelerometer(Vec3 accl){
-	Vec3 tmp(-accl[1], accl[0], 0);
-	tmp.normalize();
-	return Quaternion(tmp, acos(accl[2]));
+Quaternion::Quaternion(const Vec3& ref, const Vec3& vec){
+	float k_cos_theta = ref.dot(vec);
+	float k = sqrt(ref.dot(ref)*vec.dot(vec));
+
+	static const float fuzzFactor = .9999;
+	if (k_cos_theta/k <= -fuzzFactor) {
+	    // 180 degree rotation around any orthogonal vector
+	    Vec3 other = (fabs(vec.x) < fuzzFactor) ? Vec3(1,0,0) : Vec3(0,1,0);
+	    other.crossWith(vec);
+	    //build using axis angle with angle = M_PI
+	    other.normalize();
+		w = 0.0f;
+		x = other.x;
+		y = other.y;
+		z = other.z;
+	}
+
+	Vec3 cross = vec;
+	cross.crossWith(ref);
+	w = k_cos_theta + k;
+	x = cross[0];
+	y = cross[1];
+	z = cross[2];
+	normalize();
 }
 Quaternion
 Quaternion::inverse() const {
@@ -90,6 +109,7 @@ Quaternion::error() const {
 void
 Quaternion::nlerpWith(const Quaternion& l, float percentNew){
 	float percentOld = 1.f - percentNew;
+	if(dot(l) < 0.0f) percentNew *= -1; //lerp with the right "polarity"
 	w = percentOld * w + percentNew * l.w;
 	x = percentOld * x + percentNew * l.x;
 	y = percentOld * y + percentNew * l.y;
@@ -150,6 +170,10 @@ Quaternion::operator[] (int index){
 Quaternion
 Quaternion::operator ~ (void) const{
 	return this->inverse();
+}
+Quaternion
+Quaternion::operator - (void) const{
+	return Quaternion(-w,-x,-y,-z);
 }
 void
 Quaternion::operator*= (float s){
