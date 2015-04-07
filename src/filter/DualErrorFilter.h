@@ -74,7 +74,15 @@ DualErrorFilter::update(InertialManager* sensors){
 					 -rawGyro[1],
 					  rawGyro[2]);
 
-	//make accelerometer quaternion
+
+
+
+
+
+
+
+
+/*	//make accelerometer quaternion
 	Vec3 tmp(-rawAccl[1], rawAccl[0], rawAccl[2]);
 	float tmag = tmp.length();
 	float vmag = tmp[2]/tmag;
@@ -83,7 +91,27 @@ DualErrorFilter::update(InertialManager* sensors){
 	Quaternion accl(tmp, acos(vmag));
 	//calculate adjusted accelerometer MSE
 	float aMSE = params.acclMSE
-				+params.acclEF *fabs(log(tmag));
+				+params.acclEF *fabs(log(tmag));*/
+
+
+
+
+	//make accelerometer quaternion
+	Vec3 tmp(rawAccl[0], rawAccl[1], rawAccl[2]);
+	Quaternion accl(Vec3(0,0,-1), tmp);
+	//calculate adjusted accelerometer MSE
+	float aMSE = params.acclMSE
+				+params.acclEF *fabs(log(tmp.length()));
+
+
+
+
+
+
+
+
+
+
 	//calculate gains
 	float acclGain = computeGain(estimateMSE, aMSE);
 	gain = acclGain;
