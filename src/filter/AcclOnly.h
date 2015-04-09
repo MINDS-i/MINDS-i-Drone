@@ -40,9 +40,8 @@ AcclOnly::update(InertialManager* sensors){
 	sensors->getLinAccel(rawAccl[0],rawAccl[1],rawAccl[2]);
 
 	//make accelerometer quaternion
-	Vec3 tmp(rawAccl[0], rawAccl[1], rawAccl[2]);
-
-	attitude = Quaternion(Vec3(0,0,-1),tmp);
+	Vec3 tmp(-rawAccl[0], -rawAccl[1], rawAccl[2]);
+	attitude = Quaternion(Vec3(0,0,1),tmp);
 }
 void
 AcclOnly::updateRate(Vec3 z, float rateMSE){
