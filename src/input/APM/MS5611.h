@@ -11,6 +11,8 @@
 
 class MS5611 : public Sensor{
 protected:
+    const static uint8_t APM26_CS_PIN    = 40;
+
     const static uint8_t ADDRESS         = 0x76;
     const static uint8_t ADDR_SENS_T1    = 0xA2;
     const static uint8_t ADDR_OFF_T1     = 0xA4;
@@ -51,7 +53,7 @@ protected:
     void     calculateP (uint32_t D1);
     void     calculateDT(uint32_t D2);
 public:
-    MS5611(): select(40), newData(true) {/*Can't put IO code here on embed platforms*/}
+    MS5611(): select(APM26_CS_PIN), newData(true) {}
     MS5611(uint8_t cs_pin): select(cs_pin), newData(true) {}
     void init();
     void stop();
@@ -66,13 +68,21 @@ public:
 };
 void
 MS5611::sendCommand(uint8_t cmd){
+    uint8_t oldSREG = SREG;
+    cli();
     digitalWrite(select, LOW);
+
     SPI.transfer(cmd);
+
     digitalWrite(select, HIGH);
+    SREG = oldSREG;
 }
 uint32_t
 MS5611::get24from(uint8_t prom_addr){
+    uint8_t oldSREG = SREG;
+    cli();
     digitalWrite(select, LOW);
+
     uint8_t tmp[4];
     tmp[0] = prom_addr;
     tmp[1] = 0;
@@ -84,7 +94,9 @@ MS5611::get24from(uint8_t prom_addr){
     value.bytes[1] = tmp[2];
     value.bytes[2] = tmp[1];
     //tmp[0] is a crc checksum
+
     digitalWrite(select, HIGH);
+    SREG = oldSREG;
     return value.l;
 }
 uint16_t

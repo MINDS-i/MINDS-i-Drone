@@ -28,8 +28,11 @@
 #include "input/APM/APMCompass.h"
 #include "input/APM/LEA6H.h"
 #include "input/APM/MS5611.h"
+#include "input/APM/MPU6000.h"
+#include "input/APM/HMC5883L.h"
 #include "input/InertialManager.h"
 #include "input/Sensor.h"
+#include "input/SPIcontroller.h"
 #include "input/MpuSensor.h"
 
 #include "math/GreatCircle.h"
