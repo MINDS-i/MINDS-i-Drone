@@ -6,7 +6,6 @@
 //take this macro; it might come in handy
 #define TEST(a) Serial.print(#a);Serial.print(": ");Serial.print(a);Serial.print("\t");
 
-#include "APM/Compass.h"
 #include "APM/MegaInterrupts.h"
 #include "APM/APMRadioInput.h"
 
@@ -24,7 +23,6 @@
 #include "input/altIMU/LPS25H.h"
 #include "input/altIMU/LSM303D.h"
 #include "input/altIMU/STMtwi.h"
-#include "input/APM/APMCompass.h"
 #include "input/APM/LEA6H.h"
 #include "input/APM/MS5611.h"
 #include "input/APM/MPU6000.h"
