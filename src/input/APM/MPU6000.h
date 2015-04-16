@@ -2,6 +2,7 @@
 #include "input/Sensor.h"
 #include "input/SPIcontroller.h"
 #include "util/byteConv.h"
+#include "util/LTATune.h"
 #include <SPI.h>
 #include "MPUregs.h"
 //MPU6000 Accelerometer and Gyroscope on SPI
