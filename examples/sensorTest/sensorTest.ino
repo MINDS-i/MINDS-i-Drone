@@ -4,8 +4,8 @@
 #include "DroneLibs.h"
 
 const uint32_t UPDATE_INTERVAL = 5;
-MpuSensor  mpu;
-APMCompass cmp;
+MPU6000  mpu;
+HMC5883L cmp;
 Sensor* sens[2] = {&mpu, &cmp};
 InertialManager sensors(sens, 2);
 Settings set(eeStorage::getInstance());
