@@ -76,19 +76,12 @@ HMC5883L::rawValues(int& x, int& y, int& z){
         uint8_t* d = (uint8_t*) &x;
         d[1] = Wire.read();
         d[0] = Wire.read();
-        d = (uint8_t*) &y;
-        d[1] = Wire.read();
-        d[0] = Wire.read();
         d = (uint8_t*) &z;
         d[1] = Wire.read();
         d[0] = Wire.read();
-
-/*        x = ((long) Wire.read() )<<8; //X msb
-        x |= ((long) Wire.read() ); //X lsb
-        z = ((long) Wire.read() )<<8; //Z msb
-        z |= ((long) Wire.read() ); //Z lsb
-        y = ((long) Wire.read() )<<8; //Y msb
-        y |= ((long) Wire.read() );*/
+        d = (uint8_t*) &y;
+        d[1] = Wire.read();
+        d[0] = Wire.read();
     }
 }
 float
