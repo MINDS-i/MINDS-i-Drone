@@ -25,8 +25,8 @@ int state = 0;
 use Settings and EEStorage w/ LTATune to store the cooked values in EEPROM
 */
 
-MpuSensor  mpu;
-APMCompass cmp;
+MPU6000  mpu;
+HMC5883L cmp;
 Sensor* sens[2] = {&mpu, &cmp};
 InertialManager sensors(sens, 2);
 Settings set(eeStorage::getInstance());

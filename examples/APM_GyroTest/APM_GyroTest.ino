@@ -5,8 +5,8 @@
 const float INT_PERIOD = 5000;
 
 Settings        settings(eeStorage::getInstance());
-MpuSensor       mpu;
-lSensor*        sens[1] = {&mpu};
+MPU6000         mpu;
+Sensor*        sens[1] = {&mpu};
 InertialManager sensors(sens, 1);
 GyroOnly        orientation;
 

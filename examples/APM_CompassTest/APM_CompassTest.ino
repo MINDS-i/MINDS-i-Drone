@@ -3,9 +3,9 @@
 #include "Servo.h"
 #include "DroneLibs.h"
 
-APMCompass cmp;
-Settings        set(eeStorage::getInstance());
-HLA             angle( 75, 0); //half-life average; halflife = 75ms, init 0
+HMC5883L cmp;
+Settings set(eeStorage::getInstance());
+HLA      angle( 75, 0); //half-life average; halflife = 75ms, init 0
 
 Servo table;
 
