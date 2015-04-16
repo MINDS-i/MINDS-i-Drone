@@ -1,3 +1,5 @@
+#ifndef SPICONTROLLER_H
+#define SPICONTROLLER_H
 /**
  * This class is used to control the SPI chip select lines
  * Sensors will each own an SPIcontroller and put all
@@ -51,3 +53,4 @@ public:
 };
 uint8_t        SPIcontroller::controllerCount  = 0;
 SPIcontroller* SPIcontroller::activeController = NULL;
+#endif

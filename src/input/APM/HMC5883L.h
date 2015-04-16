@@ -1,7 +1,7 @@
 #include "input/InertialManager.h"
 #include "input/Sensor.h"
 
-//HMC5883L Barometer
+//HMC5883L Compass
 class HMC5883L : public Sensor{
 protected:
 public:
