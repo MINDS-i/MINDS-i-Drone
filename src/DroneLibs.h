@@ -8,7 +8,6 @@
 
 #include "APM/Compass.h"
 #include "APM/MegaInterrupts.h"
-#include "APM/MPU.h"
 #include "APM/APMRadioInput.h"
 
 #include "comms/CommManager.h"
@@ -33,7 +32,6 @@
 #include "input/InertialManager.h"
 #include "input/Sensor.h"
 #include "input/SPIcontroller.h"
-#include "input/MpuSensor.h"
 
 #include "math/GreatCircle.h"
 #include "math/Quaternion.h"
