@@ -3,6 +3,7 @@
 
 #include "input/InertialManager.h"
 #include "input/Sensor.h"
+#include "input/SPIcontroller.h"
 #include "util/byteConv.h"
 #include <SPI.h>
 
@@ -44,8 +45,8 @@ protected:
     uint32_t readyTime;
     int32_t  dT, P;
     uint8_t  tempCycle;
-    uint8_t  select;
     bool     newData;
+    SPIcontroller spiController;
 
     void     sendCommand(uint8_t command);
     uint32_t get24from(uint8_t prom_addr);
@@ -53,8 +54,12 @@ protected:
     void     calculateP (uint32_t D1);
     void     calculateDT(uint32_t D2);
 public:
-    MS5611(): select(APM26_CS_PIN), newData(true) {}
-    MS5611(uint8_t cs_pin): select(cs_pin), newData(true) {}
+    MS5611()
+        : spiController(APM26_CS_PIN, SPISettings(8E6, MSBFIRST, SPI_MODE0)),
+          newData(true) {}
+    MS5611(uint8_t cs_pin)
+        : spiController(cs_pin, SPISettings(8E6, MSBFIRST, SPI_MODE0)),
+          newData(true) {}
     void init();
     void stop();
     bool status();
@@ -68,54 +73,45 @@ public:
 };
 void
 MS5611::sendCommand(uint8_t cmd){
-    uint8_t oldSREG = SREG;
-    cli();
-    digitalWrite(select, LOW);
-
+    spiController.capture();
     SPI.transfer(cmd);
-
-    digitalWrite(select, HIGH);
-    SREG = oldSREG;
+    spiController.release();
 }
 uint32_t
 MS5611::get24from(uint8_t prom_addr){
-    uint8_t oldSREG = SREG;
-    cli();
-    digitalWrite(select, LOW);
-
     uint8_t tmp[4];
     tmp[0] = prom_addr;
     tmp[1] = 0;
     tmp[2] = 0;
     tmp[3] = 0;
+
+    spiController.capture();
     SPI.transfer(tmp, 4);
+    spiController.release();
+
     byteConv value;
     value.bytes[0] = tmp[3];
     value.bytes[1] = tmp[2];
     value.bytes[2] = tmp[1];
     //tmp[0] is a crc checksum
 
-    digitalWrite(select, HIGH);
-    SREG = oldSREG;
     return value.l;
 }
 uint16_t
 MS5611::get16from(uint8_t prom_addr){
-    digitalWrite(select, LOW);
     uint8_t tmp[3];
     tmp[0] = prom_addr;
     tmp[1] = 0;
     tmp[2] = 0;
+
+    spiController.capture();
     SPI.transfer(tmp, 3);
-    digitalWrite(select, HIGH);
+    spiController.release();
     //tmp[0] is a crc checksum
     return ((uint16_t) tmp[1] << 8 ) | ( tmp[2] );
 }
 void
 MS5611::init(){
-    pinMode(select, OUTPUT);
-    digitalWrite(select, HIGH);
-    SPI.begin();
     sendCommand(RESET);
     readyTime = millis();
     tempCycle = TEMP_DUTY_CYCLE; //get temperature first
