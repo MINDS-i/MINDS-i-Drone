@@ -43,6 +43,14 @@ public:
     //end of sensor interface
     void getSensors(int16_t* accl, int16_t* gyro);//arrays of 3 int16_t's
     void tuneAccl(LTATune t);
+    float acclX();
+    float acclY();
+    float acclZ();
+    float gyroX();
+    float gyroY();
+    float gyroZ();
+    float pitch();
+    float roll();
 };
 rawData
 MPU6000::readSensors(){
@@ -131,3 +139,37 @@ MPU6000::getSensors(int16_t* accl, int16_t* gyro){//arrays of 3 int16_t's
         gyro[i] = data.gyro[i];
     }
 }
+float
+MPU6000::acclX(){
+    rawData data = readSensors();
+    return (((float)data.accl[0])*LTA.values.scalar[0])
+                                 +LTA.values.scalar[0];
+}
+float
+MPU6000::acclY(){
+    rawData data = readSensors();
+    return (((float)data.accl[1])*LTA.values.scalar[1])
+                                 +LTA.values.scalar[1];
+}
+float
+MPU6000::acclZ(){
+    rawData data = readSensors();
+    return (((float)data.accl[2])*LTA.values.scalar[2])
+                                 +LTA.values.scalar[2];
+}
+float
+MPU6000::gyroX(){
+    rawData data = readSensors();
+    return (((float)data.gyro[0])*GYRO_CONVERSION_FACT) + gCal[0];
+}
+float
+MPU6000::gyroY(){
+    rawData data = readSensors();
+    return (((float)data.gyro[1])*GYRO_CONVERSION_FACT) + gCal[1];
+}
+float
+MPU6000::gyroZ(){
+    rawData data = readSensors();
+    return (((float)data.gyro[2])*GYRO_CONVERSION_FACT) + gCal[2];
+}
+

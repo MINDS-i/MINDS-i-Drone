@@ -30,6 +30,7 @@ Storage<float> *storage	= eeStorage::getInstance();
 CommManager		manager(commSerial, storage);
 Settings		settings(storage);
 LEA6H			gps;
+MPU6000			mpu;
 Waypoint		location(0,0);
 Waypoint		backWaypoint(0,0);
 HLA				lowFilter (600000, 0);//10 minutes
@@ -107,8 +108,8 @@ void setup() {
 	setupSettings();
 
 	gps.init();
+	mpu.init();
 	commSerial->begin(Protocol::BAUD_RATE);
-	InitMPU();
 	pinMode(40, OUTPUT); digitalWrite(40, HIGH); //SPI select pin
 	for(int i=0; i<3; i++) pinMode(LEDpin[i], OUTPUT);
 	for(int i=0; i<3; i++) servo[i].attach(ServoPin[i]);
@@ -238,8 +239,8 @@ void waypointUpdated(){
 }
 
 void updateGyro(){
-	double dt = lowFilter.millisSinceUpdate();
-	double Gz = MPU_Gz();
+	float dt = lowFilter.millisSinceUpdate();
+	float Gz = mpu.gyroZ();
 	lowFilter.update(Gz);
 	highFilter.update(Gz-lowFilter.get());
 	trueHeading = trunkAngle(trueHeading + dt*(highFilter.get())*dplsb);
@@ -298,9 +299,9 @@ void positionChanged(){
 }
 
 void readAccelerometer(){
-	Ax = MPU_Ax();
-	Ay = MPU_Ay();
-	Az = MPU_Az();
+	Ax = mpu.acclX();
+	Ay = mpu.acclY();
+	Az = mpu.acclZ();
 	pitch.update( atan2(sqrt(Ax*Ax+Az*Az), Ay) );
 	roll .update( atan2(sqrt(Ay*Ay+Az*Az),-Ax) );
 }
@@ -320,7 +321,7 @@ void reportLocation(){
 void calibrateGyro(){ //takes one second
 	double tmp = 0;
 	for(int i=0; i<100; i++){
-		double Gz = MPU_Gz();
+		double Gz = mpu.gyroZ();
 		tmp += Gz/100;
 		delay(10);
 	}

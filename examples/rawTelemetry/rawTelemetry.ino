@@ -7,12 +7,13 @@ const int UPDATE_INTERVAL = 1000; //ms between transmits
 HardwareSerial *commSerial  = &Serial;
 Waypoint        location(0,0);
 LEA6H           gps;
+MPU6000         mpu;
 HLA             pitch( 100, 0);
 HLA             roll ( 100, 0);
 
 void setup(){
     commSerial->begin(Protocol::BAUD_RATE);
-    InitMPU();
+    mpu.init();
     pinMode(40, OUTPUT); digitalWrite(40, HIGH); //SPI select pin
 
     gps.init();
@@ -28,9 +29,9 @@ void loop(){
     }
 }
 void readAccelerometer(){
-    long Ax = MPU_Ax();
-    long Ay = MPU_Ay();
-    long Az = MPU_Az();
+    long Ax = mpu.acclX();
+    long Ay = mpu.acclY();
+    long Az = mpu.acclZ();
     pitch.update( atan2(sqrt(Ax*Ax+Az*Az), Ay) );
     roll .update( atan2(sqrt(Ay*Ay+Az*Az),-Ax) );
 }
