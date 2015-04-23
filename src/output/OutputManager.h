@@ -28,11 +28,9 @@ public:
 				  PIDparameters  RollPID ,
 				  float predictionRMS	 ): output(NEWS),
 											PID{PitchPID, RollPID},
-											RMS(predictionRMS)
-											{};
+											RMS(predictionRMS) {}
 	OutputManager(OutputDevice* NEWS[4]) : output(NEWS),
-										   RMS(-1.0f)
-										   {}
+										   RMS(-1.0f) {}
 	void set(float pitch, float roll, float dYaw, float throttle);
 	void enable(); //use with caution; arming takes time
 	void disable();
@@ -120,21 +118,15 @@ void OutputManager::update(OrientationEngine &orientation){
 	impulses[1] = PIDout[1]*LINEAR_SCALE_FACTOR;
 	impulses[2] = desiredState[2]*LINEAR_SCALE_FACTOR;
 	impulses[3] = desiredState[3]*LINEAR_SCALE_FACTOR*4.;
-	
+
 	//run generated LU output calculation code
 	solveOutputs(impulses, outThrottle);
 
 	//set motor outputs
 	for(int i=0; i<4; i++){
-		constrain(0, outThrottle[i], (int)LINEAR_SCALE_FACTOR);
+		outThrottle[i] = constrain(0, outThrottle[i], (int)LINEAR_SCALE_FACTOR);
 		float out = ((float)outThrottle[i])/LINEAR_SCALE_FACTOR;
 		output[i]->set(out);
-	}
-
-	//inform OrientationEnigne of output's predicted effects
-	if(RMS > 0.) {
-		Vec3 prediction(PIDout[0], PIDout[1], desiredState[2]);
-		orientation.updateRate(prediction, RMS);
 	}
 }
 void OutputManager::setPitchPID(PIDparameters inputPID){
