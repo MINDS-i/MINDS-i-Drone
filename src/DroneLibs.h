@@ -36,6 +36,7 @@
 #include "math/SpatialMath.h"
 #include "math/Vec3.h"
 #include "math/Waypoint.h"
+#include "math/Algebra.h"
 
 #include "output/HK_ESCOutputDevice.h"
 #include "output/OutputDevice.h"

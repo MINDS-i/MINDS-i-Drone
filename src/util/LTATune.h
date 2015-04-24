@@ -1,5 +1,7 @@
 #ifndef LTATune_H
 #define LTATune_H
+#include "math/Algebra.h"
+
 //Linear Three Axis Tune
 // a = (a+shift)*scalar
 //shift should be applied before scalar
@@ -129,24 +131,6 @@ struct LTATune{
             tune.scalar[i]   = (2.f)/difference;
         }
         return tune;
-    }
-
-    template <size_t rows, size_t cols>
-    static void rowReduce(float (&matrix)[rows][cols] ){
-        //iterate down diagonol, zeroing up and down
-        for(int d=0; d<min(rows,cols); d++){
-            float m = matrix[d][d];
-            if(m==0) continue;
-            //iterate along rows that are not the row of interest
-            for(int r=0; r<rows; r++){
-                if(r==d) continue;
-                float factor = -matrix[r][d]/m;
-                //iterate along row doing calculations
-                for(int i=d; i<cols; i++){
-                    matrix[r][i] += factor*matrix[d][i];
-                }
-            }
-        }
     }
 };
 #endif
