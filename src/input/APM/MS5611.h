@@ -7,6 +7,7 @@
 #include "util/byteConv.h"
 #include <SPI.h>
 
+//barometer
 //equations and spec pulled from datasheet at
 //http://www.daedalus.ei.tum.de/attachments/article/61/MS5611-01BA01.pdf
 

@@ -41,7 +41,7 @@ public:
     void calibrate();
     void update(InertialManager& man);
     //end of sensor interface
-    void getSensors(int16_t* accl, int16_t* gyro);//arrays of 3 int16_t's
+    void getSensors(int16_t (&accl)[3], int16_t (&gyro)[3]);
     void tuneAccl(LTATune t);
     float acclX();
     float acclY();
@@ -122,17 +122,19 @@ MPU6000::calibrate(){
 void
 MPU6000::update(InertialManager& man){
     rawData data = readSensors();
+
     float accl[3];
+    LTA.calibrate<int16_t>(data.accl, accl);
+
     float gyro[3];
-    for(int i=0; i<3; i++){
-        accl[i] = (((float)data.accl[i])*LTA.values.scalar[i]) + LTA.values.scalar[i];
+    for(int i=0; i<3; i++){ //translate this into an LTA?
         gyro[i] = (((float)data.gyro[i])*GYRO_CONVERSION_FACT) + gCal[i];
     }
     man.updateRotRates(gyro[0], gyro[1], gyro[2]);
     man.updateLinAccel(accl[0], accl[1], accl[2]);
 }
 void
-MPU6000::getSensors(int16_t* accl, int16_t* gyro){//arrays of 3 int16_t's
+MPU6000::getSensors(int16_t (&accl)[3], int16_t (&gyro)[3]){
     rawData data = readSensors();
     for (int i = 0; i < 3; i++){
         accl[i] = data.accl[i];
@@ -142,20 +144,17 @@ MPU6000::getSensors(int16_t* accl, int16_t* gyro){//arrays of 3 int16_t's
 float
 MPU6000::acclX(){
     rawData data = readSensors();
-    return (((float)data.accl[0])*LTA.values.scalar[0])
-                                 +LTA.values.scalar[0];
+    return LTA.apply((float)data.accl[0],0);
 }
 float
 MPU6000::acclY(){
     rawData data = readSensors();
-    return (((float)data.accl[1])*LTA.values.scalar[1])
-                                 +LTA.values.scalar[1];
+    return LTA.apply((float)data.accl[1],1);
 }
 float
 MPU6000::acclZ(){
     rawData data = readSensors();
-    return (((float)data.accl[2])*LTA.values.scalar[2])
-                                 +LTA.values.scalar[2];
+    return LTA.apply((float)data.accl[2],2);
 }
 float
 MPU6000::gyroX(){

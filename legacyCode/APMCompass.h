@@ -43,11 +43,7 @@ APMCompass::update(InertialManager& man){
 	int m[3];
 	rawCompass(&m[0], &m[1], &m[2]);
 	float M[3];
-	for(int i=0; i<3; i++){
-		M[i]  = m[i];
-		M[i] += LTA.values.shift[i];
-		M[i] *= LTA.values.scalar[i];
-	}
+	LTA.calibrate<int>(m, M);
 	man.updateMagField(M[0],M[1],M[2]);
 }
 float
@@ -57,8 +53,8 @@ APMCompass::getAzimuth(){
 	float M[3];
 	for(int i=0; i<3; i++){
 		M[i]  = m[i];
-		M[i] += LTA.values.shift[i];
-		M[i] *= LTA.values.scalar[i];
+		M[i] += LTA.shift[i];
+		M[i] *= LTA.scalar[i];
 	}
 	return atan2(M[0], M[1]);
 }

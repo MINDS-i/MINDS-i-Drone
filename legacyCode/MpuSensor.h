@@ -73,8 +73,8 @@ MpuSensor::update(InertialManager& man){
 	accl[1] = MPU_Ay();
 	accl[2] = MPU_Az();
 	for(int i=0; i<3; i++){
-		accl[i] += LTA.values.shift[i];
-		accl[i] *= LTA.values.scalar[i];
+		accl[i] += LTA.shift[i];
+		accl[i] *= LTA.scalar[i];
 	}
 
 	man.updateRotRates(rate[0], rate[1], rate[2]);

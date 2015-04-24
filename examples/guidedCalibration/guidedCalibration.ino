@@ -6,8 +6,8 @@
 const char *names[] = {"-X","+X","-Y","+Y","-Z","+Z"};
 const uint16_t AVSIZE		= 25;
 const uint32_t UPDATE_DELAY	= 75;
-const int Z_VAL = 550; //maximum accelerometer reading on "empty" axiz
-const int ZPVAL =  75; //maximum derivative of value to be "stable"
+const int Z_VAL = 975; //maximum accelerometer reading on "empty" axiz
+const int ZPVAL =  85; //maximum derivative of value to be "stable"
 const char startMessage[] = "\
 Hello! \n\
 To calibrate your APM2, you will need to hold the device \n\
@@ -266,14 +266,18 @@ void printTuningData(){
 }
 
 void writeTuningData(){
-	LTATune accl, mag;
+	LTATune acclNaive;//, magNaive;
 	for(int i=0; i<3; i++){
-		accl.values.shift[i]  = -(accelMax[i][1]+accelMax[i][0])/2.f;
-		mag.values.shift[i]   = -( magVert[i][1]+ magVert[i][0])/2.f;
-		accl.values.scalar[i] = (2.f)/((float)(accelMax[i][1]-accelMax[i][0]));
-		mag.values.scalar[i]  = (2.f)/((float)( magVert[i][1]- magVert[i][0]));
+		acclNaive.shift[i]  = -(accelMax[i][1]+accelMax[i][0])/2.f;
+		acclNaive.scalar[i] = (2.f)/((float)(accelMax[i][1]-accelMax[i][0]));
+		//magNaive .shift[i]  = -( magVert[i][1]+ magVert[i][0])/2.f;
+		//magNaive .scalar[i] = (2.f)/((float)( magVert[i][1]- magVert[i][0]));
 	}
-	set.writeTuningValues(accl, mag);
+	LTATune hauxAccl;
+
+
+
+	//set.writeTuningValues(accl, mag);
 }
 
 void tuneAcclandMag(){
