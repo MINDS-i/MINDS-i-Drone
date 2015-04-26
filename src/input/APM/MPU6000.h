@@ -113,7 +113,11 @@ MPU6000::stop(){
 }
 bool
 MPU6000::status(){
-    return STATUS_OK;
+    //poll WHO_AM_I to see if its an MPU is present
+    uint8_t buf[1];
+    readFrom(REG_WHOAMI, 1, buf);
+    if(buf[0] == 0b01101000) return STATUS_OK;
+    return STATUS_BAD;
 }
 void
 MPU6000::calibrate(){
