@@ -116,7 +116,7 @@ MPU6000::status(){
     //poll WHO_AM_I to see if its an MPU is present
     uint8_t buf[1];
     readFrom(REG_WHOAMI, 1, buf);
-    if(buf[0] == 0b01101000) return STATUS_OK;
+    if(buf[0] == WHOIIS) return STATUS_OK;//WHOAMI value from specification
     return STATUS_BAD;
 }
 void

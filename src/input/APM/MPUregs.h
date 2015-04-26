@@ -49,6 +49,7 @@ const uint8_t BITS_DLPF_CFG_MASK          = 0x07;
 const uint8_t BIT_INT_ANYRD_2CLEAR        = 0x10;
 const uint8_t BIT_RAW_RDY_EN              = 0x01;
 const uint8_t BIT_I2C_DIS                 = 0x10;
+const uint8_t WHOIIS                      = 0b01101000;
 
 const uint8_t REG_DATA_START      = REG_ACCEL_XOUT_H;
 
