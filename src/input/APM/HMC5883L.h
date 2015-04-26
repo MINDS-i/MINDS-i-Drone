@@ -4,7 +4,8 @@
 //HMC5883L Compass
 class HMC5883L : public Sensor{
 protected:
-    static const uint8_t HMC_I2C_ADDR = 0x1E;
+    static const uint8_t HMC_I2C_ADDR   = 0x1E;
+    static const uint8_t HMC_STATUS_REG = 0x09;
     LTATune LTA;
     uint8_t address;
 public:
@@ -45,7 +46,15 @@ HMC5883L::stop(){
 }
 bool
 HMC5883L::status(){
-    return STATUS_OK;
+    Wire.beginTransmission(address);
+    Wire.write((uint8_t)0x09);
+    Wire.endTransmission();
+    Wire.requestFrom(address, (uint8_t)0x01);
+    if(Wire.available()>=1){
+        uint8_t status = Wire.read();
+        if((status&0x3) == 1) return STATUS_OK;
+    }
+    return STATUS_BAD;
 }
 void
 HMC5883L::calibrate(){
