@@ -79,11 +79,11 @@ struct LTATune{
         };
         rowReduce<4,5>(matrix);
 
-        if (matrix[1][1] != 0) tune.shift[0] = (matrix[1][4]/matrix[1][1])/-2.0;
+        if (matrix[1][1] != 0) tune.shift[0] = -(matrix[1][4]/matrix[1][1])/-2.0;
         else                   tune.shift[0] = 0;
-        if (matrix[2][2] != 0) tune.shift[1] = (matrix[2][4]/matrix[2][2])/-2.0;
+        if (matrix[2][2] != 0) tune.shift[1] = -(matrix[2][4]/matrix[2][2])/-2.0;
         else                   tune.shift[1] = 0;
-        if (matrix[3][3] != 0) tune.shift[2] = (matrix[3][4]/matrix[3][3])/-2.0;
+        if (matrix[3][3] != 0) tune.shift[2] = -(matrix[3][4]/matrix[3][3])/-2.0;
         else                   tune.shift[2] = 0;
 
         //find scale factors
@@ -91,9 +91,9 @@ struct LTATune{
         float XX=0, YY=0, ZZ=0;
         float XY=0, XZ=0, YZ=0;
         for(int i=0; i<6; i++){
-            float x = values[i][0]-tune.shift[0]; x = x*x;
-            float y = values[i][1]-tune.shift[1]; y = y*y;
-            float z = values[i][2]-tune.shift[2]; z = z*z;
+            float x = values[i][0]+tune.shift[0]; x = x*x;
+            float y = values[i][1]+tune.shift[1]; y = y*y;
+            float z = values[i][2]+tune.shift[2]; z = z*z;
             X  += x;
             Y  += y;
             Z  += z;
@@ -114,9 +114,9 @@ struct LTATune{
         float tx = sMatrix[0][3]/sMatrix[0][0];
         float ty = sMatrix[1][3]/sMatrix[1][1];
         float tz = sMatrix[2][3]/sMatrix[2][2];
-        tune.scalar[0] = sqrt(1.0/tx);
-        tune.scalar[1] = sqrt(1.0/ty);
-        tune.scalar[2] = sqrt(1.0/tz);
+        tune.scalar[0] = sqrt(tx);
+        tune.scalar[1] = sqrt(ty);
+        tune.scalar[2] = sqrt(tz);
 
         return tune;
     }
