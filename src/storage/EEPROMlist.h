@@ -86,7 +86,7 @@ public:
     EE_LIST_TYPE popBottom();
     void         clear();
 private:
-    int curSize;
+    uint16_t curSize;
     eeNodePtr dataRoot, dataLast;
     eeNodePtr freeRoot, freeLast;
     static EEPROMlist* m_instance;
@@ -119,7 +119,7 @@ bool EEPROMlist::readList(){
     freeLast.addr = 0;
 
     //search for end nodes
-    for(int i=0; i<MAX_NODES; i++){
+    for(uint16_t i=0; i<MAX_NODES; i++){
         eeNodePtr node(EE_LIST_START + i*NODE_SIZE);
         switch(node.getNext().addr){
             case FREE_TERM:
@@ -208,7 +208,7 @@ void EEPROMlist::constructList(){
 
     eeNodePtr here = freeRoot;
     eeNodePtr prev(FREE_TERM);
-    for (int i = 0; i < MAX_NODES; i++){
+    for (uint16_t i = 0; i < MAX_NODES; i++) {
         eeNodePtr next = eeNodePtr(here.addr+NODE_SIZE);
         here.setNext(next);
         here.setPrev(prev);
@@ -246,10 +246,10 @@ eeNodePtr EEPROMlist::getNode(uint16_t index){
     eeNodePtr cur;
     if( index <= curSize/2 ){
         cur = dataRoot;
-        for(int i=0; i<index; i++) cur = cur.getNext();
+        for(uint16_t i=0; i<index; i++) cur = cur.getNext();
     } else {
         cur = dataLast;
-        for(int i=0; i<(curSize-index-1); i++) cur = cur.getPrev();
+        for(uint16_t i=0; i<(curSize-index-1); i++) cur = cur.getPrev();
     }
 
     return cur;
@@ -286,18 +286,18 @@ bool EEPROMlist::add(EE_LIST_TYPE item){
     return pushTop(item);
 }
 bool EEPROMlist::set(uint16_t index, EE_LIST_TYPE item){
-    if(index >= curSize || index < 0) return false;
+    if(index >= curSize) return false;
     eeNodePtr node = getNode(index);
     node.setData(item);
     return true;
 }
 EE_LIST_TYPE EEPROMlist::get(uint16_t index){
-    if(index >= curSize || index < 0) return EE_LIST_TYPE();
+    if(index >= curSize) return EE_LIST_TYPE();
     return (getNode(index)).getData();
 }
 EE_LIST_TYPE EEPROMlist::remove(uint16_t index){
     if(curSize <= 0) return EE_LIST_TYPE();
-    else if(index >= curSize || index < 0) return EE_LIST_TYPE();
+    else if(index >= curSize) return EE_LIST_TYPE();
     else if(index == 0) return popTop();
     else if(index == curSize-1) return popBottom();
 
@@ -382,7 +382,7 @@ EE_LIST_TYPE EEPROMlist::popBottom(){
 void EEPROMlist::clear(){
     if(curSize == 0) return;
     eeNodePtr tmp;
-    for (int i = 0; i < curSize; i++){
+    for (uint16_t i = 0; i < curSize; i++){
         tmp = dataRoot;
         dataRoot = dataRoot.getNext();
         pushFree(tmp);
@@ -404,7 +404,7 @@ void runEEListTest(){
 
 
     eeNodePtr here = eeNodePtr(EE_LIST_START);
-    for (int i = 0; i < MAX_NODES; i++){
+    for (uint16_t i = 0; i < MAX_NODES; i++){
         uint16_t This = here.addr;
         uint16_t Next = here.getNext().addr;
         uint16_t Prev = here.getPrev().addr;

@@ -76,7 +76,7 @@ L3GD20H::calibrate(){
 	int16_t data[3];
 	float average[3];
 	for(int i=0; i<3; i++) average[i] = 0;
-	for(int i=0; i<CAL_SAMPLE_SIZE; i++){
+	for(uint8_t i=0; i<CAL_SAMPLE_SIZE; i++){
 		getRawGyro(data);
 		for(int j=0; j<3; j++) {
 			average[j] += ((float)data[j]) / ((float)CAL_SAMPLE_SIZE);

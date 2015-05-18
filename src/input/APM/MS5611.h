@@ -43,11 +43,11 @@ protected:
     uint16_t TEMPSENS;
 
     //variables for use by program
+    SPIcontroller spiController;
     uint32_t readyTime;
     int32_t  dT, P;
     uint8_t  tempCycle;
     bool     newData;
-    SPIcontroller spiController;
 
     void     sendCommand(uint8_t command);
     uint32_t get24from(uint8_t prom_addr);
