@@ -9,8 +9,8 @@
 
 class HLA{
 private:
-	double value;
 	double halfLife;
+	double value;
 	uint32_t time;
 public:
 	HLA(double half, double init): halfLife(half*1000.l), value(init) {

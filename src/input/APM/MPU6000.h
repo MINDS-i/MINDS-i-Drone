@@ -86,7 +86,7 @@ MPU6000::writeTo(uint8_t addr, uint8_t len, uint8_t* msg){
 }
 bool
 MPU6000::writeTo(uint8_t addr, uint8_t msg){
-    writeTo(addr, 1, &msg);
+    return writeTo(addr, 1, &msg);
 }
 // ---- public functions below -------------------------------------------------
 void

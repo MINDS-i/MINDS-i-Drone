@@ -66,7 +66,7 @@ public:
         return goodSamples >= AVSIZE;
     }
     float getAverage(){
-        float sum;
+        float sum = 0.0f;
         for(int i=0; i<AVSIZE; i++){
             sum += average[i];
         }
