@@ -24,7 +24,6 @@ protected:
 
     SPIcontroller spiControl;
     LTATune LTA;
-    float   gCal[3];
     bool    writeTo(uint8_t addr, uint8_t msg);
     bool    writeTo(uint8_t addr, uint8_t len, uint8_t* msg);
     bool    readFrom(uint8_t addr, uint8_t len, uint8_t* data);
@@ -131,8 +130,8 @@ MPU6000::update(InertialManager& man){
     LTA.calibrate<int16_t>(data.accl, accl);
 
     float gyro[3];
-    for(int i=0; i<3; i++){ //translate this into an LTA?
-        gyro[i] = (((float)data.gyro[i])*GYRO_CONVERSION_FACT) + gCal[i];
+    for(int i=0; i<3; i++){
+        gyro[i] = (((float)data.gyro[i])*GYRO_CONVERSION_FACT);
     }
     man.updateRotRates(gyro[0], gyro[1], gyro[2]);
     man.updateLinAccel(accl[0], accl[1], accl[2]);
@@ -163,16 +162,16 @@ MPU6000::acclZ(){
 float
 MPU6000::gyroX(){
     rawData data = readSensors();
-    return (((float)data.gyro[0])*GYRO_CONVERSION_FACT) + gCal[0];
+    return (((float)data.gyro[0])*GYRO_CONVERSION_FACT);
 }
 float
 MPU6000::gyroY(){
     rawData data = readSensors();
-    return (((float)data.gyro[1])*GYRO_CONVERSION_FACT) + gCal[1];
+    return (((float)data.gyro[1])*GYRO_CONVERSION_FACT);
 }
 float
 MPU6000::gyroZ(){
     rawData data = readSensors();
-    return (((float)data.gyro[2])*GYRO_CONVERSION_FACT) + gCal[2];
+    return (((float)data.gyro[2])*GYRO_CONVERSION_FACT);
 }
 

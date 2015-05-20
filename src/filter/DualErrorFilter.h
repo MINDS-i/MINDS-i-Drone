@@ -15,6 +15,7 @@
 
 class DualErrorFilter : public OrientationEngine {
 private:
+	bool			  calMode;
 	DualErrorParams   &params;
 	Quaternion 		  attitude;
 	Vec3 			  rate;
@@ -62,6 +63,9 @@ DualErrorFilter::update(InertialManager& sensors){
 					 -rawGyro[1],
 					  rawGyro[2]);
 
+
+
+
 	//make accelerometer quaternion
 	Vec3 raw(-rawAccl[0], -rawAccl[1], rawAccl[2]);
 	Quaternion accl(Vec3(0,0,1), raw);
@@ -80,6 +84,6 @@ DualErrorFilter::update(InertialManager& sensors){
 }
 void
 DualErrorFilter::calibrate(bool calibrate){
-
+	calMode = calibrate;
 }
 #endif
