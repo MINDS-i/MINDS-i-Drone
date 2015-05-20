@@ -3,15 +3,15 @@
 #include "Servo.h"
 #include "DroneLibs.h"
 
-const int UPDATE_INTERVAL = 100; //ms between transmits
+const int       UPDATE_INTERVAL = 100; //ms between transmits
 HardwareSerial *commSerial  = &Serial;
 Storage<float> *storage = eeStorage::getInstance();
 CommManager     manager(commSerial, storage);
 LEA6H           gps;
 MPU6000         mpu;
 Waypoint        location(0,0);
-HLA             pitch( 100, 0);
-HLA             roll ( 100, 0);
+HLA             pitch(100, 0);
+HLA             roll (100, 0);
 
 void setup(){
     commSerial->begin(Protocol::BAUD_RATE);

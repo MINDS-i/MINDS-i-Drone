@@ -1,16 +1,16 @@
 #include "NMEA.h"
 NMEA::NMEA(Stream& stream):
-	inStream(stream),
-	bufferPos(0),
-	bufferSize(100),
 	latitude(0),
 	longitude(0),
 	timeOfFix(0), dateOfFix(0),
-	warning(0),
+	warning(false),
 	groundSpeed(0),
 	course(0),
 	magVar(0),
-	isNew(false) {
+	bufferSize(100),
+	bufferPos(0),
+	isNew(false),
+	inStream(stream) {
 }
 
 void NMEA::newStream(Stream& stream){
@@ -260,7 +260,7 @@ float NMEA::parseFloat(char*& buffer, char* endPtr){
 
 bool NMEA::overlap(char* buffer, String input){
 	bool tmp = true;
-	for (int i = 0; i < input.length(); ++i){
+	for (uint16_t i = 0; i < input.length(); ++i){
 		tmp &= (buffer[i] == input[i]);
 	}
 	return tmp;
