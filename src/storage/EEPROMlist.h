@@ -6,7 +6,10 @@
 #include "storage/EEPROMsubsystem.h"
 #include "util/byteConv.h"
 
-namespace{
+//disable strict aliasing for now, its the only way this code can work
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+
+namespace EENode{
     //node is EEaddr next EEaddr prev EE_LIST_TYPE data
     struct eeNodePtr{
     private:
@@ -61,6 +64,7 @@ namespace{
     const EEaddr FREE_TERM = 0x0000; //loose end address value of free list
     const EEaddr DATA_TERM = 0xffff; //loose end address value of data list
 }
+using namespace EENode;
 class EEPROMlist : public List<EE_LIST_TYPE>{
     /**
      * doubly linked list in arduino EEprom
@@ -419,4 +423,5 @@ void runEEListTest(){
         here = eeNodePtr(here.addr+NODE_SIZE);
     }
 }
+#pragma GCC diagnostic pop
 #endif

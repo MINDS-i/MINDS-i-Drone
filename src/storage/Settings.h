@@ -120,6 +120,7 @@ public:
 			storage->updateRecord(index, defaul);
 		}
 		storage->attachCallback(index, call);
+		return true;
 	}
 	float get(int type){
 		uint8_t index = (int)type;

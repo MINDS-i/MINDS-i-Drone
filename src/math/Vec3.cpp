@@ -40,9 +40,6 @@ Vec3::lerpWith(const Vec3& l, float percentNew){
 }
 void
 Vec3::rotateBy(const Quaternion& q){
-	float X = x;
-	float Y = y;
-	float Z = z;
 	Vec3 t = *this;
 	t.crossWith(q.axis());
 	t*=2;
@@ -50,7 +47,7 @@ Vec3::rotateBy(const Quaternion& q){
 	t.crossWith(q.axis());
 	*this += t;
 }
-float& 
+float&
 Vec3::operator[] (int index){
 	switch(index){
 		case 0: return x;
@@ -60,7 +57,7 @@ Vec3::operator[] (int index){
 }
 void
 Vec3::operator*= (float s){
-	x *= s; 
+	x *= s;
 	y *= s;
 	z *= s;
 }

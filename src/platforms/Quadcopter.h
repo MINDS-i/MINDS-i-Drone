@@ -54,8 +54,14 @@ void setupQuad() {
     setupSettings();
 
     sensors.start();
-    output.enable();
+    delay(100);
     sensors.calibrate();
+    delay(100);
+
+    orientation.calibrate(true);
+    delay(500);
+    output.enable();
+    orientation.calibrate(false);
 
     gps.init();
     comms.requestResync();
