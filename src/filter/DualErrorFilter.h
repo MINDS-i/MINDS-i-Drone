@@ -15,7 +15,7 @@
 
 class DualErrorFilter : public OrientationEngine {
 private:
-	DualErrorParams   params;
+	DualErrorParams   &params;
 	Quaternion 		  attitude;
 	Vec3 			  rate;
 	float 			  estimateMSE;
@@ -23,10 +23,9 @@ private:
 	float computeGain(float& estimate, float MSE);
 	void updateStateModel();
 public:
-	DualErrorFilter():                  params(1,1,0) {}
-	DualErrorFilter(DualErrorParams p): params(p)     {}
-	void update(InertialManager* sensors);
-	void updateRate(	Vec3 z,   float rms);
+	DualErrorFilter(DualErrorParams &p): params(p)   {}
+	void update(InertialManager& sensors);
+	void updateRate(Vec3 z,   float rms);
 	void updateAttitude(Quaternion Z, float rms);
 	Vec3 getRate();
 	Quaternion getAttitude();
@@ -42,7 +41,10 @@ public:
 	float getAcclGain(){
 		return gain;
 	}
-	void  setParams(DualErrorParams p){ params = p; }
+	//void  setParams(DualErrorParams &p){ params = &p; }
+	float getSysMse(){
+		return params.sysMSE;
+	}
 };
 float
 DualErrorFilter::computeGain(float& estimate, float MSE){
@@ -63,11 +65,11 @@ DualErrorFilter::updateStateModel(){
 	attitude.integrate(rate*dt);
 }
 void
-DualErrorFilter::update(InertialManager* sensors){
+DualErrorFilter::update(InertialManager& sensors){
 	//collect raw inertial readings
 	float rawGyro[3], rawAccl[3];
-	sensors->getRotRates(rawGyro[0],rawGyro[1],rawGyro[2]);
-	sensors->getLinAccel(rawAccl[0],rawAccl[1],rawAccl[2]);
+	sensors.getRotRates(rawGyro);
+	sensors.getLinAccel(rawAccl);
 
 	//make gyro vector
 	Vec3 gyro = Vec3(-rawGyro[0],

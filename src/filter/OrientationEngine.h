@@ -20,7 +20,7 @@ class InertialManager;
 
 class OrientationEngine{
 public:
-	virtual void update(InertialManager* sensors)=0;
+	virtual void update(InertialManager& sensors)=0;
 	virtual void updateRate(Vec3 z, float MSE)=0; //pry apparent angle
 	virtual void updateAttitude(Quaternion Z, float MSE)=0;
 	virtual Quaternion	getAttitude()=0;

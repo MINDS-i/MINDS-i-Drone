@@ -19,7 +19,7 @@ private:
 	Vec3 			  rate;
 public:
 	AcclOnly(){}
-	void update(InertialManager* sensors);
+	void update(InertialManager& sensors);
 	void updateRate(	Vec3 z,   float rms);
 	void updateAttitude(Quaternion Z, float rms);
 	Vec3 getRate();
@@ -34,10 +34,10 @@ public:
 	float getYawRate();
 };
 void
-AcclOnly::update(InertialManager* sensors){
+AcclOnly::update(InertialManager& sensors){
 	//collect raw inertial readings
 	float rawAccl[3];
-	sensors->getLinAccel(rawAccl[0],rawAccl[1],rawAccl[2]);
+	sensors.getLinAccel(rawAccl);
 
 	//make accelerometer quaternion
 	Vec3 tmp(-rawAccl[0], -rawAccl[1], rawAccl[2]);

@@ -21,7 +21,7 @@ private:
 	void updateStateModel();
 public:
 	GyroOnly(){}
-	void update(InertialManager* sensors);
+	void update(InertialManager& sensors);
 	void updateRate(	Vec3 z,   float rms);
 	void updateAttitude(Quaternion Z, float rms);
 	Vec3 getRate();
@@ -45,10 +45,10 @@ GyroOnly::updateStateModel(){
 	attitude.integrate(rate*dt);
 }
 void
-GyroOnly::update(InertialManager* sensors){
+GyroOnly::update(InertialManager& sensors){
 	//collect raw inertial readings
 	float rawGyro[3];
-	sensors->getRotRates(rawGyro[0],rawGyro[1],rawGyro[2]);
+	sensors.getRotRates(rawGyro);
 
 	//make gyro vector
 	Vec3 gyro = Vec3(-rawGyro[0],

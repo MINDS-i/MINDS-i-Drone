@@ -11,17 +11,17 @@ To make more settings, one would need to stretch the default number of storage
 records in the passed in storage object
 */
 
-namespace AirSettings{	
+namespace AirSettings{
 	enum Air{
 		INT_PERIOD	=  0,
-		OUT_FEEDBK	=  1,
-		GYRO_MSE	=  2,
-		ACCL_MSE	=  3,
-		RATE_SYSMSE	=  4,
-		ATT_SYSMSE	=  5,
-		ATT_P_TERM	=  6,
-		ATT_I_TERM	=  7,
-		ATT_D_TERM	=  8,
+		ACCL_MSE	=  1,
+		ATT_SYSMSE	=  2,
+		ATT_ERRFAC	=  3,
+		ATT_P_TERM	=  4,
+		ATT_I_TERM	=  5,
+		ATT_D_TERM	=  6,
+		UNUSED_K	=  7,
+		UNUSED_J	=  8,
 		UNUSED_I	=  9,
 		UNUSED_H	= 10,
 		UNUSED_G	= 11,
@@ -33,7 +33,7 @@ namespace AirSettings{
 		UNUSED_A	= 17
 	};
 }
-namespace groundSettings{	
+namespace groundSettings{
 	enum Ground{
 		LINE_GRAV	=  0,
 		STEER_THROW	=  1,
@@ -79,7 +79,7 @@ namespace commonSettings{
 	};
 }
 using namespace commonSettings;
-class Settings{ 
+class Settings{
 	// makes the usage of Storage for settings easier to top level sketches
 	// attach is a single action
 	// keeps track of weather or not storage was initialized
@@ -115,7 +115,7 @@ public:
 		if(!formatChecked) checkStorageFormat();
 		if(storage == NULL) return false;
 		uint8_t index = (int)type;
-		
+
 		if (!validFormat) {
 			storage->updateRecord(index, defaul);
 		}

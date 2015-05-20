@@ -7,14 +7,10 @@
 -Inertial Manager is given an array of Inertial Sensors on intialization.
 -It will propogate commands to all the sensors it owns
 -when an Inertial Sensor is updated, it will pass the data back up to the
-	Inertial Manager, which will normalize the data and feed to an
-	OrientationEngine.
--This way sensor math is completly separate from sensor hardware code,
-	and OrientationEngines don't have to worry about where their data comes from
-	making swaps of OrientationEngines easier
--The math in InertialManager recieves unit normalized sensor output, and
-	transforms it to standardized state data that describes what all the sesors
-	are currently 'seeing' for the OrientatienEngine to fuse.
+	Inertial Manager, which will store the values for use by the orientation
+	code
+-Inertial Manager receives unit normalized input, and should not modify the
+	values it receives in any way
 */
 
 class InertialManager{
@@ -35,16 +31,78 @@ public:
 	void start();
 	void calibrate();
 	void stop();
-	void print(HardwareSerial* output);
 
-	void updateRotRates(float dx, float dy, float dz);//rad per millisecond
-	void updateLinAccel(float  x, float  y, float  z);//G's
-	void updateMagField(float  x, float  y, float  z);//Gauss
-	void updatePressure(float  p);					  //Pascals
+	//variable setters/getters - implicitly inlined
 
-	void getRotRates(float& dx, float& dy, float& dz);//rad per millisecond
-	void getLinAccel(float&  x, float&  y, float&  z);//G's
-	void getMagField(float&  x, float&  y, float&  z);//Gauss
-	void getPressure(float&  p);					  //Pascals
+	//rad per millisecond
+	void updateRotRates(float dx, float dy, float dz){
+		rotRates[0] = dx;
+		rotRates[1] = dy;
+		rotRates[2] = dz;
+	}
+	void updateRotRates(float (&delta)[3]){
+		rotRates[0] = delta[0];
+		rotRates[1] = delta[1];
+		rotRates[2] = delta[2];
+	}
+	void getRotRates(float& dx, float& dy, float& dz){//rad per millisecond
+		dx = rotRates[0];
+		dy = rotRates[1];
+		dz = rotRates[2];
+	}
+	void getRotRates(float (&v)[3]){
+		v[0] = rotRates[0];
+		v[1] = rotRates[1];
+		v[2] = rotRates[2];
+	}
+	//G's
+	void updateLinAccel(float  x, float  y, float  z){
+		linAccel[0] = x;
+		linAccel[1] = y;
+		linAccel[2] = z;
+	}
+	void updateLinAccel(float (&v)[3]){
+		linAccel[0] = v[0];
+		linAccel[1] = v[1];
+		linAccel[2] = v[2];
+	}
+	void getLinAccel(float&  x, float&  y, float&  z){
+		x = linAccel[0];
+		y = linAccel[1];
+		z = linAccel[2];
+	}
+	void getLinAccel(float (&v)[3]){
+		v[0] = linAccel[0];
+		v[1] = linAccel[1];
+		v[2] = linAccel[2];
+	}
+	//Gauss
+	void updateMagField(float  x, float  y, float  z){
+		magField[0] = x;
+		magField[1] = y;
+		magField[2] = z;
+	}
+	void updateMagField(float (&v)[3]){
+		magField[0] = v[0];
+		magField[1] = v[1];
+		magField[2] = v[2];
+	}
+	void getMagField(float&  x, float&  y, float&  z){
+		x = magField[0];
+		y = magField[1];
+		z = magField[2];
+	}
+	void getMagField(float (&v)[3]){
+		v[0] = magField[0];
+		v[1] = magField[1];
+		v[2] = magField[2];
+	}
+	//Pascals
+	void updatePressure(float  p){
+		pressure[0] = p;
+	}
+	void getPressure(float&  p){
+		p = pressure[0];
+	}
 };
 #endif

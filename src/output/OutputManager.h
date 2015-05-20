@@ -18,19 +18,15 @@ private:
 
 	volatile boolean enabled;
 	volatile float 	 desiredState[4];
-	OutputDevice** 	 output;
+	OutputDevice* 	 (&output)[4];
 	PIDparameters 	 PID[2];
-	float 			 RMS;
 	boolean			 stopped;
 public:
-	OutputManager(OutputDevice*  NEWS[4], //North, East, West, South
-				  PIDparameters  PitchPID,
-				  PIDparameters  RollPID ,
-				  float predictionRMS	 ): output(NEWS),
-											PID{PitchPID, RollPID},
-											RMS(predictionRMS) {}
-	OutputManager(OutputDevice* NEWS[4]) : output(NEWS),
-										   RMS(-1.0f) {}
+	OutputManager(OutputDevice* (&NEWS)[4], //North, East, West, South
+				  PIDparameters   PitchPID,
+				  PIDparameters   RollPID ): output(NEWS),
+											 PID{PitchPID, RollPID} {}
+	OutputManager(OutputDevice* (&NEWS)[4]): output(NEWS) {}
 	void set(float pitch, float roll, float dYaw, float throttle);
 	void enable(); //use with caution; arming takes time
 	void disable();
@@ -134,8 +130,5 @@ void OutputManager::setPitchPID(PIDparameters inputPID){
 }
 void OutputManager::setRollPID(PIDparameters inputPID){
 	PID[1] = inputPID;
-}
-void OutputManager::setFeedbackRMS(float input){
-	RMS = input;
 }
 #endif

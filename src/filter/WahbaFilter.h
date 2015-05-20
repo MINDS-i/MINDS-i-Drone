@@ -25,7 +25,7 @@ private:
 public:
 	WahbaFilter():                  params(1,1,0) {}
 	WahbaFilter(DualErrorParams p): params(p)     {}
-	void update(InertialManager* sensors);
+	void update(InertialManager& sensors);
 	void updateRate(	Vec3 z,   float rms);
 	void updateAttitude(Quaternion Z, float rms);
 	Vec3 getRate();
@@ -63,10 +63,10 @@ WahbaFilter::updateStateModel(){
 	attitude.integrate(rate*dt);
 }
 void
-WahbaFilter::update(InertialManager* sensors){
+WahbaFilter::update(InertialManager& sensors){
 	//collect raw inertial readings
 	float rawGyro[3];
-	sensors->getRotRates(rawGyro[0],rawGyro[1],rawGyro[2]);
+	sensors.getRotRates(rawGyro);
 
 	//make gyro vector
 	Vec3 gyro = Vec3(-rawGyro[0],
@@ -94,8 +94,8 @@ WahbaFilter::update(InertialManager* sensors){
 
     float a[3];
     float m[3];
-    sensors->getLinAccel(a[0],a[1],a[2]);
-    sensors->getMagField(m[0],m[1],m[2]);
+    sensors.getLinAccel(a);
+    sensors.getMagField(m);
     Vec3 rawA(-a[0],-a[1], a[2]);
     Vec3 rawM(m[0],m[1], m[2]);
     Vec3 M = rawA; M.crossWith(rawM);
@@ -129,19 +129,6 @@ WahbaFilter::update(InertialManager* sensors){
                           McrossR[1]+MplusR[1],
                           McrossR[2]+MplusR[2] );
     wahba.normalize();
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 	//calculate adjusted accelerometer MSE
