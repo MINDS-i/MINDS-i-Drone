@@ -34,9 +34,6 @@ void loop(){
     float pitch = attitude.getPitch();
     Serial.print(pitch);
     Serial.print("\t");
-    Serial.print(orientation.getAcclGain());
-    Serial.print("\n");
-
 
     float angle = pid.calc(-pitch);
     angle = constrain(angle, -90, 90);

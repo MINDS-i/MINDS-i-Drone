@@ -8,17 +8,15 @@ HardwareSerial *commSerial  = &Serial;
 Storage<float> *storage = eeStorage::getInstance();
 CommManager     manager(commSerial, storage);
 LEA6H           gps;
+MPU6000         mpu;
 Waypoint        location(0,0);
 HLA             pitch( 100, 0);
 HLA             roll ( 100, 0);
 
 void setup(){
     commSerial->begin(Protocol::BAUD_RATE);
-    InitMPU();
-    pinMode(40, OUTPUT); digitalWrite(40, HIGH); //SPI select pin
-
+    mpu.init();
     gps.init();
-
     manager.requestResync();
 }
 void loop(){
@@ -32,9 +30,9 @@ void loop(){
     }
 }
 void readAccelerometer(){
-    long Ax = MPU_Ax();
-    long Ay = MPU_Ay();
-    long Az = MPU_Az();
+    long Ax = mpu.acclX();
+    long Ay = mpu.acclY();
+    long Az = mpu.acclZ();
     pitch.update( atan2(sqrt(Ax*Ax+Az*Az), Ay) );
     roll .update( atan2(sqrt(Ay*Ay+Az*Az),-Ax) );
 }

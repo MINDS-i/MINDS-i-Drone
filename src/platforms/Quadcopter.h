@@ -13,9 +13,10 @@ HMC5883L  cmp;
 Sensor* sens[2] = {&mpu, &cmp};
 InertialManager sensors(sens, 2);
 #define Output_t HK_ESCOutputDevice
+//12->7 digital pins = APM outputs 1->4
 Output_t esc[4] =
-    { Output_t(12), Output_t(11)    //North, East
-     ,Output_t( 8), Output_t( 7) }; //South, West
+    { Output_t(12), Output_t(11)    //North, South
+     ,Output_t( 8), Output_t( 7) }; // East,  West
 OutputDevice* outDev[4] = {&esc[0], &esc[1], &esc[2], &esc[3]};
 OutputManager output(outDev);
 
