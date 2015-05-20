@@ -16,9 +16,10 @@
 class DualErrorFilter : public OrientationEngine {
 private:
 	bool			  calMode;
+	float			  calTrack;
 	DualErrorParams   &params;
 	Quaternion 		  attitude;
-	Vec3 			  rate;
+	Vec3 			  rate, rateCal;
 	float 			  estimateMSE;
 	volatile uint32_t stateTime;
 	float computeGain(float& estimate, float MSE);
@@ -32,6 +33,8 @@ public:
 	float getPitchRate(){ return rate[0]; }
 	float getRollRate(){  return rate[1]; }
 	float getYawRate(){   return rate[2]; }
+	//temporary
+	Vec3  getRateCal(){ return rateCal; }
 };
 float
 DualErrorFilter::computeGain(float& estimate, float MSE){
@@ -63,8 +66,11 @@ DualErrorFilter::update(InertialManager& sensors){
 					 -rawGyro[1],
 					  rawGyro[2]);
 
-
-
+	if(!calMode) gyro += rateCal;
+	else {
+		rateCal -= gyro;
+		calTrack++;
+	}
 
 	//make accelerometer quaternion
 	Vec3 raw(-rawAccl[0], -rawAccl[1], rawAccl[2]);
@@ -84,6 +90,12 @@ DualErrorFilter::update(InertialManager& sensors){
 }
 void
 DualErrorFilter::calibrate(bool calibrate){
+	if(calMode == true && calibrate == false){
+		if(calTrack != 0) rateCal = rateCal/calTrack;
+	} else if (calMode == false && calibrate == true){
+		rateCal  = Vec3();
+		calTrack = 0;
+	}
 	calMode = calibrate;
 }
 #endif
