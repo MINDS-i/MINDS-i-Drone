@@ -22,18 +22,12 @@ private:
 public:
 	GyroOnly(){}
 	void update(InertialManager& sensors);
-	void updateRate(	Vec3 z,   float rms);
-	void updateAttitude(Quaternion Z, float rms);
-	Vec3 getRate();
-	Quaternion getAttitude();
-	Quaternion getLastAttitude();
-	Quaternion getRateQuaternion();
-	float getRoll();
-	float getPitch();
-	float getYaw();
-	float getRollRate();
-	float getPitchRate();
-	float getYawRate();
+	void calibrate(bool mode);
+	Quaternion getAttitude(){ return attitude; }
+	Vec3  getRate(){ return rate;}
+	float getPitchRate(){ return rate[0]; }
+	float getRollRate(){  return rate[1]; }
+	float getYawRate(){   return rate[2]; }
 };
 void
 GyroOnly::updateStateModel(){
@@ -43,6 +37,9 @@ GyroOnly::updateStateModel(){
 	dt /= 1000.;
 
 	attitude.integrate(rate*dt);
+}
+void
+GyroOnly::calibrate(bool mode){
 }
 void
 GyroOnly::update(InertialManager& sensors){
@@ -59,43 +56,6 @@ GyroOnly::update(InertialManager& sensors){
 	updateStateModel();
 	if(attitude.error()) attitude = Quaternion();
 	attitude.normalize();
-}
-void
-GyroOnly::updateRate(Vec3 z, float rateMSE){
-	//rate.lerpWith(z, computeGain(RATE, rateMSE));
-}
-void
-GyroOnly::updateAttitude(Quaternion Z, float attitudeMSE){
-	//updateStateModel();
-	//attitude.nlerpWith(Z, computeGain(ATTITUDE, attitudeMSE));
-}
-Vec3
-GyroOnly::getRate(){
-	return rate;
-}
-Quaternion
-GyroOnly::getAttitude(){
-	return attitude;
-}
-Quaternion
-GyroOnly::getLastAttitude(){ //deprecated
-	return attitude;
-}
-Quaternion
-GyroOnly::getRateQuaternion(){
-	return Quaternion(rate);
-}
-float
-GyroOnly::getRollRate(){
-	return rate[0];
-}
-float
-GyroOnly::getPitchRate(){
-	return rate[1];
-}
-float
-GyroOnly::getYawRate(){
-	return rate[2];
 }
 
 #endif

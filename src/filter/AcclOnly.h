@@ -20,19 +20,16 @@ private:
 public:
 	AcclOnly(){}
 	void update(InertialManager& sensors);
-	void updateRate(	Vec3 z,   float rms);
-	void updateAttitude(Quaternion Z, float rms);
-	Vec3 getRate();
-	Quaternion getAttitude();
-	Quaternion getLastAttitude();
-	Quaternion getRateQuaternion();
-	float getRoll();
-	float getPitch();
-	float getYaw();
-	float getRollRate();
-	float getPitchRate();
-	float getYawRate();
+	void calibrate(bool mode);
+	Quaternion getAttitude(){ return attitude; }
+	Vec3  getRate(){ return rate;}
+	float getPitchRate(){ return rate[0]; }
+	float getRollRate(){  return rate[1]; }
+	float getYawRate(){   return rate[2]; }
 };
+void
+AcclOnly::calibrate(bool mode){
+}
 void
 AcclOnly::update(InertialManager& sensors){
 	//collect raw inertial readings
@@ -43,42 +40,4 @@ AcclOnly::update(InertialManager& sensors){
 	Vec3 tmp(-rawAccl[0], -rawAccl[1], rawAccl[2]);
 	attitude = Quaternion(Vec3(0,0,1),tmp);
 }
-void
-AcclOnly::updateRate(Vec3 z, float rateMSE){
-	//rate.lerpWith(z, computeGain(RATE, rateMSE));
-}
-void
-AcclOnly::updateAttitude(Quaternion Z, float attitudeMSE){
-	//updateStateModel();
-	//attitude.nlerpWith(Z, computeGain(ATTITUDE, attitudeMSE));
-}
-Vec3
-AcclOnly::getRate(){
-	return rate;
-}
-Quaternion
-AcclOnly::getAttitude(){
-	return attitude;
-}
-Quaternion
-AcclOnly::getLastAttitude(){ //deprecated
-	return attitude;
-}
-Quaternion
-AcclOnly::getRateQuaternion(){
-	return Quaternion(rate);
-}
-float
-AcclOnly::getRollRate(){
-	return rate[0];
-}
-float
-AcclOnly::getPitchRate(){
-	return rate[1];
-}
-float
-AcclOnly::getYawRate(){
-	return rate[2];
-}
-
 #endif

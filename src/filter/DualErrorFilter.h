@@ -23,28 +23,14 @@ private:
 	float computeGain(float& estimate, float MSE);
 	void updateStateModel();
 public:
-	DualErrorFilter(DualErrorParams &p): params(p)   {}
+	DualErrorFilter(DualErrorParams &p): params(p) {}
 	void update(InertialManager& sensors);
-	void updateRate(Vec3 z,   float rms);
-	void updateAttitude(Quaternion Z, float rms);
-	Vec3 getRate();
-	Quaternion getAttitude();
-	Quaternion getLastAttitude();
-	Quaternion getRateQuaternion();
-	float getRoll();
-	float getPitch();
-	float getYaw();
-	float getRollRate();
-	float getPitchRate();
-	float getYawRate();
-	float gain;
-	float getAcclGain(){
-		return gain;
-	}
-	//void  setParams(DualErrorParams &p){ params = &p; }
-	float getSysMse(){
-		return params.sysMSE;
-	}
+	void calibrate(bool mode);
+	Quaternion getAttitude(){ return attitude; }
+	Vec3  getRate(){ return rate; }
+	float getPitchRate(){ return rate[0]; }
+	float getRollRate(){  return rate[1]; }
+	float getYawRate(){   return rate[2]; }
 };
 float
 DualErrorFilter::computeGain(float& estimate, float MSE){
@@ -85,7 +71,6 @@ DualErrorFilter::update(InertialManager& sensors){
 
 	//calculate gains
 	float acclGain = computeGain(estimateMSE, aMSE);
-	gain = acclGain;
 
 	//run model and lerp
 	rate = gyro;
@@ -94,41 +79,7 @@ DualErrorFilter::update(InertialManager& sensors){
 	else 				 attitude.nlerpWith(accl, acclGain);
 }
 void
-DualErrorFilter::updateRate(Vec3 z, float rateMSE){
-	//rate.lerpWith(z, computeGain(RATE, rateMSE));
-}
-void
-DualErrorFilter::updateAttitude(Quaternion Z, float attitudeMSE){
-	//updateStateModel();
-	//attitude.nlerpWith(Z, computeGain(ATTITUDE, attitudeMSE));
-}
-Vec3
-DualErrorFilter::getRate(){
-	return rate;
-}
-Quaternion
-DualErrorFilter::getAttitude(){
-	return attitude;
-}
-Quaternion
-DualErrorFilter::getLastAttitude(){ //deprecated
-	return attitude;
-}
-Quaternion
-DualErrorFilter::getRateQuaternion(){
-	return Quaternion(rate);
-}
-float
-DualErrorFilter::getRollRate(){
-	return rate[0];
-}
-float
-DualErrorFilter::getPitchRate(){
-	return rate[1];
-}
-float
-DualErrorFilter::getYawRate(){
-	return rate[2];
-}
+DualErrorFilter::calibrate(bool calibrate){
 
+}
 #endif

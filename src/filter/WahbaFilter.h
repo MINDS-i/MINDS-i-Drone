@@ -26,23 +26,12 @@ public:
 	WahbaFilter():                  params(1,1,0) {}
 	WahbaFilter(DualErrorParams p): params(p)     {}
 	void update(InertialManager& sensors);
-	void updateRate(	Vec3 z,   float rms);
-	void updateAttitude(Quaternion Z, float rms);
-	Vec3 getRate();
-	Quaternion getAttitude();
-	Quaternion getLastAttitude();
-	Quaternion getRateQuaternion();
-	float getRoll();
-	float getPitch();
-	float getYaw();
-	float getRollRate();
-	float getPitchRate();
-	float getYawRate();
-	float gain;
-	float getAcclGain(){
-		return gain;
-	}
-	void  setParams(DualErrorParams p){ params = p; }
+    void calibrate(bool mode);
+    Quaternion getAttitude(){ return attitude; }
+    Vec3  getRate(){ return rate; }
+    float getPitchRate(){ return rate[0]; }
+    float getRollRate(){  return rate[1]; }
+    float getYawRate(){   return rate[2]; }
 };
 float
 WahbaFilter::computeGain(float& estimate, float MSE){
@@ -61,6 +50,9 @@ WahbaFilter::updateStateModel(){
 	estimateMSE += dt*dt*params.sysMSE;
 
 	attitude.integrate(rate*dt);
+}
+void
+WahbaFilter::calibrate(bool mode){
 }
 void
 WahbaFilter::update(InertialManager& sensors){
@@ -145,42 +137,4 @@ WahbaFilter::update(InertialManager& sensors){
 	if(attitude.error()) attitude = wahba;
 	else 				 attitude.nlerpWith(wahba, wGain);
 }
-void
-WahbaFilter::updateRate(Vec3 z, float rateMSE){
-	//rate.lerpWith(z, computeGain(RATE, rateMSE));
-}
-void
-WahbaFilter::updateAttitude(Quaternion Z, float attitudeMSE){
-	//updateStateModel();
-	//attitude.nlerpWith(Z, computeGain(ATTITUDE, attitudeMSE));
-}
-Vec3
-WahbaFilter::getRate(){
-	return rate;
-}
-Quaternion
-WahbaFilter::getAttitude(){
-	return attitude;
-}
-Quaternion
-WahbaFilter::getLastAttitude(){ //deprecated
-	return attitude;
-}
-Quaternion
-WahbaFilter::getRateQuaternion(){
-	return Quaternion(rate);
-}
-float
-WahbaFilter::getRollRate(){
-	return rate[0];
-}
-float
-WahbaFilter::getPitchRate(){
-	return rate[1];
-}
-float
-WahbaFilter::getYawRate(){
-	return rate[2];
-}
-
 #endif

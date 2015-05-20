@@ -39,8 +39,8 @@ void changeInterruptPeriod(float newPeriod){
 void setupSettings(){
     using namespace AirSettings;
     settings.attach(INT_PERIOD,  6000, &changeInterruptPeriod );
-    settings.attach(ACCL_MSE  ,  100f, callback<DualErrorParams, &parameters, &DualErrorParams::setAcclMSE>);
-    settings.attach(ATT_SYSMSE,  3.0f, callback<DualErrorParams, &parameters, &DualErrorParams::setSysMSE> );
+    settings.attach(ACCL_MSE  , 1E2f , callback<DualErrorParams, &parameters, &DualErrorParams::setAcclMSE>);
+    settings.attach(ATT_SYSMSE, 3E0f , callback<DualErrorParams, &parameters, &DualErrorParams::setSysMSE> );
     settings.attach(ATT_ERRFAC, 1E10f, callback<DualErrorParams, &parameters, &DualErrorParams::setAcclEF> );
     settings.attach(ATT_P_TERM, 1E-3f, &updatePID );
     settings.attach(ATT_I_TERM,  0.0f, &updatePID );
