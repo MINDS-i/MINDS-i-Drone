@@ -29,6 +29,7 @@ public:
 	OutputManager(OutputDevice* (&NEWS)[4]): output(NEWS) {}
 	void set(float pitch, float roll, float dYaw, float throttle);
 	void enable(); //use with caution; arming takes time
+	void calibrate();
 	void disable();
 	void stop();
 	void start();
@@ -56,6 +57,27 @@ void OutputManager::enable(){ //use with caution; arming takes time
 		finishedArming = true;
 		for(int i=0; i<4; i++){
 			finishedArming &= output[i]->continueArming( millis()-startTime );
+		}
+	}
+
+	for(int i=0; i<4; i++){
+		output[i]->set(0.);
+	}
+	enabled = true;
+	stopped = false;
+}
+void OutputManager::calibrate(){
+	uint32_t startTime = millis();
+	for(int i=0; i<4; i++){
+		output[i]->startCalibrate();
+	}
+
+	//pass control around until all the ESC's are done arming
+	boolean finishedArming = false;
+	while( !finishedArming ){
+		finishedArming = true;
+		for(int i=0; i<4; i++){
+			finishedArming &= output[i]->continueCalibrate( millis()-startTime );
 		}
 	}
 

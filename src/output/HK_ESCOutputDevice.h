@@ -39,7 +39,7 @@ public:
 		}
 		return true;
 	}
-	void  set(float in)	{ if(in>=-.001) servo.write(in*RANGE+MIN); 	}
+	void  set(float in)	{ if(in>=0.0f) servo.write(in*RANGE+MIN); 	}
 	void  stop()		{ servo.detach();   						}
 	float get()			{ return ((float)servo.read()-MIN)/RANGE; 	}
 };

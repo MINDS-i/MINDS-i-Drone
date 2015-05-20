@@ -10,7 +10,7 @@
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 
 namespace EENode{
-    //node is EEaddr next EEaddr prev EE_LIST_TYPE data
+    //node is EEaddr next; EEaddr prev; EE_LIST_TYPE data;
     struct eeNodePtr{
     private:
         template<typename T>

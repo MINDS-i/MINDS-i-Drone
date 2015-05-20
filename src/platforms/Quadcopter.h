@@ -12,10 +12,10 @@ MPU6000   mpu;
 HMC5883L  cmp;
 Sensor* sens[2] = {&mpu, &cmp};
 InertialManager sensors(sens, 2);
-#define Output_t ServoOutput
+#define Output_t HK_ESCOutputDevice
 Output_t esc[4] =
-    { Output_t(7),  Output_t(8)    //North, East
-     ,Output_t(12), Output_t(11) };//South, West
+    { Output_t(12), Output_t(11)    //North, East
+     ,Output_t( 8), Output_t( 7) }; //South, West
 OutputDevice* outDev[4] = {&esc[0], &esc[1], &esc[2], &esc[3]};
 OutputManager output(outDev);
 
@@ -42,7 +42,7 @@ void setupSettings(){
     settings.attach(ACCL_MSE  , 1E2f , callback<DualErrorParams, &parameters, &DualErrorParams::setAcclMSE>);
     settings.attach(ATT_SYSMSE, 1E1f , callback<DualErrorParams, &parameters, &DualErrorParams::setSysMSE> );
     settings.attach(ATT_ERRFAC, 1E10f, callback<DualErrorParams, &parameters, &DualErrorParams::setAcclEF> );
-    settings.attach(ATT_P_TERM, 1E-3f, &updatePID );
+    settings.attach(ATT_P_TERM, 4E-4f, &updatePID );
     settings.attach(ATT_I_TERM,  0.0f, &updatePID );
     settings.attach(ATT_D_TERM,  0.0f, &updatePID );
 }
