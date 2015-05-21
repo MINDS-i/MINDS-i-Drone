@@ -48,15 +48,16 @@ void setupSettings(){
     settings.attach(ATT_D_TERM,  0.0f, &updatePID );
 }
 void setupQuad() {
-    Serial.begin(9600);
+    Serial.begin(Protocol::BAUD_RATE);
 
     mpu.tuneAccl(settings.getAccelTune());
     cmp.tune(settings.getMagTune());
     setupSettings();
 
     sensors.start();
-    delay(100);
+    gps.init();
     sensors.calibrate();
+
     delay(100);
 
     orientation.calibrate(true);
@@ -64,7 +65,7 @@ void setupQuad() {
     output.enable();
     orientation.calibrate(false);
 
-    gps.init();
+    setupAPM2radio();
     comms.requestResync();
 }
 void loopQuad() {
