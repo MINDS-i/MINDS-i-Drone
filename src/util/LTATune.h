@@ -6,6 +6,8 @@
 // a = (a+shift)*scalar
 //shift should be applied before scalar
 
+#pragma GCC diagnostic ignored "-pedantic"
+
 struct LTATune{
 	union{
 		float params[2][3];
@@ -15,7 +17,11 @@ struct LTATune{
 			float scalar[3];
 		};
 	};
-	LTATune(): raw{0,0,0,1,1,1} {}
+	LTATune(){
+        //Extended initializer lists cause an ugly warning
+        shift[0] = 0; shift[1] = 0; shift[2] = 0;
+        scalar[0]= 1; scalar[1]= 1; scalar[2]= 1;
+    }
     inline void calibrate(float& value, uint8_t axis){
         value = (value+shift[axis])*scalar[axis];
     }
@@ -133,4 +139,7 @@ struct LTATune{
         return tune;
     }
 };
+
+#pragma GCC diagnostic pop
+
 #endif

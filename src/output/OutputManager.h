@@ -24,8 +24,10 @@ private:
 public:
 	OutputManager(OutputDevice* (&NEWS)[4], //North, East, West, South
 				  PIDparameters   PitchPID,
-				  PIDparameters   RollPID ): output(NEWS),
-											 PID{PitchPID, RollPID} {}
+				  PIDparameters   RollPID ): output(NEWS) {
+		PID[0] = PitchPID;
+		PID[1] = RollPID;
+	}
 	OutputManager(OutputDevice* (&NEWS)[4]): output(NEWS) {}
 	void set(float pitch, float roll, float dYaw, float throttle);
 	void enable(); //use with caution; arming takes time
