@@ -69,6 +69,9 @@ void OutputManager::enable(){ //use with caution; arming takes time
 	stopped = false;
 }
 void OutputManager::calibrate(){
+	//calibration will send an already armed motor to full throttle on most ESCs
+	if(enabled) return;
+
 	uint32_t startTime = millis();
 	for(int i=0; i<4; i++){
 		output[i]->startCalibrate();

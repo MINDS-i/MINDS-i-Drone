@@ -14,9 +14,12 @@ Sensor* sens[2] = {&mpu, &cmp};
 InertialManager sensors(sens, 2);
 #define Output_t HK_ESCOutputDevice
 //12->7 digital pins = APM outputs 1->4
-Output_t esc[4] =
+/*Output_t esc[4] =
     { Output_t(12), Output_t(11)    //North, South
-     ,Output_t( 8), Output_t( 7) }; // East,  West
+     ,Output_t( 8), Output_t( 7) }; // East,  West*/
+Output_t esc[4] =
+    { Output_t( 7), Output_t( 8)    //North, South
+     ,Output_t(12), Output_t(11) }; // East,  West
 OutputDevice* outDev[4] = {&esc[0], &esc[1], &esc[2], &esc[3]};
 OutputManager output(outDev);
 
@@ -58,17 +61,22 @@ void setupQuad() {
     gps.init();
     sensors.calibrate();
 
-    delay(100);
-
-    orientation.calibrate(true);
-    delay(500);
-    output.enable();
-    orientation.calibrate(false);
-
     setupAPM2radio();
     comms.requestResync();
 }
 void loopQuad() {
     comms.update();
     gps.update();
+}
+void arm(){
+    orientation.calibrate(true);
+    delay(500);
+    output.enable();
+    orientation.calibrate(false);
+}
+void calibrate(){
+    orientation.calibrate(true);
+    delay(500);
+    output.calibrate();
+    orientation.calibrate(false);
 }
