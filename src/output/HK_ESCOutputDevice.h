@@ -6,8 +6,9 @@
 //wrapper for arduino Servo Library to OutputDevice type
 class HK_ESCOutputDevice: public OutputDevice{
 private:
-	const static uint8_t RANGE = 162;
-	const static uint8_t MIN   =  18;
+	const static uint16_t MIN   = 1000;
+	const static uint16_t IDLE  = 1050;
+	const static float    RANGE = 1000;
 	Servo 	servo;
 	uint8_t	pin;
 public:
@@ -19,9 +20,10 @@ public:
 	}
 	boolean continueArming(uint32_t dt){
 		if(dt<3000){
-			servo.write(MIN);
+			servo.writeMicroseconds(MIN);
 			return false;
 		}
+		servo.writeMicroseconds(IDLE);
 		return true;
 	}
 	void startCalibrate(){
@@ -29,18 +31,25 @@ public:
 		servo.attach(pin);
 	}
 	boolean continueCalibrate(uint32_t dt){
-		if(dt<2000) {
-			servo.write(MIN+RANGE);
+		if(dt<3000) {
+			servo.writeMicroseconds(MIN+RANGE);
 			return false;
 		}
-		if(dt<8000) {
-			servo.write(MIN);
+		if(dt<10000) {
+			servo.writeMicroseconds(MIN);
 			return false;
 		}
+		servo.writeMicroseconds(IDLE);
 		return true;
 	}
-	void  set(float in)	{ if(in>=0.0f) servo.write(in*RANGE+MIN); 	}
-	void  stop()		{ servo.detach();   						}
-	float get()			{ return ((float)servo.read()-MIN)/RANGE; 	}
+	void  set(float in)	{
+		if(in>=0.0f)
+			servo.writeMicroseconds(max(in*RANGE+MIN,IDLE));
+		else
+			servo.writeMicroseconds(MIN);
+	}
+	void  stop()		{ servo.detach(); }
+	float get()			{ return ((float)servo.readMicroseconds()-MIN)/RANGE; }
+	uint16_t getRaw()   { return servo.readMicroseconds(); }
 };
 #endif

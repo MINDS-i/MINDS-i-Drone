@@ -110,9 +110,9 @@ void OutputManager::update(OrientationEngine &orientation){
 	int outThrottle[4];
 
 	//stop here if the outputs should all be off
-	if(stopped /*|| (impulses[3]<.00001)*/){
+	if(stopped){
 		for(int i=0; i<4; i++){
-			output[i]->set(0.0);
+			output[i]->set(-1.0);
 		}
 		PID[0].acc = 0;
 		PID[1].acc = 0;
