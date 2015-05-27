@@ -61,7 +61,7 @@ namespace Protocol{
 		return (label>>2) & 0x03;
 	}
 	uint8_t getMessageLength(uint8_t label){
-		return label>>4 + 2; //two bytes of checksum will be added
+		return (label>>4) + 2; //two bytes of checksum will be added
 	}
 	uint8_t buildMessageLabel(standardSubtype type, uint8_t length){
 		if(length > 0x0f) return 0;
