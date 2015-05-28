@@ -23,6 +23,8 @@ Output_t esc[4] =
 OutputDevice* outDev[4] = {&esc[0], &esc[1], &esc[2], &esc[3]};
 OutputManager output(outDev);
 
+PIDparameters pitchPID, rollPID;
+
 void isrCallback(){
     sensors.update();
     orientation.update(sensors);
@@ -33,8 +35,8 @@ void updatePID(float d){
     PIDparameters newPID = PIDparameters( settings.get(ATT_P_TERM),
                                           settings.get(ATT_I_TERM),
                                           settings.get(ATT_D_TERM) );
-    output.setPitchPID( newPID );
-    output.setRollPID ( newPID );
+    pitchPID = newPID;
+    rollPID  = newPID;
 }
 void changeInterruptPeriod(float newPeriod){
     if(newPeriod < MINIMUM_INT_PERIOD) newPeriod = MINIMUM_INT_PERIOD;
@@ -46,27 +48,9 @@ void setupSettings(){
     settings.attach(ACCL_MSE  , 1E2f , callback<DualErrorParams, &parameters, &DualErrorParams::setAcclMSE>);
     settings.attach(ATT_SYSMSE, 1E1f , callback<DualErrorParams, &parameters, &DualErrorParams::setSysMSE> );
     settings.attach(ATT_ERRFAC, 1E10f, callback<DualErrorParams, &parameters, &DualErrorParams::setAcclEF> );
-    settings.attach(ATT_P_TERM, 4E-4f, &updatePID );
+    settings.attach(ATT_P_TERM,  0.0f, &updatePID );
     settings.attach(ATT_I_TERM,  0.0f, &updatePID );
     settings.attach(ATT_D_TERM,  0.0f, &updatePID );
-}
-void setupQuad() {
-    Serial.begin(Protocol::BAUD_RATE);
-
-    mpu.tuneAccl(settings.getAccelTune());
-    cmp.tune(settings.getMagTune());
-    setupSettings();
-
-    sensors.start();
-    gps.init();
-    sensors.calibrate();
-
-    setupAPM2radio();
-    comms.requestResync();
-}
-void loopQuad() {
-    comms.update();
-    gps.update();
 }
 void arm(){
     orientation.calibrate(true);
@@ -79,4 +63,24 @@ void calibrate(){
     delay(500);
     output.calibrate();
     orientation.calibrate(false);
+}
+void setupQuad() {
+    Serial.begin(Protocol::BAUD_RATE);
+
+    mpu.tuneAccl(settings.getAccelTune());
+    cmp.tune(settings.getMagTune());
+    setupSettings();
+
+    sensors.start();
+    gps.init();
+    sensors.calibrate();
+
+    arm();
+
+    setupAPM2radio();
+    comms.requestResync();
+}
+void loopQuad() {
+    comms.update();
+    gps.update();
 }

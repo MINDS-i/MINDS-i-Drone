@@ -56,8 +56,9 @@ Copyright 2015 MINDS-i Inc.
 #include "output/HK_ESCOutputDevice.h"
 #include "output/OutputDevice.h"
 #include "output/OutputManager.h"
-#include "output/OutputSolverCross.h"
 #include "output/ServoOutputDevice.h"
+#include "output/FlightStrategy.h"
+#include "output/Horizon.h"
 
 #include "storage/EEPROMlist.h"
 #include "storage/EEPROMstorage.h"
