@@ -51,7 +51,7 @@ public:
 void OutputManager::enable(){
 	if(!armed) arm();
 	for(int i=0; i<4; i++) output[i]->set(0.0);
-	flightMode->reset();
+	if(flightMode != NULL) flightMode->reset();
 	enabled = true;
 }
 void OutputManager::disable(){
@@ -107,6 +107,7 @@ void OutputManager::calibrate(){
 void OutputManager::update(OrientationEngine &orientation){
 	//stop here if the outputs should all be off
 	if(!enabled) return;
+	if(flightMode == NULL) return;
 
 	float impulses[4];
 	flightMode->update(orientation,impulses);
