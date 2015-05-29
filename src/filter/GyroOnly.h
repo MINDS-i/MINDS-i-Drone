@@ -48,8 +48,8 @@ GyroOnly::update(InertialManager& sensors){
 	sensors.getRotRates(rawGyro);
 
 	//make gyro vector
-	Vec3 gyro = Vec3(-rawGyro[0],
-					 -rawGyro[1],
+	Vec3 gyro = Vec3( rawGyro[1],
+					  rawGyro[0],
 					  rawGyro[2]);
 
 	rate = gyro;
