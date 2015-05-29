@@ -8,8 +8,7 @@ Settings        settings(eeStorage::getInstance());
 MPU6000         mpu;
 Sensor* sens[1] = {&mpu};
 InertialManager sensors(sens, 1);
-DualErrorParams params(1.0f, 1000.0f, 1000000.0f);
-DualErrorFilter orientation(params);
+DualErrorFilter orientation(1.0f, 1000.0f, 1000000.0f);
 
 PIDparameters tune(30.0f,400.0f,0.0f);
 PIDcontroller pid(tune);
