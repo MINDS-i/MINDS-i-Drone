@@ -49,6 +49,7 @@ public:
 	void update(OrientationEngine &orientation);
 };
 void OutputManager::enable(){
+	if(enabled) return;
 	if(!armed) arm();
 	for(int i=0; i<4; i++) output[i]->set(0.0);
 	if(flightMode != NULL) flightMode->reset();

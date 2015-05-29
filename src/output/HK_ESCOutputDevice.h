@@ -19,7 +19,7 @@ public:
 		servo.attach(pin);
 	}
 	boolean continueArming(uint32_t dt){
-		if(dt<3000){
+		if(dt<3500){
 			servo.writeMicroseconds(MIN);
 			return false;
 		}

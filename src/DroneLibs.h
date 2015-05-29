@@ -30,7 +30,6 @@ Copyright 2015 MINDS-i Inc.
 
 #include "filter/AcclOnly.h"
 #include "filter/DualErrorFilter.h"
-#include "filter/DualErrorParams.h"
 #include "filter/GyroOnly.h"
 #include "filter/OrientationEngine.h"
 

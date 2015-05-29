@@ -4,8 +4,7 @@ const float MINIMUM_INT_PERIOD = 5000;
 Settings        settings(eeStorage::getInstance());
 HardwareSerial *commSerial  = &Serial;
 CommManager     comms(commSerial, eeStorage::getInstance());
-DualErrorParams parameters(1,1,1);//defaults stored in settings
-DualErrorFilter orientation(parameters);
+DualErrorFilter orientation(1,1,1);
 
 LEA6H     gps;
 MPU6000   mpu;
@@ -14,12 +13,14 @@ Sensor* sens[2] = {&mpu, &cmp};
 InertialManager sensors(sens, 2);
 #define Output_t HK_ESCOutputDevice
 //12->7 digital pins = APM outputs 1->4
-/*Output_t esc[4] =
-    { Output_t(12), Output_t(11)    //North, South
-     ,Output_t( 8), Output_t( 7) }; // East,  West*/
+/*
 Output_t esc[4] =
-    { Output_t( 7), Output_t( 8)    //North, South
-     ,Output_t(12), Output_t(11) }; // East,  West
+    { Output_t( 8), Output_t( 7)
+     ,Output_t(12), Output_t(11) };
+     */
+Output_t esc[4] =
+    { Output_t(12), Output_t(11)
+     ,Output_t( 8), Output_t( 7) };
 OutputDevice* outDev[4] = {&esc[0], &esc[1], &esc[2], &esc[3]};
 OutputManager output(outDev);
 
@@ -45,10 +46,10 @@ void changeInterruptPeriod(float newPeriod){
 void setupSettings(){
     using namespace AirSettings;
     settings.attach(INT_PERIOD,  6000, &changeInterruptPeriod );
-    settings.attach(ACCL_MSE  , 1E2f , callback<DualErrorParams, &parameters, &DualErrorParams::setAcclMSE>);
-    settings.attach(ATT_SYSMSE, 1E1f , callback<DualErrorParams, &parameters, &DualErrorParams::setSysMSE> );
-    settings.attach(ATT_ERRFAC, 1E10f, callback<DualErrorParams, &parameters, &DualErrorParams::setAcclEF> );
-    settings.attach(ATT_P_TERM,  0.0f, &updatePID );
+    settings.attach(ACCL_MSE  , 1E2f , callback<DualErrorFilter, &orientation, &DualErrorFilter::setAcclMSE>);
+    settings.attach(ATT_SYSMSE, 1E1f , callback<DualErrorFilter, &orientation, &DualErrorFilter::setSysMSE> );
+    settings.attach(ATT_ERRFAC, 1E10f, callback<DualErrorFilter, &orientation, &DualErrorFilter::setAcclEF> );
+    settings.attach(ATT_P_TERM,  1.0f, &updatePID );
     settings.attach(ATT_I_TERM,  0.0f, &updatePID );
     settings.attach(ATT_D_TERM,  0.0f, &updatePID );
 }
