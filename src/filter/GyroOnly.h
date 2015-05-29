@@ -6,7 +6,6 @@
 #include "math/Quaternion.h"
 #include "math/Vec3.h"
 #include "math/SpatialMath.h"
-#include "DualErrorParams.h"
 #ifdef STAND_ALONE_MATH
 	#include "micros.h"
 #else

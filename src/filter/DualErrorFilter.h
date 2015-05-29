@@ -6,7 +6,6 @@
 #include "math/Quaternion.h"
 #include "math/Vec3.h"
 #include "math/SpatialMath.h"
-#include "DualErrorParams.h"
 #ifdef STAND_ALONE_MATH
 	#include "micros.h"
 #else
@@ -15,17 +14,20 @@
 
 class DualErrorFilter : public OrientationEngine {
 private:
-	bool			  calMode;
-	float			  calTrack;
-	DualErrorParams   &params;
-	Quaternion 		  attitude;
-	Vec3 			  rate, rateCal;
-	float 			  estimateMSE;
+	Quaternion attitude;
+	float 	   estimateMSE;
+	bool	   calMode;
+	float	   calTrack;
+	float 	   sysMSE;
+	float 	   acclMSE;
+	float 	   acclEF;
+	Vec3 	   rate, rateCal;
 	volatile uint32_t stateTime;
 	float computeGain(float& estimate, float MSE);
 	void updateStateModel();
 public:
-	DualErrorFilter(DualErrorParams &p): params(p) {}
+	DualErrorFilter(float systemMSE, float accelerometerMSE, float acclErrorFact)
+		:sysMSE(systemMSE), acclMSE(accelerometerMSE), acclEF(acclErrorFact) {}
 	void update(InertialManager& sensors);
 	void calibrate(bool mode);
 	Quaternion getAttitude(){ return attitude; }
@@ -33,6 +35,9 @@ public:
 	float getPitchRate(){ return rate[0]; }
 	float getRollRate(){  return rate[1]; }
 	float getYawRate(){   return rate[2]; }
+	void  setSysMSE(float mse) { sysMSE	= mse; }
+	void  setAcclMSE(float mse){ acclMSE	= mse; }
+	void  setAcclEF(float aEF) { acclEF	= aEF; }
 	//temporary
 	Vec3  getRateCal(){ return rateCal; }
 };
@@ -50,7 +55,7 @@ DualErrorFilter::updateStateModel(){
 	dt /= 1000.;
 
 	//propogate process errors
-	estimateMSE += dt*dt*params.sysMSE;
+	estimateMSE += dt*dt*sysMSE;
 
 	attitude.integrate(rate*dt);
 }
@@ -62,8 +67,8 @@ DualErrorFilter::update(InertialManager& sensors){
 	sensors.getLinAccel(rawAccl);
 
 	//make gyro vector
-	Vec3 gyro = Vec3(-rawGyro[0],
-					 -rawGyro[1],
+	Vec3 gyro = Vec3( rawGyro[1],
+					  rawGyro[0],
 					  rawGyro[2]);
 
 	if(!calMode) gyro += rateCal;
@@ -73,11 +78,11 @@ DualErrorFilter::update(InertialManager& sensors){
 	}
 
 	//make accelerometer quaternion
-	Vec3 raw(-rawAccl[0], -rawAccl[1], rawAccl[2]);
+	Vec3 raw(-rawAccl[1], -rawAccl[0], rawAccl[2]);
 	Quaternion accl(Vec3(0,0,1), raw);
 	//calculate adjusted accelerometer MSE
-	float aMSE = params.acclMSE
-				+params.acclEF *fabs(log(raw.length()));
+	float aMSE = acclMSE
+				+acclEF *fabs(log(raw.length()));
 
 	//calculate gains
 	float acclGain = computeGain(estimateMSE, aMSE);

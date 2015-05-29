@@ -6,7 +6,6 @@
 #include "math/Quaternion.h"
 #include "math/Vec3.h"
 #include "math/SpatialMath.h"
-#include "DualErrorParams.h"
 #ifdef STAND_ALONE_MATH
 	#include "micros.h"
 #else
@@ -37,7 +36,7 @@ AcclOnly::update(InertialManager& sensors){
 	sensors.getLinAccel(rawAccl);
 
 	//make accelerometer quaternion
-	Vec3 tmp(rawAccl[1], rawAccl[0], rawAccl[2]);
-	attitude = Quaternion(Vec3(0,0,-1),tmp);
+	Vec3 tmp(-rawAccl[1], -rawAccl[0], rawAccl[2]);
+	attitude = Quaternion(Vec3(0,0,1),tmp);
 }
 #endif

@@ -6,7 +6,6 @@
 #include "math/Quaternion.h"
 #include "math/Vec3.h"
 #include "math/SpatialMath.h"
-#include "DualErrorParams.h"
 #ifdef STAND_ALONE_MATH
 	#include "micros.h"
 #else
@@ -15,7 +14,9 @@
 
 class WahbaFilter : public OrientationEngine {
 private:
-	DualErrorParams   params;
+    float             sysMSE;
+    float             acclMSE;
+    float             acclEF;
 	Quaternion 		  attitude;
 	Vec3 			  rate;
 	float 			  estimateMSE;
@@ -23,8 +24,8 @@ private:
 	float computeGain(float& estimate, float MSE);
 	void updateStateModel();
 public:
-	WahbaFilter():                  params(1,1,0) {}
-	WahbaFilter(DualErrorParams p): params(p)     {}
+	WahbaFilter(float systemMSE, float accelerometerMSE, float acclErrorFact)
+        :sysMSE(systemMSE), acclMSE(accelerometerMSE), acclEF(acclErrorFact) {}
 	void update(InertialManager& sensors);
     void calibrate(bool mode);
     Quaternion getAttitude(){ return attitude; }
@@ -32,6 +33,9 @@ public:
     float getPitchRate(){ return rate[0]; }
     float getRollRate(){  return rate[1]; }
     float getYawRate(){   return rate[2]; }
+    void setSysMSE(float mse) { sysMSE  = mse; }
+    void setAcclMSE(float mse){ acclMSE = mse; }
+    void setAcclEF(float aEF) { acclEF  = aEF; }
 };
 float
 WahbaFilter::computeGain(float& estimate, float MSE){
@@ -47,7 +51,7 @@ WahbaFilter::updateStateModel(){
 	dt /= 1000.;
 
 	//propogate process errors
-	estimateMSE += dt*dt*params.sysMSE;
+	estimateMSE += dt*dt*sysMSE;
 
 	attitude.integrate(rate*dt);
 }
@@ -124,8 +128,8 @@ WahbaFilter::update(InertialManager& sensors){
 
 
 	//calculate adjusted accelerometer MSE
-	float aMSE = params.acclMSE
-				+params.acclEF *fabs(log(rawA.length()+rawM.length()));
+	float aMSE = acclMSE
+				+acclEF *fabs(log(rawA.length()+rawM.length()));
 
 	//calculate gains
 	float wGain = computeGain(estimateMSE, aMSE);
