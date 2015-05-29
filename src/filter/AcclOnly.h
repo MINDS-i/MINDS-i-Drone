@@ -37,7 +37,7 @@ AcclOnly::update(InertialManager& sensors){
 	sensors.getLinAccel(rawAccl);
 
 	//make accelerometer quaternion
-	Vec3 tmp(-rawAccl[0], -rawAccl[1], rawAccl[2]);
-	attitude = Quaternion(Vec3(0,0,1),tmp);
+	Vec3 tmp(rawAccl[1], rawAccl[0], rawAccl[2]);
+	attitude = Quaternion(Vec3(0,0,-1),tmp);
 }
 #endif
