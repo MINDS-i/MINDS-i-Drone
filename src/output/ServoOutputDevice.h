@@ -16,7 +16,7 @@ public:
 	void  	startCalibrate(){ servo.attach(pin); 			}
 	boolean continueCalibrate(uint32_t dt)	{ return true;	}
 	void  set(float in)	{
-		servo.writeMicroseconds(in*1000.+1000);
+		servo.writeMicroseconds(in*-1000.+2000);
 	}
 	void  stop() {
 		servo.detach();
