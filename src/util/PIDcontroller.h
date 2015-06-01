@@ -6,7 +6,7 @@ class PIDcontroller{
 private:
 	PIDparameters*	param;
 	float 			setPoint;
-	float			lastError;
+	float			previous;
 	boolean			stopped;
 	uint32_t		time;
 public:
@@ -27,7 +27,7 @@ public:
 	float update(float current){
 		if(stopped) {
 			time = millis();
-			lastError = 0;
+			previous = 0;
 			return 0;
 		}
 
@@ -40,9 +40,9 @@ public:
 
 		const float output = param->P * error
 					       + param->I * newAcc
-					       + param->D * (error-lastError)/dt;
+					       + param->D * (previous-current)/dt;
 
-		lastError = error;
+		previous = current;
 
 		if (output >= param->upperBound) {
 			return param->upperBound;
