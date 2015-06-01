@@ -25,6 +25,7 @@ OutputDevice* outDev[4] = {&esc[0], &esc[1], &esc[2], &esc[3]};
 OutputManager output(outDev);
 
 PIDparameters pitchPID, rollPID;
+Horizon horizon(&pitchPID, &rollPID);
 
 void isrCallback(){
     sensors.update();
@@ -52,6 +53,7 @@ void setupSettings(){
     settings.attach(ATT_P_TERM,  1.0f, &updatePID );
     settings.attach(ATT_I_TERM,  0.0f, &updatePID );
     settings.attach(ATT_D_TERM,  0.0f, &updatePID );
+    settings.attach(UNUSED_K,    1.0f, callback<Horizon, &horizon, &Horizon::setVelFac>);
 }
 void arm(){
     orientation.calibrate(true);

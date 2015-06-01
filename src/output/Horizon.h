@@ -7,13 +7,22 @@ class Horizon : public FlightStrategy {
 private:
     PIDcontroller pitchPID, rollPID;
     float         yaw, throttle;
+    float         pitch, roll;
+    float         velFac;
 public:
     Horizon(PIDparameters* p, PIDparameters* r)
-        : pitchPID(p), rollPID(r) {}
+        : pitchPID(p), rollPID(r), velFac(1) {}
+    Horizon(PIDparameters* p, PIDparameters* r, float velocityFactor)
+        : pitchPID(p), rollPID(r), velFac(velocityFactor) {}
     void update(OrientationEngine& orientation, float (&torques)[4]){
         Quaternion attitude = orientation.getAttitude();
-        torques[0] = pitchPID.update(attitude.getPitch());
-        torques[1] = rollPID.update(attitude.getRoll());
+        float pError = velFac * (attitude.getPitch() - pitch);
+        float rError = velFac * (attitude.getRoll()  - roll);
+        pitchPID.set(pError);
+        rollPID.set(rError);
+        Vec3 rates = orientation.getRate();
+        torques[0] = pitchPID.update(rates[0]*1024.f);//from rad/millisecond
+        torques[1] = rollPID.update(rates[1]*1024.f);//to rad/second
         torques[2] = yaw;
         torques[3] = throttle;
     }
@@ -25,9 +34,15 @@ public:
         set(setps[0], setps[1], setps[2], setps[3]);
     }
     void set(float pitch, float roll, float yawTorque, float throttle){
-        pitchPID.set(pitch);
-        rollPID.set(roll);
+        this->pitch = pitch;
+        this->roll = roll;
         yaw = yawTorque;
         this->throttle = throttle;
+    }
+    float getVelFac(){
+        return velFac;
+    }
+    void setVelFac(float vf){
+        velFac = vf;
     }
 };
