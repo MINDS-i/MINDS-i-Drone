@@ -8,7 +8,7 @@ private:
     PIDcontroller pitchPID, rollPID;
     float         yaw, throttle;
 public:
-    Horizon(PIDparameters& p, PIDparameters& r)
+    Horizon(PIDparameters* p, PIDparameters* r)
         : pitchPID(p), rollPID(r) {}
     void update(OrientationEngine& orientation, float (&torques)[4]){
         Quaternion attitude = orientation.getAttitude();

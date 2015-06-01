@@ -4,21 +4,21 @@
 
 class PIDcontroller{
 private:
-	PIDparameters&	param;
+	PIDparameters*	param;
 	float 			setPoint;
 	float			lastError;
 	boolean			stopped;
 	uint32_t		time;
 public:
-	PIDcontroller(PIDparameters& pid): param(pid) {}
-	void tune(PIDparameters& pid){ param = pid; }
-	void clearAccumulator(){ param.resetAccumulator(); }
+	PIDcontroller(PIDparameters* pid): param(pid) {}
+	void tune(PIDparameters* pid){ param = pid; }
+	void clearAccumulator(){ param->resetAccumulator(); }
 	void set(float input){
 		setPoint = input;
 		stopped = false;
 	}
 	void stop() {
-		param.acc = 0;
+		clearAccumulator();
 		stopped = true;
 	}
 	float calc(float current){//deprecated
@@ -31,20 +31,29 @@ public:
 			return 0;
 		}
 
-		float dt = millis()-time;
-		dt /= 1024.f;//scale dt to bring closer to seconds
-		if(dt >= 1.0f) dt = 1.0f;
-
-		float error = setPoint-current;
-		param.acc += ((error+lastError)*dt)/2.f; //integrate with midpoint rule
-
-		float output = 0;
-		output += param.P * error;
-		output += param.I * param.acc;
-		output += param.D * (error-lastError)/dt;
-
+		const float dt = ((float)min( millis()-time, 1024 ))/1024.f;
 		time = millis();
+
+		const float error = setPoint-current;
+		//integrate with midpoint rule
+		const float newAcc = param->acc + error*dt;//((error+lastError)*dt)/2.f;
+
+		const float output = param->P * error
+					       + param->I * newAcc
+					       + param->D * (error-lastError)/dt;
+
 		lastError = error;
+
+		if (output >= param->upperBound) {
+			return param->upperBound;
+		} else if (output <= param->lowerBound) {
+			return param->lowerBound;
+		} else {
+			//to prevent integral windup, we only integrate if the output
+				//is not fully saturated
+			param->acc = newAcc;
+		}
+
 		return output;
 	}
 };
