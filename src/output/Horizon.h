@@ -16,8 +16,8 @@ public:
         : pitchPID(p), rollPID(r), velFac(velocityFactor) {}
     void update(OrientationEngine& orientation, float (&torques)[4]){
         Quaternion attitude = orientation.getAttitude();
-        float pError = velFac * (attitude.getPitch() - pitch);
-        float rError = velFac * (attitude.getRoll()  - roll);
+        float pError = velFac * (pitch - attitude.getPitch());
+        float rError = velFac * (roll  - attitude.getRoll());
         pitchPID.set(pError);
         rollPID.set(rError);
         Vec3 rates = orientation.getRate();

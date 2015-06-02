@@ -17,4 +17,12 @@ static void rowReduce(float (&matrix)[rows][cols]){
         }
     }
 }
+float sqrtCurve(float input){
+    float res = sqrt(fabs(input));
+    return copysign(res, input);
+}
+float squareCurve(float input){
+    float res = input*input;
+    return copysign(res, input);
+}
 #endif

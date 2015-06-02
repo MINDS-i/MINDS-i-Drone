@@ -11,10 +11,10 @@ MPU6000   mpu;
 HMC5883L  cmp;
 Sensor* sens[2] = {&mpu, &cmp};
 InertialManager sensors(sens, 2);
-#define Output_t HK_ESCOutputDevice
+#define Output_t ServoOutput
 Output_t esc[4] =
-    { Output_t(12), Output_t(11)
-     ,Output_t( 8), Output_t( 7) };
+    { Output_t(A0), Output_t(A1)
+     ,Output_t(A2), Output_t(A3) };
 OutputDevice* outDev[4] = {&esc[0], &esc[1], &esc[2], &esc[3]};
 OutputManager output(outDev);
 
@@ -35,7 +35,7 @@ void updatePID(float d){
                                           settings.get(ATT_D_TERM),
                                           -1, 1 );
     pitchPID = newPID;
-    rollPID  = newPID;
+    //rollPID  = newPID;
 }
 void changeInterruptPeriod(float newPeriod){
     if(newPeriod < MINIMUM_INT_PERIOD) newPeriod = MINIMUM_INT_PERIOD;
