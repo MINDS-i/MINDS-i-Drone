@@ -10,6 +10,7 @@ private:
     float         pitch, roll;
     float         velFac;
 public:
+    float pT, rT;
     Horizon(PIDparameters* p, PIDparameters* r)
         : pitchPID(p), rollPID(r), velFac(1) {}
     Horizon(PIDparameters* p, PIDparameters* r, float velocityFactor)
@@ -25,6 +26,8 @@ public:
         torques[1] = rollPID.update(rates[1]*1024.f);//to rad/second
         torques[2] = yaw;
         torques[3] = throttle;
+        pT = torques[0];
+        rT = torques[1];
     }
     void reset(){
         pitchPID.clearAccumulator();
