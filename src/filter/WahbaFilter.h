@@ -14,13 +14,19 @@
 
 class WahbaFilter : public OrientationEngine {
 private:
+    bool              calMode;
+    float             calTrack;
+    Vec3              rateCal;
+
     float             sysMSE;
     float             acclMSE;
     float             acclEF;
-	Quaternion 		  attitude;
-	Vec3 			  rate;
-	float 			  estimateMSE;
-	volatile uint32_t stateTime;
+    float             estimateMSE;
+    Quaternion        attitude;
+    Vec3              rate;
+    volatile uint32_t stateTime;
+
+    Vec3              north, east, down;
 	float computeGain(float& estimate, float MSE);
 	void updateStateModel();
 public:
@@ -30,8 +36,8 @@ public:
     void calibrate(bool mode);
     Quaternion getAttitude(){ return attitude; }
     Vec3  getRate(){ return rate; }
-    float getPitchRate(){ return rate[0]; }
-    float getRollRate(){  return rate[1]; }
+    float getPitchRate(){ return rate[1]; }
+    float getRollRate(){  return rate[0]; }
     float getYawRate(){   return rate[2]; }
     void setSysMSE(float mse) { sysMSE  = mse; }
     void setAcclMSE(float mse){ acclMSE = mse; }
@@ -56,56 +62,43 @@ WahbaFilter::updateStateModel(){
 	attitude.integrate(rate*dt);
 }
 void
-WahbaFilter::calibrate(bool mode){
-}
-void
 WahbaFilter::update(InertialManager& sensors){
 	//collect raw inertial readings
-	float rawGyro[3];
-	sensors.getRotRates(rawGyro);
-
-	//make gyro vector
-	Vec3 gyro = Vec3(-rawGyro[0],
-					 -rawGyro[1],
-					  rawGyro[2]);
-
-	//make accelerometer quaternion
-
-
-
-
-	//North and R need to be derived by a calibration soon
-	static int start = 0;
-    static Vec3 North(.40,-.11,-.91);
-    static Vec3 Down(0,0,1);
-    static Vec3 R;
-	if(start == 0){
-	    Vec3 R = Down; R.crossWith(North);
-	    Down.normalize();
-	    North.normalize();
-	    R.normalize();
-	    start = 1;
-	}
-
-
+	float g[3];
     float a[3];
     float m[3];
+    sensors.getRotRates(g);
     sensors.getLinAccel(a);
     sensors.getMagField(m);
-    Vec3 rawA(-a[0],-a[1], a[2]);
-    Vec3 rawM(m[0],m[1], m[2]);
+
+    //make gyro vector
+    Vec3 gyro( g[1], g[0], g[2]);
+    Vec3 rawA(-a[1],-a[0], a[2]);
+    Vec3 rawM( m[1], m[0], m[2]);
+
+
+    if(calMode){
+        rateCal -= gyro;
+        down  += rawA;
+        north += rawM;
+        calTrack++;
+        return;
+    }
+    gyro += rateCal;
+
+    //what research paper did this come from?
     Vec3 M = rawA; M.crossWith(rawM);
 	M.normalize();
-    Vec3 bcr1 = rawA; bcr1.crossWith(Down);
-    Vec3 bcr2 = rawM; bcr2.crossWith(North);
-    Vec3 McrossR = M; McrossR.crossWith(R);
-    Vec3 MplusR = M+R;
+    Vec3 bcr1 = rawA; bcr1.crossWith(down);
+    Vec3 bcr2 = rawM; bcr2.crossWith(north);
+    Vec3 McrossR = M; McrossR.crossWith(east);
+    Vec3 MplusR = M+east;
     Vec3  subCross = (bcr1+bcr2);
-    float subDot   = (rawA.dot(Down)+rawM.dot(North));
-    float MPRp1    = (1+M.dot(R));
+    float subDot   = (rawA.dot(down)+rawM.dot(north));
+    float MPRp1    = (1+M.dot(east));
     float A = (McrossR).dot(subCross) +
               MPRp1*subDot;
-    float B = (M+R).dot(subCross);
+    float B = (M+east).dot(subCross);
     float Y = sqrt(A*A+B*B);
 
     float C1,C2;
@@ -133,12 +126,40 @@ WahbaFilter::update(InertialManager& sensors){
 
 	//calculate gains
 	float wGain = computeGain(estimateMSE, aMSE);
-	gain = wGain;
 
 	//run model and lerp
 	rate = gyro;
 	updateStateModel();
 	if(attitude.error()) attitude = wahba;
 	else 				 attitude.nlerpWith(wahba, wGain);
+}
+void
+WahbaFilter::calibrate(bool calibrate){
+    if(calibrate == false){
+        if(calTrack == 0) return;
+        rateCal = rateCal/calTrack;
+
+        //averaging samples built into normalization
+        north.normalize();
+        down.normalize();
+
+        //transform down and north into earth frame
+        Quaternion level(Vec3(0,0,1), down);
+        down = Vec3(0,0,1);
+        north.rotateBy(level);
+
+        // get east by cross product and normalize
+        east = down;
+        east.crossWith(north);
+        east.normalize();
+
+    } else if (calibrate == true){
+        rateCal  = Vec3();
+        north    = Vec3();
+        east     = Vec3();
+        down     = Vec3(0,0,0);
+        calTrack = 0;
+    }
+    calMode = calibrate;
 }
 #endif

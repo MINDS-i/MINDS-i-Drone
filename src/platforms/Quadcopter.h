@@ -35,7 +35,7 @@ void updatePID(float d){
                                           settings.get(ATT_D_TERM),
                                           -1, 1 );
     pitchPID = newPID;
-    //rollPID  = newPID;
+    rollPID  = newPID;
 }
 void changeInterruptPeriod(float newPeriod){
     if(newPeriod < MINIMUM_INT_PERIOD) newPeriod = MINIMUM_INT_PERIOD;

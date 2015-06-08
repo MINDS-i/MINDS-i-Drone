@@ -35,9 +35,9 @@ public:
 	float getPitchRate(){ return rate[1]; }
 	float getRollRate(){  return rate[0]; }
 	float getYawRate(){   return rate[2]; }
-	void  setSysMSE(float mse) { sysMSE	= mse; }
-	void  setAcclMSE(float mse){ acclMSE	= mse; }
-	void  setAcclEF(float aEF) { acclEF	= aEF; }
+	void  setSysMSE(float mse) { sysMSE	 = mse; }
+	void  setAcclMSE(float mse){ acclMSE = mse; }
+	void  setAcclEF(float aEF) { acclEF	 = aEF; }
 	//temporary
 	Vec3  getRateCal(){ return rateCal; }
 };
