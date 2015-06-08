@@ -165,7 +165,7 @@ Quaternion::operator[] (int index){
 		case 1: return x;
 		case 2: return y;
 		case 3: return z;
-		default:return 0.0;
+		default:return w;
 	}
 }
 Quaternion
