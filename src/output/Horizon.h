@@ -21,9 +21,8 @@ public:
         float rError = velFac * (roll  - attitude.getRoll());
         pitchPID.set(pError);
         rollPID.set(rError);
-        Vec3 rates = orientation.getRate();
-        torques[0] = pitchPID.update(rates[0]*1024.f);//from rad/millisecond
-        torques[1] = rollPID.update(rates[1]*1024.f);//to rad/second
+        torques[0] = pitchPID.update(orientation.getPitchRate()*1024.f);//1024 from rad/millisecond
+        torques[1] = rollPID.update(orientation.getRollRate()*1024.f);  //to rad/second
         torques[2] = yaw;
         torques[3] = throttle;
         pT = torques[0];

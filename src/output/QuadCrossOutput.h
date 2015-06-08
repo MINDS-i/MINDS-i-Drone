@@ -16,7 +16,7 @@ They are derived from the LU factorization of a matrix characterizing
 		2: back right motor (ccw)
 		3: back left motor   (cw)
 
-The file is based on a plus flying configuration - The characteristic matrix:
+The file is based on a plus flying configuration - The model matrix:
 [1 1 -1 -1
  1 -1 -1 1
  1 -1 1 -1

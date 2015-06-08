@@ -24,8 +24,8 @@ public:
 	void calibrate(bool mode);
 	Quaternion getAttitude(){ return attitude; }
 	Vec3  getRate(){ return rate;}
-	float getPitchRate(){ return rate[0]; }
-	float getRollRate(){  return rate[1]; }
+	float getPitchRate(){ return rate[1]; }
+	float getRollRate(){  return rate[0]; }
 	float getYawRate(){   return rate[2]; }
 };
 void
