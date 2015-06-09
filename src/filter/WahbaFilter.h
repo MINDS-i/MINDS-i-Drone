@@ -72,7 +72,7 @@ WahbaFilter::update(InertialManager& sensors){
     sensors.getMagField(m);
 
     //make gyro vector
-    Vec3 gyro( g[1], g[0], g[2]);
+    Vec3 gyro( g[1], g[0],-g[2]);
     Vec3 rawA(-a[1],-a[0], a[2]);
     Vec3 rawM( m[1], m[0], m[2]);
 
