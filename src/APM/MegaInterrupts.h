@@ -55,8 +55,8 @@ void (*_ISRCallback)(void);
 	}
 
 	void startInterrupt(void (*callback)(void), uint16_t periodInUs){
-		_ISRCallback = callback;
 		cli();
+		_ISRCallback = callback;
 		TCCR2A = (1<<WGM21); //CTC mode
 		TCCR2B = (1<<CS20) | (1<<CS21) | (1<<CS22); //1024 prescalar
 		TIMSK2 = (1<<OCIE2A); //interrupt of compare to OCR2A
