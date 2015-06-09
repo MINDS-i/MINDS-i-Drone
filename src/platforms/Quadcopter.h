@@ -1,10 +1,11 @@
 #include "DroneLibs.h"
 
+typedef WahbaFilter Filter_t;
 const float MINIMUM_INT_PERIOD = 5000;
 Settings        settings(eeStorage::getInstance());
 HardwareSerial *commSerial  = &Serial;
 CommManager     comms(commSerial, eeStorage::getInstance());
-DualErrorFilter orientation(1,1,1);
+Filter_t        orientation(1,1,1);
 
 LEA6H     gps;
 MPU6000   mpu;
@@ -43,14 +44,14 @@ void changeInterruptPeriod(float newPeriod){
 }
 void setupSettings(){
     using namespace AirSettings;
-    settings.attach(INT_PERIOD,  6000, &changeInterruptPeriod );
-    settings.attach(ACCL_MSE  , 1E2f , callback<DualErrorFilter, &orientation, &DualErrorFilter::setAcclMSE>);
-    settings.attach(ATT_SYSMSE, 1E1f , callback<DualErrorFilter, &orientation, &DualErrorFilter::setSysMSE> );
-    settings.attach(ATT_ERRFAC, 1E10f, callback<DualErrorFilter, &orientation, &DualErrorFilter::setAcclEF> );
-    settings.attach(ATT_P_TERM,  0.0f, &updatePID );
-    settings.attach(ATT_I_TERM,  0.0f, &updatePID );
-    settings.attach(ATT_D_TERM,  0.0f, &updatePID );
-    settings.attach(UNUSED_K,    1.0f, callback<Horizon, &horizon, &Horizon::setVelFac>);
+    settings.attach(INT_PERIOD, 8000 , &changeInterruptPeriod );
+    settings.attach(ACCL_MSE  , 1E2f , callback<Filter_t, &orientation, &Filter_t::setAcclMSE>);
+    settings.attach(ATT_SYSMSE, 1E1f , callback<Filter_t, &orientation, &Filter_t::setSysMSE> );
+    settings.attach(ATT_ERRFAC, 5E5f , callback<Filter_t, &orientation, &Filter_t::setAcclEF> );
+    settings.attach(ATT_P_TERM, 0.25f, &updatePID );
+    settings.attach(ATT_I_TERM, 0.05f, &updatePID );
+    settings.attach(ATT_D_TERM, 0.02f, &updatePID );
+    settings.attach(UNUSED_K,   4.5f , callback<Horizon, &horizon, &Horizon::setVelFac>);
 }
 void arm(){
     orientation.calibrate(true);
