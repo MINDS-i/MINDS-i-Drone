@@ -146,7 +146,7 @@ WahbaFilter::calibrate(bool calibrate){
         //transform down and north into earth frame
         Quaternion level(Vec3(0,0,1), down);
         down = Vec3(0,0,1);
-        north.rotateBy(level);
+        north.rotateBy(~level);
 
         // get east by cross product and normalize
         east = down;
