@@ -1,7 +1,8 @@
 #ifndef ALGEBRA_H
 #define ALGEBRA_H
 template <size_t rows, size_t cols>
-static void rowReduce(float (&matrix)[rows][cols]){
+static void
+rowReduce(float (&matrix)[rows][cols]){
     //iterate down diagonol, zeroing up and down
     for(int d=0; d<min(rows,cols); d++){
         float m = matrix[d][d];
@@ -17,12 +18,24 @@ static void rowReduce(float (&matrix)[rows][cols]){
         }
     }
 }
-float sqrtCurve(float input){
+inline float
+sqrtCurve(float input){
     float res = sqrt(fabs(input));
     return copysign(res, input);
 }
-float squareCurve(float input){
+inline float
+squareCurve(float input){
     float res = input*input;
+    return copysign(res, input);
+}
+inline float
+atanCurve(float input){
+    float res = atan(fabs(input));
+    return copysign(res, input);
+}
+inline float
+logCurve(float input){
+    float res = log(fabs(input)+1.0);
     return copysign(res, input);
 }
 #endif
