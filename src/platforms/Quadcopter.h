@@ -20,7 +20,8 @@ OutputDevice* outDev[4] = {&esc[0], &esc[1], &esc[2], &esc[3]};
 OutputManager output(outDev);
 
 PIDparameters pitchPID(0,0,0,-1,1), rollPID(0,0,0,-1,1);
-Horizon horizon(&pitchPID, &rollPID);
+PIDparameters yawPID(0,0,0,-1,1);
+Horizon horizon(&pitchPID, &rollPID, &yawPID);
 
 void isrCallback(){
     tic(0);
@@ -38,6 +39,13 @@ void updatePID(float d){
     pitchPID = newPID;
     rollPID  = newPID;
 }
+void updateYawPID(float d){
+    using namespace AirSettings;
+    yawPID = PIDparameters( settings.get(YAW_P_TERM),
+                            settings.get(YAW_I_TERM),
+                            settings.get(YAW_D_TERM),
+                            -1, 1 );
+}
 void changeInterruptPeriod(float newPeriod){
     if(newPeriod < MINIMUM_INT_PERIOD) newPeriod = MINIMUM_INT_PERIOD;
     startInterrupt(isrCallback, newPeriod);
@@ -46,12 +54,15 @@ void setupSettings(){
     using namespace AirSettings;
     settings.attach(INT_PERIOD, 6000 , &changeInterruptPeriod );
     settings.attach(ACCL_MSE  , 1E8f , callback<Filter_t, &orientation, &Filter_t::setAcclMSE>);
-    settings.attach(ATT_SYSMSE, 8E0f , callback<Filter_t, &orientation, &Filter_t::setSysMSE> );
+    settings.attach(ATT_SYSMSE, 1E1f , callback<Filter_t, &orientation, &Filter_t::setSysMSE> );
     settings.attach(ATT_ERRFAC, 1E3f , callback<Filter_t, &orientation, &Filter_t::setAcclEF> );
     settings.attach(ATT_P_TERM, 0.30f, &updatePID );
     settings.attach(ATT_I_TERM, 0.05f, &updatePID );
     settings.attach(ATT_D_TERM, 0.02f, &updatePID );
-    settings.attach(UNUSED_K,   4.5f , callback<Horizon, &horizon, &Horizon::setVelFac>);
+    settings.attach(VEL_P_TERM, 4.5f , callback<Horizon, &horizon, &Horizon::setVelFac>);
+    settings.attach(YAW_P_TERM, 0.0f , &updateYawPID);
+    settings.attach(YAW_I_TERM, 0.0f , &updateYawPID);
+    settings.attach(YAW_D_TERM, 0.0f , &updateYawPID);
 }
 void arm(){
     orientation.calibrate(true);

@@ -6,15 +6,16 @@
 class Horizon : public FlightStrategy {
 private:
     PIDcontroller pitchPID, rollPID;
-    float         yaw, throttle;
+    PIDcontroller yawPID;
+    float         throttle;
     float         pitch, roll;
     float         velFac;
 public:
-    float pT, rT;
-    Horizon(PIDparameters* p, PIDparameters* r)
-        : pitchPID(p), rollPID(r), velFac(1) {}
-    Horizon(PIDparameters* p, PIDparameters* r, float velocityFactor)
-        : pitchPID(p), rollPID(r), velFac(velocityFactor) {}
+    float testPoint;
+    Horizon(PIDparameters* p, PIDparameters* r, PIDparameters* y)
+        : pitchPID(p), rollPID(r), yawPID(y), velFac(1) {}
+    Horizon(PIDparameters* p, PIDparameters* r, PIDparameters* y, float velocityFactor)
+        : pitchPID(p), rollPID(r), yawPID(y), velFac(velocityFactor) {}
     void update(OrientationEngine& orientation, float (&torques)[4]){
         Quaternion attitude = orientation.getAttitude();
         float pError = velFac * (pitch - attitude.getPitch());
@@ -23,10 +24,9 @@ public:
         rollPID.set(rError);
         torques[0] = pitchPID.update(orientation.getPitchRate()*1024.f);//1024 from rad/millisecond
         torques[1] = rollPID.update(orientation.getRollRate()*1024.f);  //to rad/second
-        torques[2] = yaw;
+        torques[2] = yawPID.update(orientation.getYawRate()*256.f);
         torques[3] = throttle;
-        pT = torques[0];
-        rT = torques[1];
+        testPoint = torques[2];
     }
     void reset(){
         pitchPID.clearAccumulator();
@@ -35,10 +35,10 @@ public:
     void set(float (&setps)[4]){
         set(setps[0], setps[1], setps[2], setps[3]);
     }
-    void set(float pitch, float roll, float yawTorque, float throttle){
+    void set(float pitch, float roll, float yawRPM, float throttle){
         this->pitch = pitch;
         this->roll = roll;
-        yaw = yawTorque;
+        yawPID.set(yawRPM);
         this->throttle = throttle;
     }
     float getVelFac(){
