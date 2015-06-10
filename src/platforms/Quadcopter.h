@@ -1,6 +1,6 @@
 #include "DroneLibs.h"
 
-typedef WahbaFilter Filter_t;
+typedef DualErrorFilter Filter_t;
 const float MINIMUM_INT_PERIOD = 5000;
 Settings        settings(eeStorage::getInstance());
 HardwareSerial *commSerial  = &Serial;
@@ -44,11 +44,11 @@ void changeInterruptPeriod(float newPeriod){
 }
 void setupSettings(){
     using namespace AirSettings;
-    settings.attach(INT_PERIOD, 8000 , &changeInterruptPeriod );
-    settings.attach(ACCL_MSE  , 1E2f , callback<Filter_t, &orientation, &Filter_t::setAcclMSE>);
-    settings.attach(ATT_SYSMSE, 1E1f , callback<Filter_t, &orientation, &Filter_t::setSysMSE> );
-    settings.attach(ATT_ERRFAC, 5E5f , callback<Filter_t, &orientation, &Filter_t::setAcclEF> );
-    settings.attach(ATT_P_TERM, 0.25f, &updatePID );
+    settings.attach(INT_PERIOD, 6000 , &changeInterruptPeriod );
+    settings.attach(ACCL_MSE  , 1E8f , callback<Filter_t, &orientation, &Filter_t::setAcclMSE>);
+    settings.attach(ATT_SYSMSE, 8E0f , callback<Filter_t, &orientation, &Filter_t::setSysMSE> );
+    settings.attach(ATT_ERRFAC, 1E3f , callback<Filter_t, &orientation, &Filter_t::setAcclEF> );
+    settings.attach(ATT_P_TERM, 0.30f, &updatePID );
     settings.attach(ATT_I_TERM, 0.05f, &updatePID );
     settings.attach(ATT_D_TERM, 0.02f, &updatePID );
     settings.attach(UNUSED_K,   4.5f , callback<Horizon, &horizon, &Horizon::setVelFac>);
