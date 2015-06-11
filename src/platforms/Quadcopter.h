@@ -60,8 +60,8 @@ void setupSettings(){
     settings.attach(ATT_I_TERM, 0.05f, &updatePID );
     settings.attach(ATT_D_TERM, 0.02f, &updatePID );
     settings.attach(VEL_P_TERM, 4.5f , callback<Horizon, &horizon, &Horizon::setVelFac>);
-    settings.attach(YAW_P_TERM, 0.0f , &updateYawPID);
-    settings.attach(YAW_I_TERM, 0.0f , &updateYawPID);
+    settings.attach(YAW_P_TERM, 3.0f , &updateYawPID);
+    settings.attach(YAW_I_TERM, 1.0f , &updateYawPID);
     settings.attach(YAW_D_TERM, 0.0f , &updateYawPID);
 }
 void arm(){
