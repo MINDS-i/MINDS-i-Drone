@@ -22,9 +22,11 @@ private:
 	float 	   acclMSE;
 	float 	   acclEF;
 	Vec3 	   rate, rateCal;
+	float 	   pitch, roll, yaw;
 	volatile uint32_t stateTime;
 	float computeGain(float& estimate, float MSE);
 	void updateStateModel();
+	void updatePRY();
 public:
 	DualErrorFilter(float systemMSE, float accelerometerMSE, float acclErrorFact)
 		:sysMSE(systemMSE), acclMSE(accelerometerMSE), acclEF(acclErrorFact) {}
@@ -35,12 +37,21 @@ public:
 	float getPitchRate(){ return rate[1]; }
 	float getRollRate(){  return rate[0]; }
 	float getYawRate(){   return rate[2]; }
+	float getPitch() { return pitch; }
+	float getRoll() {  return roll;  }
+	float getYaw() {   return yaw;   }
 	void  setSysMSE(float mse) { sysMSE	 = mse; }
 	void  setAcclMSE(float mse){ acclMSE = mse; }
 	void  setAcclEF(float aEF) { acclEF	 = aEF; }
 	//temporary
 	Vec3  getRateCal(){ return rateCal; }
 };
+void
+DualErrorFilter::updatePRY(){
+	pitch = attitude.getPitch();
+	roll  = attitude.getRoll();
+	yaw   = attitude.getYaw();
+}
 float
 DualErrorFilter::computeGain(float& estimate, float MSE){
 	float gain = estimate/(estimate+MSE);
@@ -90,6 +101,8 @@ DualErrorFilter::update(InertialManager& sensors){
 	updateStateModel();
 	if(attitude.error()) attitude = accl;
 	else 				 attitude.nlerpWith(accl, acclGain);
+
+	updatePRY();
 }
 void
 DualErrorFilter::calibrate(bool calibrate){

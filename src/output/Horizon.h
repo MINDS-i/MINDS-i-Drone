@@ -17,9 +17,8 @@ public:
     Horizon(PIDparameters* p, PIDparameters* r, PIDparameters* y, float velocityFactor)
         : pitchPID(p), rollPID(r), yawPID(y), velFac(velocityFactor) {}
     void update(OrientationEngine& orientation, float (&torques)[4]){
-        Quaternion attitude = orientation.getAttitude();
-        float pError = velFac * (pitch - attitude.getPitch());
-        float rError = velFac * (roll  - attitude.getRoll());
+        float pError = velFac * (pitch - orientation.getPitch());
+        float rError = velFac * (roll  - orientation.getRoll());
         pitchPID.set(pError);
         rollPID.set(rError);
         torques[0] = pitchPID.update(orientation.getPitchRate()*1024.f);//1024 from rad/millisecond

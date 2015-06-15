@@ -24,8 +24,11 @@ public:
 	virtual void calibrate(bool mode)=0;
 	virtual Quaternion getAttitude()=0;
 	virtual Vec3       getRate()=0;
-	virtual float getRollRate()=0;
-	virtual float getPitchRate()=0;
-	virtual float getYawRate()=0;
+	virtual float getRollRate(){  return getRate()[1]; }
+	virtual float getPitchRate(){ return getRate()[0]; }
+	virtual float getYawRate(){   return getRate()[2]; }
+	virtual float getRoll(){  return getAttitude().getRoll(); }
+	virtual float getPitch(){ return getAttitude().getPitch();}
+	virtual float getYaw(){   return getAttitude().getYaw(); }
 };
 #endif
