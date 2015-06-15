@@ -27,8 +27,10 @@ private:
     volatile uint32_t stateTime;
 
     Vec3              north, east, down;
+    float             pitch, roll, yaw;
 	float computeGain(float& estimate, float MSE);
 	void updateStateModel();
+    void updatePRY();
 public:
 	WahbaFilter(float systemMSE, float accelerometerMSE, float acclErrorFact)
         :sysMSE(systemMSE), acclMSE(accelerometerMSE), acclEF(acclErrorFact) {}
@@ -43,6 +45,12 @@ public:
     void setAcclMSE(float mse){ acclMSE = mse; }
     void setAcclEF(float aEF) { acclEF  = aEF; }
 };
+void
+WahbaFilter::updatePRY(){
+    pitch = attitude.getPitch();
+    roll  = attitude.getRoll();
+    yaw   = attitude.getYaw();
+}
 float
 WahbaFilter::computeGain(float& estimate, float MSE){
 	float gain = estimate/(estimate+MSE);
@@ -54,8 +62,8 @@ WahbaFilter::updateStateModel(){
 	//keep track of passing time
 	float dt = (micros()-stateTime);
 	stateTime = micros();
-	dt /= 1000.;
-
+	dt /= 1024.f;
+    if(dt >= 250) return;
 	//propogate process errors
 	estimateMSE += dt*dt*sysMSE;
 
@@ -132,6 +140,7 @@ WahbaFilter::update(InertialManager& sensors){
 	updateStateModel();
 	if(attitude.error()) attitude = wahba;
 	else 				 attitude.nlerpWith(wahba, wGain);
+    updatePRY();
 }
 void
 WahbaFilter::calibrate(bool calibrate){
@@ -153,6 +162,7 @@ WahbaFilter::calibrate(bool calibrate){
         east.crossWith(north);
         east.normalize();
 
+        attitude = Quaternion();
     } else if (calibrate == true){
         rateCal  = Vec3();
         north    = Vec3();

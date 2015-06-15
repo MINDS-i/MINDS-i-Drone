@@ -63,7 +63,8 @@ DualErrorFilter::updateStateModel(){
 	//keep track of passing time
 	float dt = (micros()-stateTime);
 	stateTime = micros();
-	dt /= 1000.;
+	dt /= 1024.f;
+	if(dt >= 250) return;
 
 	//propogate process errors
 	estimateMSE += dt*dt*sysMSE;
@@ -101,13 +102,15 @@ DualErrorFilter::update(InertialManager& sensors){
 	updateStateModel();
 	if(attitude.error()) attitude = accl;
 	else 				 attitude.nlerpWith(accl, acclGain);
-
 	updatePRY();
 }
 void
 DualErrorFilter::calibrate(bool calibrate){
 	if(calMode == true && calibrate == false){
-		if(calTrack != 0) rateCal = rateCal/calTrack;
+		if(calTrack != 0) {
+			rateCal = rateCal/calTrack;
+			attitude = Quaternion();
+		}
 	} else if (calMode == false && calibrate == true){
 		rateCal  = Vec3();
 		calTrack = 0;
