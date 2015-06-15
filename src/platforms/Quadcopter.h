@@ -1,6 +1,6 @@
 #include "DroneLibs.h"
 
-typedef DualErrorFilter Filter_t;
+typedef WahbaFilter Filter_t;
 const float MINIMUM_INT_PERIOD = 5000;
 Settings        settings(eeStorage::getInstance());
 HardwareSerial *commSerial  = &Serial;
