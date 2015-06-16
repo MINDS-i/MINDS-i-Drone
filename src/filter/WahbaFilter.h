@@ -98,6 +98,8 @@ WahbaFilter::update(InertialManager& sensors){
     Taken from
     FAST QUATERNION ATTITUDE ESTIMATION FROM TWO VECTOR MEASUREMENTS
     by F. Landis Markley
+
+    Integrates accelerometer and magnetometer fairly
     */
     Vec3 M = rawA; M.crossWith(rawM);
 	M.normalize();

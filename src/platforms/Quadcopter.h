@@ -1,6 +1,6 @@
 #include "DroneLibs.h"
 
-typedef SQEFilter Filter_t;
+typedef DualErrorFilter Filter_t;
 const float MINIMUM_INT_PERIOD = 5000;
 Settings        settings(eeStorage::getInstance());
 HardwareSerial *commSerial  = &Serial;
