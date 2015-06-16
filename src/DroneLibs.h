@@ -33,6 +33,7 @@ Copyright 2015 MINDS-i Inc.
 #include "filter/GyroOnly.h"
 #include "filter/OrientationEngine.h"
 #include "filter/WahbaFilter.h"
+#include "filter/SQEFilter.h"
 
 #include "input/altIMU/L3GD20H.h"
 #include "input/altIMU/LPS25H.h"

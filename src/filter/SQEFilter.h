@@ -1,5 +1,5 @@
-#ifndef WahbaFilter_H
-#define WahbaFilter_H
+#ifndef SQEFilter_H
+#define SQEFilter_H
 
 #include "input/InertialManager.h"
 #include "filter/OrientationEngine.h"
@@ -12,7 +12,7 @@
 	#include "util/profile.h"
 #endif
 
-class WahbaFilter : public OrientationEngine {
+class SQEFilter : public OrientationEngine {
 private:
     bool              calMode;
     float             calTrack;
@@ -32,7 +32,7 @@ private:
 	void updateStateModel();
     void updatePRY();
 public:
-	WahbaFilter(float systemMSE, float accelerometerMSE, float acclErrorFact)
+	SQEFilter(float systemMSE, float accelerometerMSE, float acclErrorFact)
         :sysMSE(systemMSE), acclMSE(accelerometerMSE), acclEF(acclErrorFact) {}
 	void update(InertialManager& sensors);
     void calibrate(bool mode);
@@ -46,19 +46,19 @@ public:
     void setAcclEF(float aEF) { acclEF  = aEF; }
 };
 void
-WahbaFilter::updatePRY(){
+SQEFilter::updatePRY(){
     pitch = attitude.getPitch();
     roll  = attitude.getRoll();
     yaw   = attitude.getYaw();
 }
 float
-WahbaFilter::computeGain(float& estimate, float MSE){
+SQEFilter::computeGain(float& estimate, float MSE){
 	float gain = estimate/(estimate+MSE);
 	estimate = (1.-gain)*estimate;
 	return gain;
 }
 void
-WahbaFilter::updateStateModel(){
+SQEFilter::updateStateModel(){
 	//keep track of passing time
 	float dt = (micros()-stateTime);
 	stateTime = micros();
@@ -70,7 +70,7 @@ WahbaFilter::updateStateModel(){
 	attitude.integrate(rate*dt);
 }
 void
-WahbaFilter::update(InertialManager& sensors){
+SQEFilter::update(InertialManager& sensors){
 	//collect raw inertial readings
 	float g[3];
     float a[3];
@@ -100,35 +100,30 @@ WahbaFilter::update(InertialManager& sensors){
     by F. Landis Markley
     */
     Vec3 M = rawA; M.crossWith(rawM);
-	M.normalize();
-    Vec3 bcr1 = rawA; bcr1.crossWith(down);
-    Vec3 bcr2 = rawM; bcr2.crossWith(north);
-    Vec3 McrossR = M; McrossR.crossWith(east);
-    Vec3 MplusR = M+east;
-    Vec3  subCross = (bcr1+bcr2);
-    float subDot   = (rawA.dot(down)+rawM.dot(north));
-    float MPRp1    = (1+M.dot(east));
-    float A = (McrossR).dot(subCross) +
-              MPRp1*subDot;
-    float B = (M+east).dot(subCross);
-    float Y = sqrt(A*A+B*B);
+    Vec3 b1Cr1 = rawA; b1Cr1.crossWith(down);
+    Vec3 b3Cr3 = M; b3Cr3.crossWith(east);
+    float b1r1P1 = 1 + rawA.dot(down);
+    Vec3  b1Pr1  = rawA+down;
+    float U = b1r1P1*(M.dot(east)) - (down.dot(M))*(rawA.dot(east));
+    float V = b1Pr1.dot(b3Cr3);
+    float P = sqrt(U*U + V*V);
 
     float C1,C2;
-    if(A>0){
-        C1 = (Y+A);
-        C2 = B;
+    if(U>0){
+        C1 = (P+U);
+        C2 = V;
     } else {
-        C1 = B;
-        C2 = (Y-A);
+        C1 = V;
+        C2 = (P-U);
     }
 
-    McrossR *= C1;
-    MplusR  *= C2;
+    b1Cr1 *= C1;
+    b1Pr1 *= C2;
 
-    float MdotR = MPRp1*C1;
-    Quaternion wahba(MdotR, McrossR[0]+MplusR[0],
-                          McrossR[1]+MplusR[1],
-                          McrossR[2]+MplusR[2] );
+    float MdotR = b1r1P1*C1;
+    Quaternion wahba(MdotR, b1Cr1[0]+b1Pr1[0],
+                            b1Cr1[1]+b1Pr1[1],
+                            b1Cr1[2]+b1Pr1[2] );
     wahba.normalize();
 
 
@@ -147,7 +142,7 @@ WahbaFilter::update(InertialManager& sensors){
     updatePRY();
 }
 void
-WahbaFilter::calibrate(bool calibrate){
+SQEFilter::calibrate(bool calibrate){
     if(calibrate == false){
         if(calTrack == 0) return;
         rateCal = rateCal/calTrack;
