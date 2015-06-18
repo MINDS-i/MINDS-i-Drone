@@ -28,7 +28,7 @@ public:
         torques[1] = rollPID.update(orientation.getRollRate()*1024.f);  //to rad/second
         torques[2] = yawPID.update(-orientation.getYawRate()*256.f);
         torques[3] = throttle;
-        testPoint = torques[3];
+        testPoint = torques[2];
     }
     void reset(){
         pitchPID.clearAccumulator();

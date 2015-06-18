@@ -24,6 +24,13 @@ PIDparameters yawPID(0,0,0,-1,1);
 ThrottleCurve throttleCurve(0.33, 0.4);
 Horizon horizon(&pitchPID, &rollPID, &yawPID, &throttleCurve);
 
+///////////
+void arm();
+void calibrateESCs();
+void setupQuad();
+void loopQuad();
+///////////
+
 void isrCallback(){
     tic(0);
     sensors.update();
@@ -65,7 +72,7 @@ void setupSettings(){
     settings.attach(YAW_I_TERM, 1.0f , &updateYawPID);
     settings.attach(YAW_D_TERM, 0.0f , &updateYawPID);
     settings.attach(HOVER_THL , 0.4f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setHoverPoint>);
-    settings.attach(THL_LINITY, 0.25f, callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setLinearity>);
+    settings.attach(THL_LINITY, 0.33f, callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setLinearity>);
 }
 void arm(){
     delay(500);
@@ -87,6 +94,7 @@ void setupQuad() {
     sensors.calibrate();
 
     arm();
+    output.setMode(&horizon);
 
     setupAPM2radio();
     comms.requestResync();

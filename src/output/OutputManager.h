@@ -29,6 +29,11 @@ Motors should be in cross configuration, counting clockwise from the front left
   1 - clockwise
   2 - counter clockwise
   3 - clockwise
+
+  enable / disable - software level stopping and starting of motors
+  				   - can be called repeatedly or back and forth safely
+  arm/calibrate/stop - should be called a single time per power on
+  				     - stop is not intended to be undone
 */
 class OutputManager{
 private:
