@@ -68,16 +68,12 @@ void setupSettings(){
     settings.attach(THL_LINITY, 0.25f, callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setLinearity>);
 }
 void arm(){
-    orientation.calibrate(true);
     delay(500);
-    output.enable();
-    orientation.calibrate(false);
+    output.arm();
 }
-void calibrate(){
-    orientation.calibrate(true);
+void calibrateESCs(){
     delay(500);
     output.calibrate();
-    orientation.calibrate(false);
 }
 void setupQuad() {
     Serial.begin(Protocol::BAUD_RATE);
