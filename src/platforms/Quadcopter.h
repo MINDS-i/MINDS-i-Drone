@@ -21,7 +21,8 @@ OutputManager output(outDev);
 
 PIDparameters pitchPID(0,0,0,-1,1), rollPID(0,0,0,-1,1);
 PIDparameters yawPID(0,0,0,-1,1);
-Horizon horizon(&pitchPID, &rollPID, &yawPID);
+ThrottleCurve throttleCurve(0.33, 0.4);
+Horizon horizon(&pitchPID, &rollPID, &yawPID, &throttleCurve);
 
 void isrCallback(){
     tic(0);
@@ -63,6 +64,8 @@ void setupSettings(){
     settings.attach(YAW_P_TERM, 3.0f , &updateYawPID);
     settings.attach(YAW_I_TERM, 1.0f , &updateYawPID);
     settings.attach(YAW_D_TERM, 0.0f , &updateYawPID);
+    settings.attach(HOVER_THL , 0.4f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setHoverPoint>);
+    settings.attach(THL_LINITY, 0.25f, callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setLinearity>);
 }
 void arm(){
     orientation.calibrate(true);

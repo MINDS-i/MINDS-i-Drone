@@ -3,12 +3,14 @@
 
 #include "Servo.h"
 #include "output/OutputDevice.h"
+#include "math/Algebra.h"
 //wrapper for arduino Servo Library to OutputDevice type
 class HK_ESCOutputDevice: public OutputDevice{
 private:
-	const static uint16_t MIN   = 1000;
-	const static uint16_t IDLE  = 1050;
-	const static float    RANGE = 1000;
+	const static float thrustCurve[4];// = { 0.776, -1.160, 1.382, 0.0 };
+	const static uint16_t MIN    = 1000;
+	const static uint16_t IDLE   = 1050;
+	const static float    RANGE  = 1000;
 	Servo 	servo;
 	uint8_t	pin;
 public:
@@ -43,13 +45,17 @@ public:
 		return true;
 	}
 	void  set(float in)	{
-		if(in>=0.0f)
-			servo.writeMicroseconds(max(in*RANGE+MIN,IDLE));
-		else
+		if (in>=0.0f) {
+			float throttle = cubicHorner(in, thrustCurve);
+			servo.writeMicroseconds(max(throttle*RANGE+MIN,IDLE));
+		} else {
 			servo.writeMicroseconds(MIN);
+		}
 	}
 	void  stop()		{ servo.detach(); }
 	float get()			{ return ((float)servo.readMicroseconds()-MIN)/RANGE; }
 	uint16_t getRaw()   { return servo.readMicroseconds(); }
 };
+const float HK_ESCOutputDevice::thrustCurve[4] = { 0.776, -1.160, 1.382, 0.0 };
+
 #endif
