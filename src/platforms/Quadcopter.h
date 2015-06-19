@@ -67,12 +67,12 @@ void setupSettings(){
     settings.attach(ATT_P_TERM, 0.30f, &updatePID );
     settings.attach(ATT_I_TERM, 0.05f, &updatePID );
     settings.attach(ATT_D_TERM, 0.02f, &updatePID );
-    settings.attach(VEL_P_TERM, 4.5f , callback<Horizon, &horizon, &Horizon::setVelFac>);
-    settings.attach(YAW_P_TERM, 3.0f , &updateYawPID);
-    settings.attach(YAW_I_TERM, 1.0f , &updateYawPID);
-    settings.attach(YAW_D_TERM, 0.0f , &updateYawPID);
-    settings.attach(HOVER_THL , 0.4f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setHoverPoint>);
-    settings.attach(THL_LINITY, 0.33f, callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setLinearity>);
+    settings.attach(VEL_P_TERM, 4.50f, callback<Horizon, &horizon, &Horizon::setVelFac>);
+    settings.attach(YAW_P_TERM, 3.00f, &updateYawPID);
+    settings.attach(YAW_I_TERM, 1.00f, &updateYawPID);
+    settings.attach(YAW_D_TERM, 0.00f, &updateYawPID);
+    settings.attach(HOVER_THL , 0.40f, callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setHoverPoint>);
+    settings.attach(THL_LINITY, 0.30f, callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setLinearity>);
 }
 void arm(){
     delay(500);
