@@ -10,6 +10,16 @@ struct PIDparameters{
         : P(p), I(i), D(d), acc(0), lowerBound(0), upperBound(1) {};
     PIDparameters(float p, float i, float d, float l, float u)
         : P(p), I(i), D(d), acc(0), lowerBound(l), upperBound(u) {};
+    void setIdeal(float kp, float ki, float kd){
+        P = kp;
+        I = ki;
+        D = kd;
+    }
+    void setStandard(float kp, float ti, float td){
+        P = kp;
+        I = kp/ti;
+        D = kp*td;
+    }
     void setBounds(float lower, float upper){
         lowerBound = lower;
         upperBound = upper;
