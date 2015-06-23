@@ -62,7 +62,7 @@ void setupSettings(){
     settings.attach(ATT_I_TERM,  0.095f, &updatePID );
     settings.attach(ATT_D_TERM,  0.0001f, &updatePID );
     settings.attach(VEL_P_TERM, 200.0f, callback<float, &velFac>);
-    settings.attach(UNUSED_E  ,-180.0f, callback<float, &yawGain>);
+    settings.attach(UNUSED_E  , 180.0f, callback<float, &yawGain>);
     settings.attach(UNUSED_D  , 580.0f, callback<float, &throttleThrowDiv>);
     settings.attach(UNUSED_C  ,  -7.0f, callback<float, &balanceCenter>);
     settings.attach(UNUSED_B  ,  0.5300f, callback<float, &lMotCenter >);
