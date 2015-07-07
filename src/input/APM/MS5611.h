@@ -26,7 +26,6 @@ protected:
     const static uint8_t CMD_Temp        = 0x50;
     const static uint8_t RESET           = 0x1E;
     const static uint8_t ADC_READ_ADDR   = 0;
-    const static uint8_t TEMP_DUTY_CYCLE = 100;
 
     // OSR (Over Sampling Ratio) constants and calculation milliseconds
     // 0x00, 0x02, 0x04, 0x06, 0x08
@@ -41,13 +40,14 @@ protected:
     uint16_t TCO;
     uint16_t T_REF;
     uint16_t TEMPSENS;
+    uint16_t TEMP_DUTY_CYCLE = 100;
 
     //variables for use by program
     SPIcontroller spiController;
-    uint32_t readyTime;
-    int32_t  dT, P;
-    uint8_t  tempCycle;
-    bool     newData;
+    uint16_t  tempCycle;
+    uint32_t  readyTime;
+    int32_t   dT, P;
+    bool      newData;
 
     void     sendCommand(uint8_t command);
     uint32_t get24from(uint8_t prom_addr);
@@ -67,6 +67,7 @@ public:
     void calibrate();
     void update(InertialManager& man);
     void update();
+    void setTempDutyCycle(uint16_t cycle);
     float getPascals();
     float getMilliBar();
     float getCelsius(); // returns celsius
@@ -132,6 +133,10 @@ MS5611::calibrate(){
     TCO      = get16from(ADDR_TCO     );
     T_REF    = get16from(ADDR_T_REF   );
     TEMPSENS = get16from(ADDR_TEMPSENS);
+}
+void
+MS5611::setTempDutyCycle(uint16_t cycle){
+    TEMP_DUTY_CYCLE = cycle;
 }
 void
 MS5611::update(){

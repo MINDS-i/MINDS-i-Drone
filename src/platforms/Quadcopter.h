@@ -76,6 +76,13 @@ void changeInterruptPeriod(float newPeriod){
     startInterrupt(isrCallback, newPeriod);
 }
 void setupSettings(){
+
+    /* simulation results suggest
+     ACCL_MSE   90000.0
+     ATT_SYSMSE 1.0
+     ATT_ERRFAC 0.5 // +- 0.4
+     */
+
     using namespace AirSettings;
     settings.attach(INT_PERIOD, 6000 , &changeInterruptPeriod );
     settings.attach(ACCL_MSE  , 1E8f , callback<Filter_t, &orientation, &Filter_t::setAcclMSE>);
