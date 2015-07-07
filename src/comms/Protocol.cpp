@@ -37,25 +37,13 @@ namespace Protocol{
 	}
 	bool
 	needsConfirmation(uint8_t label){
-		return true;
-		/*
-		messageType type = getMessageType(label);
-		switch(type){
-			case STANDARD:
-				return STANDARD_CONFIRM_REQ;
-				break;
-			case SETTINGS:
-				return SETTINGS_CONFIRM_REQ;
-				break;
-			case WAYPOINT:
-				return WAYPOINT_CONFIRM_REQ;
-				break;
-			case PROTOCOL:
-				return false;
-			default:
-				return false;
-		}
-		*/
+		uint8_t type = getMessageType(label);
+		uint8_t subtype = getSubtype(label);
+
+		if(type == WAYPOINT) return true;
+		if(type == DATA && subtype == SETTING) return true;
+
+		return false;
 	}
 	messageType getMessageType(uint8_t label){
 		return (messageType) (label & 0x0F);

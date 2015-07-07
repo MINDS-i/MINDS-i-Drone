@@ -9,7 +9,7 @@ CommManager::CommManager(HardwareSerial *inStream, Storage<float> *settings):
 		cachedTarget(0,0),
 		connectCallback(NULL) {
 	waypoints = new SRAMlist<Waypoint>(MAX_WAYPOINTS);
-	sendSync();
+	sendSyncMessage(Protocol::SYNC_REQUEST);
 }
 void
 CommManager::update(){
@@ -40,7 +40,6 @@ CommManager::rightMatch(const uint8_t* lhs, const uint8_t llen,
 void
 CommManager::processMessage(uint8_t* msg, uint8_t length){
 	if(!fletcher(msg, length)) return;
-	//if(length != getMessageLength(msg[0])) return; //debug this
 	messageType type = getMessageType(msg[0]);
 	switch(type){
 		case WAYPOINT:
@@ -56,12 +55,12 @@ CommManager::processMessage(uint8_t* msg, uint8_t length){
 			handleString(msg,length);
 			break;
 	}
-//	if(needsConfirmation(type)){ //hit them all right now!
+	if(needsConfirmation(msg[0])){
 		sendConfirm(fletcher16(msg, length));
-//	}
+	}
 }
 
-void
+inline void
 CommManager::handleWaypoint(uint8_t* msg, uint8_t length){
 	uint8_t subtype = getSubtype(msg[0]);
 	byteConv lat, lon;
@@ -71,20 +70,21 @@ CommManager::handleWaypoint(uint8_t* msg, uint8_t length){
 	}
 	uint16_t alt   = (((uint16_t)msg[9])<<8) | msg[10];
 	uint8_t  index = msg[11];
-	if(index >= waypoints->size()) return;
 	switch(subtype){
 		case ADD:
+			if(index > waypoints->size()) return;
 			waypoints->add(index, Waypoint(lat.f, lon.f, alt));
 			if(index <  getTargetIndex()) advanceTargetIndex();
 			if(index == getTargetIndex()) cachedTarget = getWaypoint(index);
 			break;
 		case ALTER:
+			if(index >= waypoints->size()) return;
 			waypoints->set(index, Waypoint(lat.f, lon.f, alt));
 			if(index == getTargetIndex()) cachedTarget = getWaypoint(index);
 			break;
 	}
 }
-void
+inline void
 CommManager::handleData(uint8_t* msg, uint8_t length){
 	uint8_t subtype = getSubtype(msg[0]);
 	uint8_t index = msg[1];
@@ -99,7 +99,7 @@ CommManager::handleData(uint8_t* msg, uint8_t length){
 			break;
 	}
 }
-void
+inline void
 CommManager::handleWord(uint8_t* msg, uint8_t length){
 	uint8_t subtype = getSubtype(msg[0]);
 	uint8_t a = msg[1];
@@ -111,14 +111,14 @@ CommManager::handleWord(uint8_t* msg, uint8_t length){
 			break;
 		case SYNC:
 			onConnect();
-			sendSyncResponse();
+			if(a == Protocol::SYNC_REQUEST) sendSyncMessage(Protocol::SYNC_RESPOND);
 			break;
 		case COMMAND:
 			handleCommands(a,b);
 			break;
 	}
 }
-void
+inline void
 CommManager::handleCommands(uint8_t a, uint8_t b){
 	switch(a){
 		case ESTOP:
@@ -140,7 +140,7 @@ CommManager::handleCommands(uint8_t a, uint8_t b){
 			break;
 	}
 }
-void
+inline void
 CommManager::handleString(uint8_t* msg, uint8_t length){
 	/*dead end for strings*/
 }
@@ -153,7 +153,7 @@ void
 CommManager::clearWaypointList(){
 	waypoints->clear();
 }
-void
+inline void
 CommManager::sendConfirm(uint16_t digest){
 	byte datum[3];
 	datum[0] = buildMessageLabel(wordSubtype(CONFIRMATION));
@@ -207,7 +207,7 @@ CommManager::getSetting(uint8_t id){
 }
 void
 CommManager::requestResync(){
-	sendSync();
+	sendSyncMessage(Protocol::SYNC_REQUEST);
 }
 void
 CommManager::setConnectCallback(void (*call)(void)){
@@ -250,13 +250,8 @@ CommManager::sendCommand(uint8_t id, uint8_t data){
 	Protocol::sendMessage(tmp, 3, stream);
 }
 void
-CommManager::sendSync(){
-	byte datum[3] = {buildMessageLabel(wordSubtype(SYNC)), 0, 0};
-	sendMessage(datum, 3, stream);
-}
-void
-CommManager::sendSyncResponse(){
-	byte datum[3] = {buildMessageLabel(wordSubtype(SYNC)), 1, 0};
+CommManager::sendSyncMessage(int type){
+	byte datum[3] = {buildMessageLabel(wordSubtype(SYNC)), type, 0};
 	sendMessage(datum, 3, stream);
 }
 void

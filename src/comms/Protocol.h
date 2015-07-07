@@ -23,8 +23,6 @@
 */
 
 namespace Protocol{
-    const uint8_t MESSAGE_TYPE_MASK = 0x03;
-
     enum messageType{ WAYPOINT = 0,
                       DATA     = 1,
                       WORD     = 2,
@@ -62,9 +60,8 @@ namespace Protocol{
     const uint16_t BAUD_RATE        = 9600;
     const uint16_t U16_FIXED_FACTOR = 256;
 
-    const boolean STANDARD_CONFIRM_REQ = false;
-    const boolean SETTINGS_CONFIRM_REQ = true;
-    const boolean WAYPOINT_CONFIRM_REQ = true;
+    const uint8_t SYNC_REQUEST = 0x00;
+    const uint8_t SYNC_RESPOND = 0x01;
 
     const uint8_t HEADER[] = {0x13, 0x37};
     const uint8_t HEADER_SIZE = 2;

@@ -34,6 +34,7 @@ void loop(){
 		loc = manager.getTargetWaypoint();
 		manager.sendTelem(Protocol::telemetryType(LATITUDE) , loc.degLatitude());
 		manager.sendTelem(Protocol::telemetryType(LONGITUDE), loc.degLongitude());
+		manager.sendTelem(2, manager.numWaypoints());
 
 		//advance waypoint list
 		if(manager.getTargetIndex() < manager.numWaypoints()-1){

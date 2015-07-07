@@ -66,8 +66,7 @@ private:
 					   const uint8_t* rhs, const uint8_t rlen);
 	void	onConnect();
 	void	sendCommand(uint8_t id, uint8_t data);
-	void	sendSync();
-	void	sendSyncResponse();
+	void	sendSyncMessage(int type);
 	void    inputSetting(uint8_t id, float input);
 	void    processMessage(uint8_t* msg, uint8_t length);
 	void    sendConfirm(uint16_t digest);
