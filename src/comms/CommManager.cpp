@@ -95,7 +95,7 @@ CommManager::clearWaypointList(){
 void
 CommManager::sendConfirm(uint16_t digest){
 	byte datum[3];
-	datum[0] = buildMessageLabel(protocolSubtype(CONFIRM),3);
+	datum[0] = buildMessageLabel(protocolSubtype(CONFIRM));
 	datum[1] = (digest>>8  );
 	datum[2] = (digest&0xff);
 	sendMessage(datum, 3, stream);
@@ -168,7 +168,7 @@ void
 CommManager::sendTelem(uint8_t id, float value){
 	byteConv data;
 	data.f = value;
-	byte tmp[6] = {	buildMessageLabel(standardSubtype(TELEMETRY), 6),
+	byte tmp[6] = {	buildMessageLabel(standardSubtype(TELEMETRY)),
 					id,
 					data.bytes[3], data.bytes[2],
 					data.bytes[1], data.bytes[0], };
@@ -183,7 +183,7 @@ void
 CommManager::sendSetting(uint8_t id, float value){
 	byteConv data;
 	data.f = value;
-	byte tmp[6] = {	buildMessageLabel(settingsSubtype(SET), 6),
+	byte tmp[6] = {	buildMessageLabel(settingsSubtype(SET)),
 					id,
 					data.bytes[3], data.bytes[2],
 					data.bytes[1], data.bytes[0], };
@@ -214,7 +214,7 @@ CommManager::onConnect(){
 }
 void
 CommManager::sendCommand(uint8_t id, uint8_t data){
-	byte tmp[3] = { buildMessageLabel(standardSubtype(COMMAND), 3), id, data };
+	byte tmp[3] = { buildMessageLabel(standardSubtype(COMMAND)), id, data };
 	Protocol::sendMessage(tmp, 3, stream);
 }
 void
@@ -236,12 +236,12 @@ CommManager::handleCommand(commandType command, uint8_t data){
 }
 void
 CommManager::sendSync(){
-	byte datum[1] = {buildMessageLabel(protocolSubtype(SYNC),1)};
+	byte datum[1] = {buildMessageLabel(protocolSubtype(SYNC))};
 	sendMessage(datum, 1, stream);
 }
 void
 CommManager::sendSyncResponse(){
-	byte datum[1] = {buildMessageLabel(protocolSubtype(SYNC_RESP),1)};
+	byte datum[1] = {buildMessageLabel(protocolSubtype(SYNC_RESP))};
 	sendMessage(datum, 1, stream);
 }
 

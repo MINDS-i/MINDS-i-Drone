@@ -55,32 +55,25 @@ namespace Protocol{
 		}
 	}
 	messageType getMessageType(uint8_t label){
-		return (messageType) (label & MESSAGE_TYPE_MASK);
+		return (messageType) (label & 0x0F);
 	}
 	uint8_t getSubtype(uint8_t label){
-		return (label>>2) & 0x03;
+		return (label>>4) & 0x0F;
 	}
-	uint8_t getMessageLength(uint8_t label){
-		return (label>>4) + 2; //two bytes of checksum will be added
+	uint8_t buildMessageLabel(standardSubtype subtype){
+		if(subtype > 0x0F) return 0;
+		return (subtype<<4) | messageType(STANDARD);
 	}
-	uint8_t buildMessageLabel(standardSubtype type, uint8_t length){
-		if(length > 0x0f) return 0;
-		if(type > 0x03) return 0;
-		return (length<<4) | (type<<2) | messageType(STANDARD);
+	uint8_t buildMessageLabel(settingsSubtype subtype){
+		if(subtype > 0x0F) return 0;
+		return (subtype<<4) | messageType(SETTINGS);
 	}
-	uint8_t buildMessageLabel(settingsSubtype type, uint8_t length){
-		if(length > 0x0f) return 0;
-		if(type > 0x03) return 0;
-		return (length<<4) | (type<<2) | messageType(SETTINGS);
+	uint8_t buildMessageLabel(waypointSubtype subtype){
+		if(subtype > 0x0F) return 0;
+		return (subtype<<4) | messageType(WAYPOINT);
 	}
-	uint8_t buildMessageLabel(waypointSubtype type, uint8_t length){
-		if(length > 0x0f) return 0;
-		if(type > 0x03) return 0;
-		return (length<<4) | (type<<2) | messageType(WAYPOINT);
-	}
-	uint8_t buildMessageLabel(protocolSubtype type, uint8_t length){
-		if(length > 0x0f) return 0;
-		if(type > 0x03) return 0;
-		return (length<<4) | (type<<2) | messageType(PROTOCOL);
+	uint8_t buildMessageLabel(protocolSubtype subtype){
+		if(subtype > 0x0F) return 0;
+		return (subtype<<4) | messageType(PROTOCOL);
 	}
 }

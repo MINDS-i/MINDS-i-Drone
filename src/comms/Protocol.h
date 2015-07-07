@@ -69,7 +69,7 @@ namespace Protocol{
 
 	const uint8_t HEADER[] = {0x13, 0x37};
 	const uint8_t HEADER_SIZE = 2;
-	const uint8_t FOOTER[] = {0x7A};
+	const uint8_t FOOTER[] = {0x9A};
 	const uint8_t FOOTER_SIZE = 1;
 
 	void sendMessage(uint8_t* data, int length, HardwareSerial *stream);
@@ -86,12 +86,10 @@ namespace Protocol{
 
 	uint8_t getSubtype(uint8_t label);
 
-	uint8_t getMessageLength(uint8_t label);
-
-	uint8_t buildMessageLabel(standardSubtype type, uint8_t length);
-	uint8_t buildMessageLabel(settingsSubtype type, uint8_t length);
-	uint8_t buildMessageLabel(waypointSubtype type, uint8_t length);
-	uint8_t buildMessageLabel(protocolSubtype type, uint8_t length);
+	uint8_t buildMessageLabel(standardSubtype type);
+	uint8_t buildMessageLabel(settingsSubtype type);
+	uint8_t buildMessageLabel(waypointSubtype type);
+	uint8_t buildMessageLabel(protocolSubtype type);
 }
 
 #endif

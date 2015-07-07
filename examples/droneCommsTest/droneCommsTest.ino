@@ -13,10 +13,10 @@ uint32_t		walkInterval;
 
 void setupSettings(){
 	using namespace AirSettings;
-	settings.attach(INT_PERIOD	, 1000.f, callback<uint32_t, &walkInterval>);
-	settings.attach(UNUSED_I	, 1234.f, NULL);
-	settings.attach(UNUSED_H	, 2025.f, NULL);
-	settings.attach(UNUSED_G	, 1337.f, NULL);
+	settings.attach(INT_PERIOD , 1000.f, callback<uint32_t, &walkInterval>);
+	settings.attach(UNUSED_A   , 1234.f, NULL);
+	settings.attach(UNUSED_B   , 2025.f, NULL);
+	settings.attach(UNUSED_C   , 1337.f, NULL);
 }
 void setup(){
 	setupSettings();
