@@ -37,6 +37,8 @@ namespace Protocol{
 	}
 	bool
 	needsConfirmation(uint8_t label){
+		return true;
+		/*
 		messageType type = getMessageType(label);
 		switch(type){
 			case STANDARD:
@@ -53,6 +55,7 @@ namespace Protocol{
 			default:
 				return false;
 		}
+		*/
 	}
 	messageType getMessageType(uint8_t label){
 		return (messageType) (label & 0x0F);
@@ -60,20 +63,20 @@ namespace Protocol{
 	uint8_t getSubtype(uint8_t label){
 		return (label>>4) & 0x0F;
 	}
-	uint8_t buildMessageLabel(standardSubtype subtype){
-		if(subtype > 0x0F) return 0;
-		return (subtype<<4) | messageType(STANDARD);
-	}
-	uint8_t buildMessageLabel(settingsSubtype subtype){
-		if(subtype > 0x0F) return 0;
-		return (subtype<<4) | messageType(SETTINGS);
-	}
 	uint8_t buildMessageLabel(waypointSubtype subtype){
 		if(subtype > 0x0F) return 0;
 		return (subtype<<4) | messageType(WAYPOINT);
 	}
-	uint8_t buildMessageLabel(protocolSubtype subtype){
+	uint8_t buildMessageLabel(dataSubtype subtype){
 		if(subtype > 0x0F) return 0;
-		return (subtype<<4) | messageType(PROTOCOL);
+		return (subtype<<4) | messageType(DATA);
+	}
+	uint8_t buildMessageLabel(wordSubtype subtype){
+		if(subtype > 0x0F) return 0;
+		return (subtype<<4) | messageType(WORD);
+	}
+	uint8_t buildMessageLabel(stringSubtype subtype){
+		if(subtype > 0x0F) return 0;
+		return (subtype<<4) | messageType(STRING);
 	}
 }
