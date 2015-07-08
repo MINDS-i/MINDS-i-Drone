@@ -250,11 +250,13 @@ CommManager::sendCommand(uint8_t id, uint8_t data){
 	Protocol::sendMessage(tmp, 3, stream);
 }
 void
-CommManager::sendSyncMessage(int type){
-	byte datum[3] = {buildMessageLabel(wordSubtype(SYNC)), type, 0};
+CommManager::sendSyncMessage(uint8_t syncMsg){
+	byte datum[3] = {buildMessageLabel(wordSubtype(SYNC)), syncMsg, 0};
 	sendMessage(datum, 3, stream);
 }
 void
-CommManager::sendString(const char* msg, uint8_t len){
-
+CommManager::sendString(int type, const char* msg, uint8_t len){
+	//defer to protocol for more complicated procedure
+	Protocol::sendStringMessage(buildMessageLabel(stringSubtype(type))
+									, msg, len, stream);
 }

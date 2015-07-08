@@ -57,7 +57,7 @@ public:
 	void     retardTargetIndex();
 	void     setSetting(uint8_t id,   float input);
 	void     setTargetIndex(uint16_t index);
-	void 	 sendString(const char* msg , uint8_t len);
+	void     sendString(int type, const char* msg, uint8_t len);
 	Waypoint getTargetWaypoint();
 	Waypoint getWaypoint(uint16_t index);
 private:
@@ -66,7 +66,7 @@ private:
 					   const uint8_t* rhs, const uint8_t rlen);
 	void	onConnect();
 	void	sendCommand(uint8_t id, uint8_t data);
-	void	sendSyncMessage(int type);
+	void	sendSyncMessage(uint8_t syncMsg);
 	void    inputSetting(uint8_t id, float input);
 	void    processMessage(uint8_t* msg, uint8_t length);
 	void    sendConfirm(uint16_t digest);

@@ -68,10 +68,12 @@ namespace Protocol{
     const uint8_t FOOTER[] = {0x9A};
     const uint8_t FOOTER_SIZE = 1;
 
+    void sendStringMessage(uint8_t label, const char * msg, int length, HardwareSerial * stream);
     void sendMessage(uint8_t* data, int length, HardwareSerial *stream);
 
     //return a 16-bit fletcher checksum for an array of data
-    uint16_t fletcher16(uint8_t* data, int length);
+    uint16_t fletcher16(uint8_t const *data, int length);
+    uint16_t fletcher16_resume(uint8_t const *data, int length, uint16_t lastResult);
 
     //return true if an array has a valid fletcher checksum concatenated
     bool fletcher(uint8_t* data, int length);

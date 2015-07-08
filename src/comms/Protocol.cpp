@@ -4,9 +4,15 @@
 
 namespace Protocol{
 	uint16_t
-	fletcher16(uint8_t* data, int length){
+	fletcher16(uint8_t const *data, int length){
+		return fletcher16_resume(data, length, 0xFFFF);
+	}
+	uint16_t
+	fletcher16_resume(uint8_t const *data, int length, uint16_t lastResult){
 			uint16_t Asum, Bsum;
-			Asum = 0xff; Bsum = 0xff;
+			Asum = lastResult & 0xff;
+			Bsum = (lastResult>>8) & 0xff;
+			//Asum = 0xff; Bsum = 0xff;
 			while(length){
 				uint8_t tlen = (length > 20) ? 20 : length;
 				length -= tlen;
@@ -31,6 +37,17 @@ namespace Protocol{
 		uint16_t sum = Protocol::fletcher16(data, length);
 		stream->write(HEADER, HEADER_SIZE);
 		stream->write(data,length);
+		stream->write(sum>>8);
+		stream->write(sum&0xff);
+		stream->write(FOOTER, FOOTER_SIZE);
+	}
+	void
+	sendStringMessage(uint8_t label, const char * msg, int len, HardwareSerial* stream){
+		uint16_t labelSum = Protocol::fletcher16(&label, 1);
+		uint16_t sum = Protocol::fletcher16_resume((uint8_t const*)msg, len, labelSum);
+		stream->write(HEADER, HEADER_SIZE);
+		stream->write(label);
+		stream->write(msg,len);
 		stream->write(sum>>8);
 		stream->write(sum&0xff);
 		stream->write(FOOTER, FOOTER_SIZE);
