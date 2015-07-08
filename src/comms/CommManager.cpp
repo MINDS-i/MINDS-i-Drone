@@ -9,7 +9,6 @@ CommManager::CommManager(HardwareSerial *inStream, Storage<float> *settings):
 		cachedTarget(0,0),
 		connectCallback(NULL) {
 	waypoints = new SRAMlist<Waypoint>(MAX_WAYPOINTS);
-	sendSyncMessage(Protocol::SYNC_REQUEST);
 }
 void
 CommManager::update(){
@@ -131,6 +130,7 @@ CommManager::handleCommands(uint8_t a, uint8_t b){
 			waypointsLooped = (b!=0);
 			break;
 		case CLEAR_WAYPOINTS:
+			sendString("Cleared Waypoints");
 			waypoints->clear();
 			break;
 		case DELETE_WAYPOINT:
