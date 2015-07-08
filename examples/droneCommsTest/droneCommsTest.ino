@@ -36,7 +36,7 @@ void loop(){
 		manager.sendTelem(Protocol::telemetryType(LONGITUDE), loc.degLongitude());
 		manager.sendTelem(2, manager.numWaypoints());
 
-		manager.sendString(Protocol::stringSubtype(STATE), "How about this longer message?", 31);
+		manager.sendString("This simpler syntax?");
 
 		//advance waypoint list
 		if(manager.getTargetIndex() < manager.numWaypoints()-1){

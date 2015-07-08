@@ -260,3 +260,13 @@ CommManager::sendString(int type, const char* msg, uint8_t len){
 	Protocol::sendStringMessage(buildMessageLabel(stringSubtype(type))
 									, msg, len, stream);
 }
+void
+CommManager::sendString(char const * msg){
+	uint8_t len = strnlen(msg, 0xFF);
+	sendString(Protocol::stringSubtype(STATE), msg, len);
+}
+void
+CommManager::sendError(char const * msg){
+	uint8_t len = strnlen(msg, 0xFF);
+	sendString(Protocol::stringSubtype(ERROR), msg, len);
+}

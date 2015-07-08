@@ -58,6 +58,8 @@ public:
 	void     setSetting(uint8_t id,   float input);
 	void     setTargetIndex(uint16_t index);
 	void     sendString(int type, const char* msg, uint8_t len);
+	void 	 sendString(char const * msg);
+	void 	 sendError(char const * msg);
 	Waypoint getTargetWaypoint();
 	Waypoint getWaypoint(uint16_t index);
 private:
