@@ -115,7 +115,7 @@ EEPROMlist::EEPROMlist(): curSize(0) {
  * return true if every node is accounted for
  * return false if a valid list could not be salvaged
  */
-#define FAIL(a) {Serial.print("\nERROR:>"); Serial.println(a); return false; }
+
 bool EEPROMlist::readList(){
     dataRoot.addr = 0;
     dataLast.addr = 0;

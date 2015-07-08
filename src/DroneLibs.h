@@ -18,8 +18,15 @@ Copyright 2015 MINDS-i Inc.
    limitations under the License.
 */
 
-//take this macro; it might come in handy
-#define TEST(a) Serial.print(#a);Serial.print(": ");Serial.print(a);Serial.print("\t");
+//these macros can be turned off to save space
+#define DEBUG 0
+#if DEBUG
+    #define TEST(a) Serial.print(#a);Serial.print(": ");Serial.print(a);Serial.print("\t");
+    #define FAIL(a) {Serial.print("\nERROR:>"); Serial.println(a); return false; }
+#else
+    #define TEST(a) ;
+    #define FAIL(a) return false;
+#endif
 
 #include "APM/MegaInterrupts.h"
 #include "APM/APMRadioInput.h"

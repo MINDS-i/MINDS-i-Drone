@@ -36,7 +36,7 @@ void loop(){
 		manager.sendTelem(Protocol::telemetryType(LONGITUDE), loc.degLongitude());
 		manager.sendTelem(2, manager.numWaypoints());
 
-		manager.sendString("This simpler syntax?");
+		manager.sendString("Hello from the arduino!");
 
 		//advance waypoint list
 		if(manager.getTargetIndex() < manager.numWaypoints()-1){
