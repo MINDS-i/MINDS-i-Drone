@@ -6,7 +6,7 @@
 
 class NMEA{
 public:
-	NMEA(Stream& stream);
+	explicit NMEA(Stream& stream);
 	void newStream(Stream& stream);
 	void update();
 	bool newData();

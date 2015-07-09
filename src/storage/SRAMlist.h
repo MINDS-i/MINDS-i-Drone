@@ -16,7 +16,7 @@ namespace{
 template<typename T>
 class SRAMlist : public List<T>{
 public:
-	SRAMlist(uint16_t numberOfNodes);
+	explicit SRAMlist(uint16_t numberOfNodes);
 	~SRAMlist();
 	uint16_t size();
 	uint16_t maxSize();

@@ -10,9 +10,9 @@ public:
 	Quaternion(): w(1.f), x(0.f), y(0.f), z(0.f) {}
 	Quaternion(float W, float X, float Y, float Z):
 				  w(W), x(X), y(Y), z(Z) {}
-	Quaternion(const Vec3& euler);
-	Quaternion(const Vec3& axis, float angle);
-	Quaternion(const Vec3& ref, const Vec3& vec);
+	explicit Quaternion(const Vec3& euler);
+	explicit Quaternion(const Vec3& axis, float angle);
+	explicit Quaternion(const Vec3& ref, const Vec3& vec);
 	//const methods
 	Quaternion	inverse() const;
 	float		dot(const Quaternion& l) const;

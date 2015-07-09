@@ -17,8 +17,7 @@ toDeg(float radians){
 float
 invSqrt(float x){
 #if INVSQRTHACK
-	float xhalf = 0.5f * x;     // accurate within 3%, 12 times faster
-	long i = *(long*)&x;  // evil floating point bit level hacking
+	int32_t i = *(int32_t*)&x;  // evil floating point bit level hacking
 	i = 0x5f3759df - (i >> 1);  // what the ....?
 	return *(float*)&i;
 #else
