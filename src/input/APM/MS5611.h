@@ -40,7 +40,6 @@ protected:
     uint16_t TCO;
     uint16_t T_REF;
     uint16_t TEMPSENS;
-    uint16_t TEMP_DUTY_CYCLE = 100;
 
     //variables for use by program
     SPIcontroller spiController;
@@ -48,6 +47,7 @@ protected:
     uint32_t  readyTime;
     int32_t   dT, P;
     bool      newData;
+    uint16_t  TEMP_DUTY_CYCLE;
 
     void     sendCommand(uint8_t command);
     uint32_t get24from(uint8_t prom_addr);
@@ -57,10 +57,10 @@ protected:
 public:
     MS5611()
         : spiController(APM26_CS_PIN, SPISettings(8E6, MSBFIRST, SPI_MODE0)),
-          newData(true) {}
+            newData(true), TEMP_DUTY_CYCLE(100) {}
     MS5611(uint8_t cs_pin)
         : spiController(cs_pin, SPISettings(8E6, MSBFIRST, SPI_MODE0)),
-          newData(true) {}
+          newData(true), TEMP_DUTY_CYCLE(100) {}
     void init();
     void stop();
     bool status();

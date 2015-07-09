@@ -395,6 +395,7 @@ void EEPROMlist::clear(){
     dataLast = DATA_TERM;
     curSize = 0;
 }
+#if DEBUG
 void runEEListTest(){
     EEPROMlist* list = (EEPROMlist::getInstance());
 
@@ -423,5 +424,6 @@ void runEEListTest(){
         here = eeNodePtr(here.addr+NODE_SIZE);
     }
 }
+#endif
 #pragma GCC diagnostic pop
 #endif
