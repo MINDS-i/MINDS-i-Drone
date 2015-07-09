@@ -7,7 +7,11 @@ CommManager::CommManager(HardwareSerial *inStream, Storage<float> *settings):
 		bufPos(0),
 		storage(settings),
 		cachedTarget(0,0),
-		connectCallback(NULL) {
+		isLooped(false),
+		targetIndex(0),
+		waypointsLooped(false),
+		connectCallback(NULL),
+		eStopCallback(NULL) {
 	waypoints = new SRAMlist<Waypoint>(MAX_WAYPOINTS);
 }
 void
