@@ -6,8 +6,8 @@
 
 class NMEA{
 public:
-	NMEA(Stream&);
-	void newStream(Stream&);
+	NMEA(Stream& stream);
+	void newStream(Stream& stream);
 	void update();
 	bool newData();
 	#ifdef WAYPOINT_H

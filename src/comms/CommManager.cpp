@@ -107,9 +107,9 @@ CommManager::handleWord(uint8_t* msg, uint8_t length){
 	uint8_t subtype = getSubtype(msg[0]);
 	uint8_t a = msg[1];
 	uint8_t b = msg[2];
-	uint16_t join = (((uint16_t)a)<<8) | b;
 	switch(subtype){
 		case CONFIRMATION:
+			//uint16_t sum = (((uint16_t)a)<<8) | b;
 			//arduino doesn't keep track of failed messages
 			break;
 		case SYNC:
