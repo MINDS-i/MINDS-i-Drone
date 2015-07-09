@@ -178,9 +178,8 @@ T SRAMlist<T>::popBottom(){
 template<typename T>
 void SRAMlist<T>::clear(){
 	if(curSize == 0) return;
-	Node<T>* tmp;
 	for (int i = 0; i < curSize; i++){
-		tmp = root;
+		Node<T>* tmp = root;
 		root = root->next;
 		pushFree(tmp);
 	}
