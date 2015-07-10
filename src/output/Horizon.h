@@ -27,7 +27,15 @@ public:
         torques[0] = pitchPID.update(orientation.getPitchRate()*1024.f);//1024 from rad/millisecond
         torques[1] = rollPID.update(orientation.getRollRate()*1024.f);  //to rad/second
         torques[2] = yawPID.update(-orientation.getYawRate()*256.f);
+
         torques[3] = throttle;
+        /*
+        Quaternion attitude = orientation.getAttitude();
+        Vec3 down(0,0,1);
+        down.rotateBy(attitude);
+        float corr = max(down[2], 0.85); //capped at 115%
+        torques[3] = throttle/corr;
+        */
         testPoint = torques[2];
     }
     void reset(){
