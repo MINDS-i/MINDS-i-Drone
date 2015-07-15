@@ -91,8 +91,12 @@ DualErrorFilter::update(InertialManager& sensors){
 	Vec3 raw(-rawAccl[1], -rawAccl[0], rawAccl[2]);
 	Quaternion accl(Vec3(0,0,1), raw);
 	//calculate adjusted accelerometer MSE
+
+	float tmp = raw.length()-1.0f;
+	float oE  = tmp*tmp;
+
 	float aMSE = acclMSE
-				+acclEF *fabs(log(raw.length()));
+				+acclEF *oE;//*fabs(log(raw.length()));
 
 	//calculate gains
 	float acclGain = computeGain(estimateMSE, aMSE);
