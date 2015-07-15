@@ -31,7 +31,7 @@ void setupQuad();
 void loopQuad();
 ///////////
 
-float pidScore;
+float pidScore = 100000000;
 float rollCommand, pitchCommand;
 void measurePID(){
     static float lastError[2];
@@ -45,6 +45,7 @@ void measurePID(){
 
     pidScore  = pidScore * 0.99;
     pidScore += e1*e1 + e1*de + de*de/3.0f;
+    if(isnan(pidScore)) pidScore = 100000000;
 }
 
 void isrCallback(){
@@ -76,18 +77,11 @@ void changeInterruptPeriod(float newPeriod){
     startInterrupt(isrCallback, newPeriod);
 }
 void setupSettings(){
-
-    /* simulation results suggest
-     ACCL_MSE   90000.0
-     ATT_SYSMSE 1.0
-     ATT_ERRFAC 0.5 // +- 0.4
-     */
-
     using namespace AirSettings;
-    settings.attach(INT_PERIOD, 6000 , &changeInterruptPeriod );
-    settings.attach(ACCL_MSE  , 1E8f , callback<Filter_t, &orientation, &Filter_t::setAcclMSE>);
-    settings.attach(ATT_SYSMSE, 1E1f , callback<Filter_t, &orientation, &Filter_t::setSysMSE> );
-    settings.attach(ATT_ERRFAC, 1E3f , callback<Filter_t, &orientation, &Filter_t::setAcclEF> );
+    settings.attach(INT_PERIOD, 6500    , &changeInterruptPeriod );
+    settings.attach(ACCL_MSE  , 500f    , callback<Filter_t, &orientation, &Filter_t::setAcclMSE>);
+    settings.attach(ATT_SYSMSE, 0.0015f , callback<Filter_t, &orientation, &Filter_t::setSysMSE> );
+    settings.attach(ATT_ERRFAC, 10.0f   , callback<Filter_t, &orientation, &Filter_t::setAcclEF> );
     settings.attach(ATT_P_TERM, 0.30f, &updatePID );
     settings.attach(ATT_I_TERM, 0.05f, &updatePID );
     settings.attach(ATT_D_TERM, 0.02f, &updatePID );
