@@ -1,6 +1,6 @@
 #include "DroneLibs.h"
 
-typedef DualErrorFilter Filter_t;
+typedef SQEFilter Filter_t;
 const float MINIMUM_INT_PERIOD = 5000;
 Settings        settings(eeStorage::getInstance());
 HardwareSerial *commSerial  = &Serial;
@@ -82,9 +82,9 @@ void setupSettings(){
     settings.attach(ACCL_MSE  , 500.0f , callback<Filter_t, &orientation, &Filter_t::setAcclMSE>);
     settings.attach(ATT_SYSMSE, 0.0015f, callback<Filter_t, &orientation, &Filter_t::setSysMSE> );
     settings.attach(ATT_ERRFAC, 10.0f  , callback<Filter_t, &orientation, &Filter_t::setAcclEF> );
-    settings.attach(ATT_P_TERM, 0.320f , &updatePID );
-    settings.attach(ATT_I_TERM, 0.058f , &updatePID );
-    settings.attach(ATT_D_TERM, 0.021f , &updatePID );
+    settings.attach(ATT_P_TERM, 0.300f , &updatePID );
+    settings.attach(ATT_I_TERM, 0.050f , &updatePID );
+    settings.attach(ATT_D_TERM, 0.020f , &updatePID );
     settings.attach(VEL_P_TERM, 4.50f, callback<Horizon, &horizon, &Horizon::setVelFac>);
     settings.attach(YAW_P_TERM, 3.00f, &updateYawPID);
     settings.attach(YAW_I_TERM, 1.00f, &updateYawPID);
