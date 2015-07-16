@@ -1,6 +1,6 @@
 #include "DroneLibs.h"
 
-typedef SQEFilter Filter_t;
+typedef DualErrorFilter Filter_t;
 const float MINIMUM_INT_PERIOD = 5000;
 Settings        settings(eeStorage::getInstance());
 HardwareSerial *commSerial  = &Serial;
@@ -31,30 +31,12 @@ void setupQuad();
 void loopQuad();
 ///////////
 
-float pidScore = 100000000;
-float rollCommand, pitchCommand;
-void measurePID(){
-    static float lastError[2];
-    lastError[1] = lastError[0];
-    lastError[0] = (rollCommand - orientation.getRoll())+
-                   (pitchCommand- orientation.getPitch());
-
-    const float e1 = lastError[0];
-    const float e2 = lastError[1];
-    const float de = e2 - e1;
-
-    pidScore  = pidScore * 0.99;
-    pidScore += e1*e1 + e1*de + de*de/3.0f;
-    if(isnan(pidScore)) pidScore = 100000000;
-}
-
 void isrCallback(){
     tic(0);
     sensors.update();
     orientation.update(sensors);
     output.update(orientation);
     toc(0);
-    measurePID();
 }
 void updatePID(float d){
     using namespace AirSettings;
