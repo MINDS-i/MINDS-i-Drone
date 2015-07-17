@@ -100,7 +100,8 @@ SQEFilter::update(InertialManager& sensors){
     Vec3 b3Cr3 = M; b3Cr3.crossWith(east);
     float b1r1P1 = 1 + rawA.dot(down);
     Vec3  b1Pr1  = rawA+down;
-    float U = b1r1P1*(M.dot(east)) - (down.dot(M))*(rawA.dot(east));
+    //float U = b1r1P1*(M.dot(east)) - (down.dot(M))*(rawA.dot(east));
+    float U = b1r1P1*(M.dot(east) - rawA.dot(east))*(down.dot(M));
     float V = b1Pr1.dot(b3Cr3);
     float P = sqrt(U*U + V*V);
 
