@@ -94,6 +94,7 @@ SQEFilter::update(InertialManager& sensors){
     Integrates accelerometer and magnetometer, but assuming the
     accelerometer is far mare accurate (to pitch/roll from mag)
     */
+
     Vec3 M = rawA; M.crossWith(rawM);
     Vec3 b1Cr1 = rawA; b1Cr1.crossWith(down);
     Vec3 b3Cr3 = M; b3Cr3.crossWith(east);

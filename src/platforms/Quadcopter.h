@@ -1,11 +1,10 @@
 #include "DroneLibs.h"
 
-typedef DualErrorFilter Filter_t;
 const float MINIMUM_INT_PERIOD = 5000;
 Settings        settings(eeStorage::getInstance());
 HardwareSerial *commSerial  = &Serial;
 CommManager     comms(commSerial, eeStorage::getInstance());
-Filter_t        orientation(1,1,1);
+SQEFilter       orientation(0.002);
 
 LEA6H     gps;
 MPU6000   mpu;
@@ -66,9 +65,9 @@ void setupSettings(){
      */
     using namespace AirSettings;
     settings.attach(INT_PERIOD, 6500   , &changeInterruptPeriod );
-    settings.attach(ACCL_MSE  , 500.0f , callback<Filter_t, &orientation, &Filter_t::setAcclMSE>);
-    settings.attach(ATT_SYSMSE, 0.0015f, callback<Filter_t, &orientation, &Filter_t::setSysMSE> );
-    settings.attach(ATT_ERRFAC, 10.0f  , callback<Filter_t, &orientation, &Filter_t::setAcclEF> );
+    settings.attach(ACCL_MSE  , 0.0025f, callback<SQEFilter, &orientation, &SQEFilter::setwGain>);
+    //settings.attach(ATT_SYSMSE, 0.0015f, callback<Filter_t, &orientation, &Filter_t::setSysMSE> );
+    //settings.attach(ATT_ERRFAC, 10.0f  , callback<Filter_t, &orientation, &Filter_t::setAcclEF> );
     settings.attach(ATT_P_TERM, 0.300f , &updatePID );
     settings.attach(ATT_I_TERM, 0.050f , &updatePID );
     settings.attach(ATT_D_TERM, 0.020f , &updatePID );
