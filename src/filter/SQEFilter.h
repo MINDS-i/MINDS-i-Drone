@@ -14,27 +14,27 @@
 
 class SQEFilter : public OrientationEngine {
 private:
-    volatile bool              calMode;
-    volatile float             calTrack;
+    volatile bool     calMode;
+    volatile float    calTrack;
     Vec3              rateCal;
 
-    float             sysMSE;
-    float             acclMSE;
-    float             acclEF;
-    float             estimateMSE;
+    float             wGain;
     Quaternion        attitude;
     Vec3              rate;
     volatile uint32_t stateTime;
 
     float             pitch, roll, yaw;
     Vec3              north, east, down;
-    float computeGain(float& estimate, float MSE);
     void updateStateModel();
     void updatePRY();
 public:
-	SQEFilter(float systemMSE, float accelerometerMSE, float acclErrorFact)
-        :sysMSE(systemMSE), acclMSE(accelerometerMSE), acclEF(acclErrorFact),
-         north(1,0,0), east(0,1,0), down(0,0,1) {}
+	SQEFilter(float gain)
+        :calMode(false), calTrack(0), rateCal(0,0,0),
+         wGain(gain), attitude(), rate(0,0,0),
+         stateTime(0),
+         pitch(0), roll(0), yaw(0),
+         north(1,0,0), east(0,1,0), down(0,0,1)
+         {}
 	void update(InertialManager& sensors);
     void calibrate(bool mode);
     Quaternion getAttitude(){ return attitude; }
@@ -45,21 +45,13 @@ public:
     float getRoll(){  return roll; }
     float getPitch(){ return pitch;}
     float getYaw(){   return yaw;  }
-    void setSysMSE(float mse) { sysMSE  = mse; }
-    void setAcclMSE(float mse){ acclMSE = mse; }
-    void setAcclEF(float aEF) { acclEF  = aEF; }
+    void setwGain(float g) { wGain = g; }
 };
 void
 SQEFilter::updatePRY(){
     pitch = attitude.getPitch();
     roll  = attitude.getRoll();
     yaw   = attitude.getYaw();
-}
-float
-SQEFilter::computeGain(float& estimate, float MSE){
-	float gain = estimate/(estimate+MSE);
-	estimate = (1.-gain)*estimate;
-	return gain;
 }
 void
 SQEFilter::updateStateModel(){
@@ -68,9 +60,6 @@ SQEFilter::updateStateModel(){
 	stateTime = micros();
 	dt /= 1024.f;
     if(dt >= 250) return;
-	//propogate process errors
-	estimateMSE += dt*dt*sysMSE;
-
 	attitude.integrate(rate*dt);
 }
 void
@@ -132,19 +121,9 @@ SQEFilter::update(InertialManager& sensors){
                             b1Cr1[2]+b1Pr1[2] );
     wahba.normalize();
 
-    float tmp = rawA.length()-1.0f;
-    float oE  = tmp*tmp;
-
-    float aMSE = acclMSE
-                +acclEF *oE;//*fabs(log(raw.length()));
-
-	//calculate gains
-	float wGain = computeGain(estimateMSE, aMSE);
-
 	//run model and lerp
 	rate = gyro;
 	updateStateModel();
-
 	if(attitude.error()) attitude = wahba;
 	else 				 attitude.nlerpWith(wahba, wGain);
 
