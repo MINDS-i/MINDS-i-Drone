@@ -59,6 +59,11 @@ void changeInterruptPeriod(float newPeriod){
     startInterrupt(isrCallback, newPeriod);
 }
 void setupSettings(){
+    /*
+     1E8 1E1 1E3
+     374 0.001425 2,214
+     334633 1.0 0.0212
+     */
     using namespace AirSettings;
     settings.attach(INT_PERIOD, 6500   , &changeInterruptPeriod );
     settings.attach(ACCL_MSE  , 500.0f , callback<Filter_t, &orientation, &Filter_t::setAcclMSE>);
@@ -67,12 +72,12 @@ void setupSettings(){
     settings.attach(ATT_P_TERM, 0.300f , &updatePID );
     settings.attach(ATT_I_TERM, 0.050f , &updatePID );
     settings.attach(ATT_D_TERM, 0.020f , &updatePID );
-    settings.attach(VEL_P_TERM, 4.50f, callback<Horizon, &horizon, &Horizon::setVelFac>);
-    settings.attach(YAW_P_TERM, 3.00f, &updateYawPID);
-    settings.attach(YAW_I_TERM, 1.00f, &updateYawPID);
-    settings.attach(YAW_D_TERM, 0.00f, &updateYawPID);
-    settings.attach(HOVER_THL , 0.40f, callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setHoverPoint>);
-    settings.attach(THL_LINITY, 0.30f, callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setLinearity>);
+    settings.attach(VEL_P_TERM, 4.50f  , callback<Horizon, &horizon, &Horizon::setVelFac>);
+    settings.attach(YAW_P_TERM, 3.00f  , &updateYawPID);
+    settings.attach(YAW_I_TERM, 1.00f  , &updateYawPID);
+    settings.attach(YAW_D_TERM, 0.00f  , &updateYawPID);
+    settings.attach(HOVER_THL , 0.40f  , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setHoverPoint>);
+    settings.attach(THL_LINITY, 0.30f  , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setLinearity>);
 }
 void arm(){
     delay(500);

@@ -14,8 +14,8 @@
 
 class SQEFilter : public OrientationEngine {
 private:
-    bool              calMode;
-    float             calTrack;
+    volatile bool              calMode;
+    volatile float             calTrack;
     Vec3              rateCal;
 
     float             sysMSE;
@@ -26,14 +26,15 @@ private:
     Vec3              rate;
     volatile uint32_t stateTime;
 
-    Vec3              north, east, down;
     float             pitch, roll, yaw;
-	float computeGain(float& estimate, float MSE);
-	void updateStateModel();
+    Vec3              north, east, down;
+    float computeGain(float& estimate, float MSE);
+    void updateStateModel();
     void updatePRY();
 public:
 	SQEFilter(float systemMSE, float accelerometerMSE, float acclErrorFact)
-        :sysMSE(systemMSE), acclMSE(accelerometerMSE), acclEF(acclErrorFact) {}
+        :sysMSE(systemMSE), acclMSE(accelerometerMSE), acclEF(acclErrorFact),
+         north(1,0,0), east(0,1,0), down(0,0,1) {}
 	void update(InertialManager& sensors);
     void calibrate(bool mode);
     Quaternion getAttitude(){ return attitude; }
@@ -87,12 +88,11 @@ SQEFilter::update(InertialManager& sensors){
     Vec3 rawA(-a[1],-a[0], a[2]);
     Vec3 rawM( m[1], m[0], m[2]);
 
-
-    if(calMode){
+    if(calMode == true){
         rateCal -= gyro;
-        down  += rawA;
-        north += rawM;
-        calTrack++;
+        down    += rawA;
+        north   += rawM;
+        calTrack = calTrack +1;
         return;
     }
     gyro += rateCal;
@@ -132,10 +132,11 @@ SQEFilter::update(InertialManager& sensors){
                             b1Cr1[2]+b1Pr1[2] );
     wahba.normalize();
 
+    float tmp = rawA.length()-1.0f;
+    float oE  = tmp*tmp;
 
-	//calculate adjusted accelerometer MSE
-	float aMSE = acclMSE
-				+acclEF *fabs(log(rawA.length()));
+    float aMSE = acclMSE
+                +acclEF *oE;//*fabs(log(raw.length()));
 
 	//calculate gains
 	float wGain = computeGain(estimateMSE, aMSE);
@@ -143,15 +144,17 @@ SQEFilter::update(InertialManager& sensors){
 	//run model and lerp
 	rate = gyro;
 	updateStateModel();
+
 	if(attitude.error()) attitude = wahba;
 	else 				 attitude.nlerpWith(wahba, wGain);
+
     updatePRY();
 }
 void
 SQEFilter::calibrate(bool calibrate){
-    if(calibrate == false){
-        if(calTrack == 0) return;
-        rateCal = rateCal/calTrack;
+    if(calibrate == false && calMode == true){
+        if(calTrack != 0)
+            rateCal = rateCal/calTrack;
 
         //averaging samples built into normalization
         north.normalize();
@@ -167,14 +170,17 @@ SQEFilter::calibrate(bool calibrate){
         east.crossWith(north);
         east.normalize();
 
+        //reset orientation
         attitude = Quaternion();
-    } else if (calibrate == true){
-        rateCal  = Vec3();
-        north    = Vec3();
-        east     = Vec3();
+        rate     = Vec3();
+    } else if (calibrate == true && calMode == false){
+        rateCal  = Vec3(0,0,0);
+        north    = Vec3(0,0,0);
+        east     = Vec3(0,0,0);
         down     = Vec3(0,0,0);
         calTrack = 0;
     }
+
     calMode = calibrate;
 }
 #endif
