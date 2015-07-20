@@ -76,10 +76,6 @@ SQEFilter::update(InertialManager& sensors){
     Vec3 rawA(-a[1],-a[0], a[2]);
     Vec3 rawM( m[1], m[0], m[2]);
 
-    Quaternion wahba(down, rawA);
-    Quaternion mag(north, rawM);
-    wahba.rotateBy(mag);
-
     if(calMode == true){
         rateCal -= gyro;
         down    += rawA;
@@ -97,7 +93,6 @@ SQEFilter::update(InertialManager& sensors){
     Integrates accelerometer and magnetometer, but assuming the
     accelerometer is far mare accurate (to pitch/roll from mag)
     */
-    /*
     const Vec3 b1 = rawA;
     const Vec3 b2 = rawM;
     Vec3 b3 = b1; b3.crossWith(b2);
@@ -129,7 +124,6 @@ SQEFilter::update(InertialManager& sensors){
                     ,b1crossr1[1] + b1plusr1[1]
                     ,b1crossr1[2] + b1plusr1[2] );
     wahba.normalize();
-    */
 
     //run model and lerp
     rate = gyro;
