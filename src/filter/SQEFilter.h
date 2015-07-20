@@ -58,8 +58,7 @@ SQEFilter::updateStateModel(){
 	//keep track of passing time
 	float dt = (micros()-stateTime);
 	stateTime = micros();
-	dt /= 1024.f;
-    if(dt >= 250) return;
+	dt /= 1000.f;
 	attitude.integrate(rate*dt);
 }
 void
@@ -76,6 +75,10 @@ SQEFilter::update(InertialManager& sensors){
     Vec3 gyro( g[1], g[0],-g[2]);
     Vec3 rawA(-a[1],-a[0], a[2]);
     Vec3 rawM( m[1], m[0], m[2]);
+
+    Quaternion wahba(down, rawA);
+    Quaternion mag(north, rawM);
+    wahba.rotateBy(mag);
 
     if(calMode == true){
         rateCal -= gyro;
@@ -94,41 +97,45 @@ SQEFilter::update(InertialManager& sensors){
     Integrates accelerometer and magnetometer, but assuming the
     accelerometer is far mare accurate (to pitch/roll from mag)
     */
+    /*
+    const Vec3 b1 = rawA;
+    const Vec3 b2 = rawM;
+    Vec3 b3 = b1; b3.crossWith(b2);
+    const Vec3 r1 = down;
+    const Vec3 r2 = north;
+    Vec3 r3 = r1; r3.crossWith(r2);
+    Vec3 b3crossr3 = b3; b3crossr3.crossWith(r3);
+    const float U = (1.0f+b1.dot(r1))*(b3.dot(r3)) - (b1.dot(r3))*(r1.dot(b3));
+    const float V = (b1 + r1).dot(b3crossr3);
+    const float P = sqrt(U*U + V*V);
 
-    Vec3 M = rawA; M.crossWith(rawM);
-    Vec3 b1Cr1 = rawA; b1Cr1.crossWith(down);
-    Vec3 b3Cr3 = M; b3Cr3.crossWith(east);
-    float b1r1P1 = 1 + rawA.dot(down);
-    Vec3  b1Pr1  = rawA+down;
-    //float U = b1r1P1*(M.dot(east)) - (down.dot(M))*(rawA.dot(east));
-    float U = b1r1P1*(M.dot(east) - rawA.dot(east))*(down.dot(M));
-    float V = b1Pr1.dot(b3Cr3);
-    float P = sqrt(U*U + V*V);
-
-    float C1,C2;
-    if(U>0){
-        C1 = (P+U);
-        C2 = V;
+    float c1, c2;
+    if(U > 0){
+        c1 = P+U;
+        c2 = V;
     } else {
-        C1 = V;
-        C2 = (P-U);
+        c1 = V;
+        c2 = P-U;
     }
 
-    b1Cr1 *= C1;
-    b1Pr1 *= C2;
+    const float w = c1 * (1.0f + b1.dot(r1));
+    Vec3 b1crossr1 = b1; b1crossr1.crossWith(r1);
+    b1crossr1 *= c1;
+    Vec3 b1plusr1 = b1 + r1;
+    b1plusr1 *= c2;
 
-    float MdotR = b1r1P1*C1;
-    Quaternion wahba(MdotR, b1Cr1[0]+b1Pr1[0],
-                            b1Cr1[1]+b1Pr1[1],
-                            b1Cr1[2]+b1Pr1[2] );
+    Quaternion wahba(w
+                    ,b1crossr1[0] + b1plusr1[0]
+                    ,b1crossr1[1] + b1plusr1[1]
+                    ,b1crossr1[2] + b1plusr1[2] );
     wahba.normalize();
+    */
 
-	//run model and lerp
-	rate = gyro;
-	updateStateModel();
-	if(attitude.error()) attitude = wahba;
+    //run model and lerp
+    rate = gyro;
+    updateStateModel();
+    if(attitude.error()) attitude = wahba;
 	else 				 attitude.nlerpWith(wahba, wGain);
-
     updatePRY();
 }
 void
