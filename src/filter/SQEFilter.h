@@ -76,10 +76,6 @@ SQEFilter::update(InertialManager& sensors){
     Vec3 rawA(-a[1],-a[0], a[2]);
     Vec3 rawM( m[1], m[0], m[2]);
 
-    Quaternion wahba(down, rawA);
-    Quaternion mag(north, rawM);
-    wahba.rotateBy(mag);
-
     if(calMode == true){
         rateCal -= gyro;
         down    += rawA;
@@ -88,6 +84,26 @@ SQEFilter::update(InertialManager& sensors){
         return;
     }
     gyro += rateCal;
+
+
+
+    rawA.normalize();
+    rawM.normalize();
+    Vec3 dref = down;
+    //Vec3 nref = north;
+    dref.rotateBy(attitude);
+    //nref.rotateBy(attitude);
+    dref.crossWith(rawA);
+    //nref.crossWith(rawM);
+    //Vec3 d(dref[0], dref[1], nref[2]);
+//    Quaternion wahba = attitude;
+//    wahba.integrate(d);
+
+    rate = gyro + wGain * dref;
+    updateStateModel();
+    if(attitude.error()) attitude = Quaternion();
+    //if(attitude.error()) attitude = wahba;
+    //else                 attitude.nlerpWith(wahba, wGain);
 
     /*
     Taken from
@@ -129,13 +145,13 @@ SQEFilter::update(InertialManager& sensors){
                     ,b1crossr1[1] + b1plusr1[1]
                     ,b1crossr1[2] + b1plusr1[2] );
     wahba.normalize();
-    */
 
     //run model and lerp
     rate = gyro;
     updateStateModel();
     if(attitude.error()) attitude = wahba;
-	else 				 attitude.nlerpWith(wahba, wGain);
+    else                 attitude.nlerpWith(wahba, wGain);
+    */
     updatePRY();
 }
 void

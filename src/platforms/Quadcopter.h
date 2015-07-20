@@ -31,11 +31,11 @@ void loopQuad();
 ///////////
 
 void isrCallback(){
-    tic(0);
     sensors.update();
+    tic(0);
     orientation.update(sensors);
-    output.update(orientation);
     toc(0);
+    output.update(orientation);
 }
 void updatePID(float d){
     using namespace AirSettings;
