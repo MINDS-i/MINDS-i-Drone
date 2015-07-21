@@ -4,7 +4,7 @@ const float MINIMUM_INT_PERIOD = 5000;
 Settings        settings(eeStorage::getInstance());
 HardwareSerial *commSerial  = &Serial;
 CommManager     comms(commSerial, eeStorage::getInstance());
-SQEFilter       orientation(0.002);
+RCFilter        orientation(0.002);
 
 LEA6H     gps;
 MPU6000   mpu;
@@ -65,7 +65,8 @@ void setupSettings(){
      */
     using namespace AirSettings;
     settings.attach(INT_PERIOD, 6500   , &changeInterruptPeriod );
-    settings.attach(ACCL_MSE  , 0.0025f, callback<SQEFilter, &orientation, &SQEFilter::setwGain>);
+    settings.attach(ACCL_MSE  , 0.0025f, callback<RCFilter, &orientation, &RCFilter::setwGain>);
+    settings.attach(ATT_SYSMSE, 0.0000f, callback<RCFilter, &orientation, &RCFilter::setRateGain> );
     //settings.attach(ATT_SYSMSE, 0.0015f, callback<Filter_t, &orientation, &Filter_t::setSysMSE> );
     //settings.attach(ATT_ERRFAC, 10.0f  , callback<Filter_t, &orientation, &Filter_t::setAcclEF> );
     settings.attach(ATT_P_TERM, 0.300f , &updatePID );

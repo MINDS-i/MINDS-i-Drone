@@ -2,6 +2,7 @@
 #define ORIENTATION_ENGINE_H
 
 class InertialManager;
+class OrientationEngine;
 #include "input/InertialManager.h"
 #include "math/Quaternion.h"
 #include "math/Vec3.h"

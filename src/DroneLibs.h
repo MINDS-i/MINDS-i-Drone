@@ -35,12 +35,13 @@ Copyright 2015 MINDS-i Inc.
 #include "comms/NMEA.h"
 #include "comms/Protocol.h"
 
+#include "filter/OrientationEngine.h"
 #include "filter/AcclOnly.h"
 #include "filter/DualErrorFilter.h"
 #include "filter/GyroOnly.h"
-#include "filter/OrientationEngine.h"
 #include "filter/WahbaFilter.h"
 #include "filter/SQEFilter.h"
+#include "filter/RCFilter.h"
 
 #include "input/altIMU/L3GD20H.h"
 #include "input/altIMU/LPS25H.h"
