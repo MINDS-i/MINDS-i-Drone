@@ -85,22 +85,6 @@ SQEFilter::update(InertialManager& sensors){
     }
     gyro += rateCal;
 
-    rawA.normalize();
-    rawA.rotateBy(~attitude);
-    //rawA.crossWith(down);
-    rawM.normalize();
-    rawM.rotateBy(~attitude);
-    float mz = rawM[0]*north[1] - rawM[1]*north[0];
-    Vec3 delta(rawA[1], -rawA[0], mz);
-
-    rate = gyro + wGain * delta;
-    updateStateModel();
-    if(attitude.error()) attitude = Quaternion();
-    attitude.normalize();
-
-    //if(attitude.error()) attitude = wahba;
-    //else                 attitude.nlerpWith(wahba, wGain);
-
     /*
     Taken from
     FAST QUATERNION ATTITUDE ESTIMATION FROM TWO VECTOR MEASUREMENTS
@@ -146,7 +130,6 @@ SQEFilter::update(InertialManager& sensors){
     updateStateModel();
     if(attitude.error()) attitude = wahba;
     else                 attitude.nlerpWith(wahba, wGain);
-    */
     updatePRY();
 }
 void

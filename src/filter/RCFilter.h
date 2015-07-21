@@ -14,20 +14,21 @@
 
 class RCFilter : public OrientationEngine {
 private:
-    Vec3              rateCal;
-    Vec3              rate;
-    float             wGain, rateGain;
-    Quaternion        attitude;
     volatile uint32_t stateTime;
+    Vec3              rateCal;
+    Quaternion        attitude;
+    float             wGain, rateGain;
+    Vec3              rate;
     float             pitch, roll, yaw;
     void updateStateModel(Vec3 correction);
     void updateStateModel();
     void updatePRY();
 public:
-    RCFilter(float gain)
-        :rateCal(0,0,0),
-         wGain(gain), rateGain(0.0), attitude(), rate(0,0,0),
-         stateTime(0),
+    RCFilter(float gain, float rGain)
+        :stateTime(0),
+         rateCal(0,0,0),
+         attitude(),
+         wGain(gain), rateGain(rGain),
          pitch(0), roll(0), yaw(0)
          {}
     void update(InertialManager& sensors);
@@ -67,6 +68,18 @@ RCFilter::updateStateModel(){
 }
 void
 RCFilter::calibrate(bool calibrate){
+    hello
+    this
+    is
+    code
+    that doesn't
+    compile
+    because
+    you need
+    to
+    only
+    reset
+    on change
     if(calibrate) {
         attitude = Quaternion(); //reset state when calibrate is called
         rateCal  = Vec3();
