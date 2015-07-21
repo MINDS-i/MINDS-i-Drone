@@ -15,6 +15,7 @@
 class RCFilter : public OrientationEngine {
 private:
     volatile uint32_t stateTime;
+    bool              calMode;
     Vec3              rateCal;
     Quaternion        attitude;
     float             wGain, rateGain;
@@ -25,7 +26,7 @@ private:
     void updatePRY();
 public:
     RCFilter(float gain, float rGain)
-        :stateTime(0),
+        :stateTime(0), calMode(false),
          rateCal(0,0,0),
          attitude(),
          wGain(gain), rateGain(rGain),
@@ -68,22 +69,11 @@ RCFilter::updateStateModel(){
 }
 void
 RCFilter::calibrate(bool calibrate){
-    hello
-    this
-    is
-    code
-    that doesn't
-    compile
-    because
-    you need
-    to
-    only
-    reset
-    on change
-    if(calibrate) {
-        attitude = Quaternion(); //reset state when calibrate is called
+    if(calibrate == true && calMode == false) {
+        //attitude = Quaternion(); //reset state when calibrate is called
         rateCal  = Vec3();
     }
+    calMode = calibrate;
 }
 void
 RCFilter::update(InertialManager& sensors){
@@ -98,7 +88,7 @@ RCFilter::update(InertialManager& sensors){
     //make gyro vector
     Vec3 gyro( g[1], g[0],-g[2]);
     Vec3 rawA(-a[1],-a[0], a[2]);
-    Vec3 rawM( m[1], m[0], m[2]);
+    Vec3 rawM(-m[1], m[0],-m[2]);
 
     //reference frame mahoney filter 2.2ms
     //delta is build from cross products rawAxdown and rawMxnorth, which both

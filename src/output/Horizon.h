@@ -26,8 +26,7 @@ public:
         rollPID.set(rError);
         torques[0] = pitchPID.update(orientation.getPitchRate()*1024.f);//1024 from rad/millisecond
         torques[1] = rollPID.update(orientation.getRollRate()*1024.f);  //to rad/second
-        torques[2] = yawPID.update(-orientation.getYawRate()*256.f);
-
+        torques[2] = yawPID.update(orientation.getYaw());
         torques[3] = throttle;
         /*
         Quaternion attitude = orientation.getAttitude();
@@ -45,10 +44,10 @@ public:
     void set(float (&setps)[4]){
         set(setps[0], setps[1], setps[2], setps[3]);
     }
-    void set(float pitch, float roll, float yawRPM, float throttle){
+    void set(float pitch, float roll, float yaw, float throttle){
         this->pitch = pitch;
         this->roll = roll;
-        yawPID.set(yawRPM);
+        yawPID.set(yaw);
         this->throttle = tCurve->get(throttle);
     }
     float getVelFac(){
