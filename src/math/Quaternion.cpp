@@ -151,6 +151,18 @@ Quaternion::integrate(const Vec3& rotVel){
 	z +=  W*rotVel.z + X*rotVel.y - Y*rotVel.x;
 }
 void
+Quaternion::preintegrate(const Vec3& rotVel){
+	//this = <0 x y z>.rotateBy(this) /2
+	float W = w/2;
+	float X = x/2;
+	float Y = y/2;
+	float Z = z/2;
+	w = W - rotVel.x*X - rotVel.y*Y - rotVel.z*Z;
+	x = X + rotVel.x*W + rotVel.y*Z - rotVel.z*Y;
+	y = Y - rotVel.x*Z + rotVel.y*W + rotVel.z*X;
+	z = Z + rotVel.x*Y - rotVel.y*X + rotVel.z*W;
+}
+void
 Quaternion::normalize(){
 	float inv = 1/length();
 	w *= inv;

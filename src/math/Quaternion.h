@@ -29,6 +29,7 @@ public:
 	void		nlerpWith(const Quaternion& l, float percentNew);
 	void		rotateBy(const Quaternion& l);
 	void		integrate(const Vec3& rotationalVelocity);
+	void		preintegrate(const Vec3& rotationalVelocity);
 	void		normalize();
 	//operators
 	float&		operator[] (int x); //this should be avoided
