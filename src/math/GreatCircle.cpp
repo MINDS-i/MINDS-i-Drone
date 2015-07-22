@@ -2,30 +2,29 @@
 
 const float _eRad = 3963.1676; //earth's radius in miles
 
-float simplifyRadian(float ref, float val);
-float simplifyDegree(float ref, float val);
-float distanceRadian(float   a, float   b);
-float distanceDegree(float   a, float   b);
-float truncateRadian(float val);
-float truncateDegree(float val);
+#define TEST(a) Serial.print(#a);Serial.print(": ");Serial.print(a);Serial.print("\t");
 
-///// deprecated
-float trunkAngle(float angle){
-	return trunkAngle(double(angle));//float and double are the same on arduino
+/*make integer versions*/
+#define TWO_M_PI 6.283185307179586476925
+float simplifyRadian(float ref, float val){
+	ref += M_PI;
+	float diff = ref - val;
+	if(diff < 0.0f) diff += TWO_M_PI * ceil(diff / -TWO_M_PI);
+	return ref - fmod(diff, TWO_M_PI);
 }
-double
-trunkAngle(double angle){
-	angle += 180.l;
-	while(angle < 0.l) angle += 360.l;
-	return fmod(angle,360.l)-180.l;
+float simplifyDegree(float ref, float val){
+	ref += 180.0f;
+	float diff = ref - val;
+	if(diff < 0.0f) diff += 360.0f * ceil(diff / -360.0f);
+	return ref - fmod(diff, 360.0f);
 }
-int
-trunkAngle(int 	angle){
-	angle += 180;
-	while(angle < 0) angle += 360;
-	return (angle%360)-180;
-}
-/////
+float distanceRadian(float   a, float   b){ return simplifyRadian(0, b-a); }
+float distanceDegree(float   a, float   b){ return simplifyDegree(0, b-a); }
+float truncateRadian(float val){ return simplifyRadian(0, val); }
+float truncateDegree(float val){ return simplifyDegree(0, val); }
+float trunkAngle(float angle)  { return simplifyDegree(0, angle); }
+// deprecated name
+
 float
 calcHeading(Waypoint a, Waypoint b){
 	float aRlat = a.radLatitude();
