@@ -38,7 +38,8 @@ HLA				highFilter(    10, 0);//10 milliseconds
 HLA 			pitch( 100, 0);
 HLA 			roll ( 100, 0);
 Servo			servo[3]; //drive, steer, backSteer
-PIDcontroller   cruise;
+PIDparameters   cruisePID(0,0,0,-90,90);
+PIDcontroller   cruise(&cruisePID);
 		//scheduler, navigation, obstacle, stop times
 uint32_t uTime = 0, nTime = 0, oTime = 0, sTime = 0;
 uint32_t gpsHalfTime = 0, gpsTime = 0;
@@ -75,10 +76,9 @@ int		steerCenter;
 void dangerTimeCallback(float in){ dangerTime = coastTime+in; }
 void newPIDparam(float x){
 	using namespace groundSettings;
-	PIDparameters newPID = PIDparameters(settings.get(CRUISE_P),
-										 settings.get(CRUISE_I),
-										 settings.get(CRUISE_D) );
-	cruise.tune(newPID);
+	cruisePID = PIDparameters(settings.get(CRUISE_P),
+                              settings.get(CRUISE_I),
+                              settings.get(CRUISE_D) );
 }
 
 void setupSettings(){
