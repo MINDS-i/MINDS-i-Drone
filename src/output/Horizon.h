@@ -2,13 +2,14 @@
 
 #include "util/PIDcontroller.h"
 #include "util/PIDparameters.h"
+#include "math/GreatCircle.h"
 
 class Horizon : public FlightStrategy {
 private:
     PIDcontroller  pitchPID, rollPID;
     PIDcontroller  yawPID;
     float          throttle;
-    float          pitch, roll;
+    float          pitch, roll, yaw;
     float          velFac;
     ThrottleCurve* tCurve;
 public:
@@ -26,7 +27,10 @@ public:
         rollPID.set(rError);
         torques[0] = pitchPID.update(orientation.getPitchRate()*1024.f);//1024 from rad/millisecond
         torques[1] = rollPID.update(orientation.getRollRate()*1024.f);  //to rad/second
-        torques[2] = yawPID.update(orientation.getYaw());//radian wrap to the value closest to setpoint?
+
+        float wrappedYaw = simplifyRadian(yaw, orientation.getYaw());
+        torques[2] = yawPID.update(wrappedYaw);
+
         torques[3] = throttle;
         /*
         Quaternion attitude = orientation.getAttitude();
@@ -47,8 +51,9 @@ public:
     void set(float pitch, float roll, float yaw, float throttle){
         this->pitch = pitch;
         this->roll = roll;
-        yawPID.set(yaw);
+        this->yaw = yaw;
         this->throttle = tCurve->get(throttle);
+        yawPID.set(yaw);
     }
     float getVelFac(){
         return velFac;
