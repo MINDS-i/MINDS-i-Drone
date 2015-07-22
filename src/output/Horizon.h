@@ -26,7 +26,7 @@ public:
         rollPID.set(rError);
         torques[0] = pitchPID.update(orientation.getPitchRate()*1024.f);//1024 from rad/millisecond
         torques[1] = rollPID.update(orientation.getRollRate()*1024.f);  //to rad/second
-        torques[2] = yawPID.update(orientation.getYaw());
+        torques[2] = yawPID.update(orientation.getYaw());//radian wrap to the value closest to setpoint?
         torques[3] = throttle;
         /*
         Quaternion attitude = orientation.getAttitude();

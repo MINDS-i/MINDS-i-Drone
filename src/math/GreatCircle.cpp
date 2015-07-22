@@ -2,6 +2,14 @@
 
 const float _eRad = 3963.1676; //earth's radius in miles
 
+float simplifyRadian(float ref, float val);
+float simplifyDegree(float ref, float val);
+float distanceRadian(float   a, float   b);
+float distanceDegree(float   a, float   b);
+float truncateRadian(float val);
+float truncateDegree(float val);
+
+///// deprecated
 float trunkAngle(float angle){
 	return trunkAngle(double(angle));//float and double are the same on arduino
 }
@@ -17,6 +25,7 @@ trunkAngle(int 	angle){
 	while(angle < 0) angle += 360;
 	return (angle%360)-180;
 }
+/////
 float
 calcHeading(Waypoint a, Waypoint b){
 	float aRlat = a.radLatitude();

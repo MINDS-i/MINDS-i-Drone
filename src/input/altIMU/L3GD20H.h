@@ -11,7 +11,7 @@ class L3GD20H : public STMtwiDev {
 private:
 	//settings
 	static const uint16_t CAL_SAMPLE_SIZE = 100;
-	static const float OUTPUT_CONVERSION_FACTOR = .07f*.001*PI/180.f;//(2000.f/32767.f)*PI/180.f;
+	static const float OUTPUT_CONVERSION_FACTOR;
 	//Read/Write
 	static const uint8_t CTRL1 			= 0x20;
 	static const uint8_t CTRL2 			= 0x21;
@@ -56,6 +56,7 @@ public:
 	void update(InertialManager& man);
 	void getRawGyro(int16_t* buf);
 };
+const float L3GD20H::OUTPUT_CONVERSION_FACTOR = .07f*.001*PI/180.f;
 void
 L3GD20H::init(){
 	this->write(CTRL1, 0x8F); //on at 200Hz

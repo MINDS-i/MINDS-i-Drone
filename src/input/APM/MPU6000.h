@@ -16,12 +16,10 @@ namespace{
 class MPU6000 : public Sensor {
 protected:
     static const uint8_t  APM26_CS_PIN    = 53;
-    static const float    SAMPLE_RATE     = 200; //sample at 200Hz
     static const uint16_t CAL_SAMPLE_SIZE = 200; //for gyro calibration
-                            //+- 2000 dps per least sig bit, in ms
-    static const float dPlsb = 2.f*(2.f/65535.f);
-    static const float GYRO_CONVERSION_FACT =  2.f*(2.f/65535.f) *PI/180.l;
-
+    static const float SAMPLE_RATE;//sample at 200Hz
+    static const float dPlsb;//+- 2000 dps per least sig bit, in ms
+    static const float GYRO_CONVERSION_FACT;
     SPIcontroller spiControl;
     LTATune LTA;
     bool    writeTo(uint8_t addr, uint8_t msg);
@@ -51,6 +49,9 @@ public:
     float pitch();
     float roll();
 };
+const float MPU6000::SAMPLE_RATE     = 200; //sample at 200Hz
+const float MPU6000::dPlsb = 2.f*(2.f/65535.f);
+const float MPU6000::GYRO_CONVERSION_FACT =  2.f*(2.f/65535.f) *PI/180.l;
 rawData
 MPU6000::readSensors(){
     //Note: its faster to read and ignore temp than make two transfers
