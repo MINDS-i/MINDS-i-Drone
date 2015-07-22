@@ -23,7 +23,6 @@ float distanceDegree(float   a, float   b){ return simplifyDegree(0, b-a); }
 float truncateRadian(float val){ return simplifyRadian(0, val); }
 float truncateDegree(float val){ return simplifyDegree(0, val); }
 float trunkAngle(float angle)  { return simplifyDegree(0, angle); }
-// deprecated name
 
 float
 calcHeading(Waypoint a, Waypoint b){

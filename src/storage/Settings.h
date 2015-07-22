@@ -13,24 +13,24 @@ records in the passed in storage object
 
 namespace AirSettings{
 	enum Air{
-		INT_PERIOD	=  0,
-		ACCL_MSE	=  1,
-		ATT_SYSMSE	=  2,
-		ATT_ERRFAC	=  3,
-		ATT_P_TERM	=  4,
-		ATT_I_TERM	=  5,
-		ATT_D_TERM	=  6,
-		VEL_P_TERM	=  7,
-		YAW_P_TERM	=  8,
-		YAW_I_TERM	=  9,
-		YAW_D_TERM	= 10,
-		HOVER_THL   = 11,
-		THL_LINITY  = 12,
-		UNUSED_E	= 13,
-		UNUSED_D	= 14,
-		UNUSED_C	= 15,
-		UNUSED_B	= 16,
-		UNUSED_A	= 17
+		INT_PERIOD =  0,
+		INRT_U_FAC =  1,
+		GYRO_CMP_F =  2,
+		TILT_CMP_L =  3,
+		ATT_P_TERM =  4,
+		ATT_I_TERM =  5,
+		ATT_D_TERM =  6,
+		ATT_V_TERM =  7,
+		YAW_P_TERM =  8,
+		YAW_I_TERM =  9,
+		YAW_D_TERM = 10,
+		YAW_V_TERM = 11,
+		HOVER_THL  = 12,
+		THL_LINITY = 13,
+		UNUSED_D   = 14,
+		UNUSED_C   = 15,
+		UNUSED_B   = 16,
+		UNUSED_A   = 17
 	};
 }
 namespace groundSettings{

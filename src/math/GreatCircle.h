@@ -12,7 +12,7 @@ float  simplifyDegree(float ref, float val);
 //return the angle that turns a onto b
 float  distanceRadian(float   a, float   b);
 float  distanceDegree(float   a, float   b);
-//retrun the angle in a standard +/- half turn from 0 range
+//return the angle in a standard +/- half turn from 0 range
 float  truncateRadian(float val);
 float  truncateDegree(float val);
 //deprecated, use truncateDegree instead
