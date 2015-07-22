@@ -2,6 +2,9 @@
 #define DRONELIBS_H
 
 #include "Arduino.h"
+#include "SPI.h"
+#include "Wire.h"
+#include "Servo.h"
 /*
 Copyright 2015 MINDS-i Inc.
 
