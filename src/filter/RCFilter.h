@@ -107,9 +107,14 @@ RCFilter::update(InertialManager& sensors){
     //attitude.preintegrate(delta*wGain);
     delta.rotateBy(attitude);
 
+    /*
     rateCal += delta;
+    rateCal *= rateGain;
+    */
+    rateCal = rateCal*rateGain + delta*(1.0f-rateGain);
+
     delta   *= wGain;
-    updateStateModel(delta*wGain + rateCal*rateGain);
+    updateStateModel(delta*wGain + rateCal);
 
     /*
     //madgewick/mahoney filter 2.6ms
