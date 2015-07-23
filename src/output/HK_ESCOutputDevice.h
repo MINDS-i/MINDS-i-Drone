@@ -10,7 +10,7 @@ private:
 	const static float thrustCurve[4];// = { 0.776, -1.160, 1.382, 0.0 };
 	const static uint16_t MIN    = 1000;
 	const static uint16_t IDLE   = 1100;
-	const static float    RANGE  = 1000;
+	const static float    RANGE;// 1000
 	Servo 	servo;
 	uint8_t	pin;
 public:
@@ -56,6 +56,7 @@ public:
 	float get()			{ return ((float)servo.readMicroseconds()-MIN)/RANGE; }
 	uint16_t getRaw()   { return servo.readMicroseconds(); }
 };
+const float HK_ESCOutputDevice::RANGE  = 1000;
 const float HK_ESCOutputDevice::thrustCurve[4] = { 0.776, -1.160, 1.382, 0.0 };
 
 #endif

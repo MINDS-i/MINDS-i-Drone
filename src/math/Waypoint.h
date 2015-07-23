@@ -1,12 +1,8 @@
 #ifndef WAYPOINT_H
 #define WAYPOINT_H
 
+#include "Arduino.h"
 #include "SpatialMath.h"
-#ifndef STAND_ALONE_MATH
-	#include "comms/Protocol.h"
-#else
-	#include <stdint.h>
-#endif
 
 class Waypoint{
 public:
@@ -51,12 +47,8 @@ public:
 		return lng;
 	}
 #ifndef STAND_ALONE_MATH
-	float getAltitude(){
-		return ((double)extra)/((double)Protocol::U16_FIXED_FACTOR);
-	}
-	float getApproachSpeed(){
-		return ((double)extra)/((double)Protocol::U16_FIXED_FACTOR);
-	}
+	float getAltitude();
+	float getApproachSpeed();
 #endif
 	void setExtra(uint16_t alt){
 		extra = alt;

@@ -6,8 +6,8 @@
 //LSM303D Accelerometer and Magnometer
 class LSM303D : public STMtwiDev {
 private:
-	static const float ACC_CONVERSION_FACTOR = (2.f/32767.f);
-	static const float MAG_CONVERSION_FACTOR = (4.f/32767.f);
+	static const float ACC_CONVERSION_FACTOR;
+	static const float MAG_CONVERSION_FACTOR;
 	//Read/Write
 	static const uint8_t Act_DUR 			= 0x3F;
 	static const uint8_t Act_THS 			= 0x3E;
@@ -77,6 +77,8 @@ public:
 	void getRawAccl(int16_t* buf);
 	void getRawMag(int16_t* buf);
 };
+const float LSM303D::ACC_CONVERSION_FACTOR = (2.f/32767.f);
+const float LSM303D::MAG_CONVERSION_FACTOR = (4.f/32767.f);
 void
 LSM303D::init(){
 	this->write(CTRL1, 0x87); //all accl axis on, 400Hz

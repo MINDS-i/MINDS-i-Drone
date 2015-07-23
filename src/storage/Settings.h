@@ -5,32 +5,28 @@
 #include "storage/Storage.h"
 #include "util/LTATune.h"
 
-/*
-These enumerations fill up all 32 settings slots (some are named unused_[alpha])
-To make more settings, one would need to stretch the default number of storage
-records in the passed in storage object
-*/
-
 namespace AirSettings{
 	enum Air{
-		INT_PERIOD	=  0,
-		ACCL_MSE	=  1,
-		ATT_SYSMSE	=  2,
-		ATT_ERRFAC	=  3,
-		ATT_P_TERM	=  4,
-		ATT_I_TERM	=  5,
-		ATT_D_TERM	=  6,
-		VEL_P_TERM	=  7,
-		YAW_P_TERM	=  8,
-		YAW_I_TERM	=  9,
-		YAW_D_TERM	= 10,
-		HOVER_THL   = 11,
-		THL_LINITY  = 12,
-		UNUSED_E	= 13,
-		UNUSED_D	= 14,
-		UNUSED_C	= 15,
-		UNUSED_B	= 16,
-		UNUSED_A	= 17
+		INT_PERIOD =  0,
+		INRT_U_FAC =  1,
+		GYRO_CMP_F =  2,
+		TILT_CMP_L =  3,
+		ATT_P_TERM =  4,
+		ATT_I_TERM =  5,
+		ATT_D_TERM =  6,
+		ATT_V_TERM =  7,
+		YAW_P_TERM =  8,
+		YAW_I_TERM =  9,
+		YAW_D_TERM = 10,
+		YAW_V_TERM = 11,
+		HOVER_THL  = 12,
+		THL_LINITY = 13,
+		BARO_HL    = 14,
+		BARO_P     = 15,
+		BARO_I     = 16,
+		BARO_D     = 17,
+		BARO_V     = 18,
+		FREE_START = 19
 	};
 }
 namespace groundSettings{
@@ -51,8 +47,7 @@ namespace groundSettings{
 		CRUISE_D	= 13,
 		TIRE_DIAM	= 14,
 		STR_CENTER	= 15,
-		UNUSED_B	= 16,
-		UNUSED_A	= 17
+		FREE_START  = 16
 	};
 }
 namespace commonSettings{
@@ -60,22 +55,22 @@ namespace commonSettings{
 									+__TIME__[7]*10
 									+__TIME__[3]*100
 									+__TIME__[4]*1000;
-	static const uint16_t CALIBRATION_VERSON = 7;
+	static const uint16_t CALIBRATION_VERSON = 8;
 	enum Common{
-		ACCL_X_SHFT	= 18,
-		ACCL_Y_SHFT	= 19,
-		ACCL_Z_SHFT	= 20,
-		ACCL_X_SCLR	= 21,
-		ACCL_Y_SCLR	= 22,
-		ACCL_Z_SCLR	= 23,
-		MAG_X_SHFT	= 24,
-		MAG_Y_SHFT	= 25,
-		MAG_Z_SHFT	= 26,
-		MAG_X_SCLR	= 27,
-		MAG_Y_SCLR	= 28,
-		MAG_Z_SCLR	= 29,
-		CALIB_VER	= 30,
-		STORAGE_VER	= 31
+		ACCL_X_SHFT	= 50,
+		ACCL_Y_SHFT	= 51,
+		ACCL_Z_SHFT	= 52,
+		ACCL_X_SCLR	= 53,
+		ACCL_Y_SCLR	= 54,
+		ACCL_Z_SCLR	= 55,
+		MAG_X_SHFT	= 56,
+		MAG_Y_SHFT	= 57,
+		MAG_Z_SHFT	= 58,
+		MAG_X_SCLR	= 59,
+		MAG_Y_SCLR	= 60,
+		MAG_Z_SCLR	= 61,
+		CALIB_VER	= 62,
+		STORAGE_VER	= 63
 	};
 }
 using namespace commonSettings;

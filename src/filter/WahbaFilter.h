@@ -14,36 +14,34 @@
 
 class WahbaFilter : public OrientationEngine {
 private:
-    bool              calMode;
-    float             calTrack;
+    volatile bool     calMode;
+    volatile float    calTrack;
     Vec3              rateCal;
 
-    float             sysMSE;
-    float             acclMSE;
-    float             acclEF;
-    float             estimateMSE;
+    float             wGain;
     Quaternion        attitude;
     Vec3              rate;
     volatile uint32_t stateTime;
 
-    Vec3              north, east, down;
     float             pitch, roll, yaw;
-	float computeGain(float& estimate, float MSE);
-	void updateStateModel();
+    Vec3              north, east, down;
+    void updateStateModel();
     void updatePRY();
 public:
-	WahbaFilter(float systemMSE, float accelerometerMSE, float acclErrorFact)
-        :sysMSE(systemMSE), acclMSE(accelerometerMSE), acclEF(acclErrorFact) {}
+	WahbaFilter(float gain)
+        :calMode(false), calTrack(0), rateCal(0,0,0),
+         wGain(gain), attitude(), rate(0,0,0),
+         stateTime(0),
+         pitch(0), roll(0), yaw(0),
+         north(1,0,0), east(0,1,0), down(0,0,1)
+         {}
 	void update(InertialManager& sensors);
     void calibrate(bool mode);
     Quaternion getAttitude(){ return attitude; }
     Vec3  getRate(){ return rate; }
     float getPitchRate(){ return rate[1]; }
     float getRollRate(){  return rate[0]; }
-    float getYawRate(){   return rate[2]; }
-    void setSysMSE(float mse) { sysMSE  = mse; }
-    void setAcclMSE(float mse){ acclMSE = mse; }
-    void setAcclEF(float aEF) { acclEF  = aEF; }
+    void setwGain(float g) { wGain = g; }
 };
 void
 WahbaFilter::updatePRY(){
@@ -51,22 +49,12 @@ WahbaFilter::updatePRY(){
     roll  = attitude.getRoll();
     yaw   = attitude.getYaw();
 }
-float
-WahbaFilter::computeGain(float& estimate, float MSE){
-	float gain = estimate/(estimate+MSE);
-	estimate = (1.-gain)*estimate;
-	return gain;
-}
 void
 WahbaFilter::updateStateModel(){
 	//keep track of passing time
 	float dt = (micros()-stateTime);
 	stateTime = micros();
-	dt /= 1024.f;
-    if(dt >= 250) return;
-	//propogate process errors
-	estimateMSE += dt*dt*sysMSE;
-
+	dt /= 1000.f;
 	attitude.integrate(rate*dt);
 }
 void
@@ -101,6 +89,7 @@ WahbaFilter::update(InertialManager& sensors){
 
     Integrates accelerometer and magnetometer fairly
     */
+
     Vec3 M = rawA; M.crossWith(rawM);
 	M.normalize();
     Vec3 bcr1 = rawA; bcr1.crossWith(down);
@@ -128,18 +117,11 @@ WahbaFilter::update(InertialManager& sensors){
     MplusR  *= C2;
 
     float MdotR = MPRp1*C1;
+
     Quaternion wahba(MdotR, McrossR[0]+MplusR[0],
-                          McrossR[1]+MplusR[1],
-                          McrossR[2]+MplusR[2] );
+                            McrossR[1]+MplusR[1],
+                            McrossR[2]+MplusR[2] );
     wahba.normalize();
-
-
-	//calculate adjusted accelerometer MSE
-	float aMSE = acclMSE
-				+acclEF *fabs(log(rawA.length()+rawM.length()));
-
-	//calculate gains
-	float wGain = computeGain(estimateMSE, aMSE);
 
 	//run model and lerp
 	rate = gyro;
@@ -150,9 +132,9 @@ WahbaFilter::update(InertialManager& sensors){
 }
 void
 WahbaFilter::calibrate(bool calibrate){
-    if(calibrate == false){
-        if(calTrack == 0) return;
-        rateCal = rateCal/calTrack;
+    if(calibrate == false && calMode == true){
+        if(calTrack != 0)
+            rateCal = rateCal/calTrack;
 
         //averaging samples built into normalization
         north.normalize();
@@ -168,14 +150,17 @@ WahbaFilter::calibrate(bool calibrate){
         east.crossWith(north);
         east.normalize();
 
+        //reset orientation
         attitude = Quaternion();
-    } else if (calibrate == true){
-        rateCal  = Vec3();
-        north    = Vec3();
-        east     = Vec3();
+        rate     = Vec3();
+    } else if (calibrate == true && calMode == false){
+        rateCal  = Vec3(0,0,0);
+        north    = Vec3(0,0,0);
+        east     = Vec3(0,0,0);
         down     = Vec3(0,0,0);
         calTrack = 0;
     }
+
     calMode = calibrate;
 }
 #endif

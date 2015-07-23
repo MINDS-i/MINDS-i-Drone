@@ -16,7 +16,7 @@ private:
 	bool parsePacketTo(uint8_t* buf, uint8_t size);
 	void splitData(uint8_t address, uint8_t batch, uint8_t* buf);
 public:
-	static const double FIXED_CONVERSION = 29789.09091;
+	static const double FIXED_CONVERSION;
 	static const uint8_t QUAT_AB    = 0x6D;
 	static const uint8_t QUAT_CD    = 0x6E;
 	static const uint8_t QUAT_TIME  = 0x6F;
@@ -28,7 +28,7 @@ public:
 	void sendPacket(uint8_t PT, uint8_t ADDR);
 	void update();
 };
-
+const double UM7::FIXED_CONVERSION = 29789.09091;
 void
 UM7::sendPacket(uint8_t PT, uint8_t ADDR, uint8_t* data, uint8_t len){
 	uint8_t ptSize = len + 4;//PT, ADDR, 16 bit check
