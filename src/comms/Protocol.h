@@ -3,6 +3,7 @@
 
 #include <inttypes.h>
 #include "Arduino.h"
+#include "storage/EEPROMconfig.h"
 
 /* messages are minumum of 3 bytes, max of 19 bytes, constructed as
     HEADER :(label[1 bytes] : data[length bytes] : checksum [2 bytes]): FOOTER
@@ -56,7 +57,7 @@ namespace Protocol{
                       DELETE_WAYPOINT = 4 };
 
     const uint8_t  MAX_WAYPOINTS    = 64;
-    const uint8_t  MAX_SETTINGS     = 32;
+    const uint8_t  MAX_SETTINGS     = NUM_STORED_RECORDS;//taken from eepromconfig
     const uint16_t BAUD_RATE        = 9600;
     const uint16_t U16_FIXED_FACTOR = 256;
 

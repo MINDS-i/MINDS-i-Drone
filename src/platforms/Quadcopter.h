@@ -64,9 +64,10 @@ void setupSettings(){
      334633 1.0 0.0212
      */
      /*
+     TTC 0.85
      PID: 0.6, 0.06, 0.0225, 6.5
-          1.0, 4.00, 0.023 , 6.5
-            yaw: -1.0, -0.4, 0.0, 1.0
+          0.8, 4.00, 0.023 , 6.5
+            yaw: -1.0, -0.4, 0.0, 8.0
      */
     using namespace AirSettings;
     settings.attach(INT_PERIOD, 6500  , &changeInterruptPeriod );

@@ -22,11 +22,12 @@ typedef Waypoint EE_LIST_TYPE;
 // I wish there were a better way to do this *grumble*
 #endif
 
-const uint8_t NUM_STORED_RECORDS = 32;
+const uint8_t NUM_STORED_RECORDS = 64;
 const EEaddr EENULL         = 0;
 const EEaddr EEaddrStart    = 1;
 const EEaddr EE_LIST_START  = EEaddrStart +
                               sizeof(EE_STORAGE_TYPE) * NUM_STORED_RECORDS;
 const EEaddr EE_LIST_LENGTH = (EE_MAX -EE_LIST_START -1);
+
 
 #endif
