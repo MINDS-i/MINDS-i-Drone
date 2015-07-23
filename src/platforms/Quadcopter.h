@@ -31,11 +31,11 @@ void loopQuad();
 ///////////
 
 void isrCallback(){
-    sensors.update();
     tic(0);
+    sensors.update();
     orientation.update(sensors);
-    toc(0);
     output.update(orientation);
+    toc(0);
 }
 void updatePID(float d){
     using namespace AirSettings;
@@ -64,16 +64,18 @@ void setupSettings(){
      334633 1.0 0.0212
      */
      /*
-     PID: 0.6, 0.06, 0.0225
+     PID: 0.6, 0.06, 0.0225, 6.5
+          1.0, 4.00, 0.023 , 6.5
+            yaw: -1.0, -0.4, 0.0, 1.0
      */
     using namespace AirSettings;
     settings.attach(INT_PERIOD, 6500  , &changeInterruptPeriod );
     settings.attach(INRT_U_FAC, 0.05f , callback<RCFilter, &orientation, &RCFilter::setwGain>);
-    settings.attach(GYRO_CMP_F, 0.00f , callback<RCFilter, &orientation, &RCFilter::setRateGain>);
+    settings.attach(GYRO_CMP_F, 0.99999f, callback<RCFilter, &orientation, &RCFilter::setRateGain>);
     settings.attach(TILT_CMP_L, 1.00f , callback<Horizon, &horizon, &Horizon::setTiltCompLimit>);
-    settings.attach(ATT_P_TERM, 0.550f, &updatePID );
-    settings.attach(ATT_I_TERM, 0.060f, &updatePID );
-    settings.attach(ATT_D_TERM, 0.023f, &updatePID );
+    settings.attach(ATT_P_TERM, 0.550f, &updatePID);
+    settings.attach(ATT_I_TERM, 0.060f, &updatePID);
+    settings.attach(ATT_D_TERM, 0.023f, &updatePID);
     settings.attach(ATT_V_TERM, 6.50f , callback<Horizon, &horizon, &Horizon::setVelFac>);
     settings.attach(YAW_P_TERM, 0.00f , &updateYawPID);
     settings.attach(YAW_I_TERM, 0.00f , &updateYawPID);
