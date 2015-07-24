@@ -57,10 +57,10 @@ protected:
 public:
     MS5611()
         : spiController(APM26_CS_PIN, SPISettings(8E6, MSBFIRST, SPI_MODE0)),
-            newData(true), TEMP_DUTY_CYCLE(100) {}
+          newData(true), TEMP_DUTY_CYCLE(20) {}
     MS5611(uint8_t cs_pin)
         : spiController(cs_pin, SPISettings(8E6, MSBFIRST, SPI_MODE0)),
-          newData(true), TEMP_DUTY_CYCLE(100) {}
+          newData(true), TEMP_DUTY_CYCLE(20) {}
     void init();
     void stop();
     bool status();
