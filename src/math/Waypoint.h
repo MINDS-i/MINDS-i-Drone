@@ -4,6 +4,10 @@
 #include "Arduino.h"
 #include "SpatialMath.h"
 
+#ifdef STAND_ALONE_MATH
+    #include <stdint.h>
+#endif
+
 class Waypoint{
 public:
 	float lat, lng; //these are stored in degrees
