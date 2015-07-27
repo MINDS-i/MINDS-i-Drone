@@ -36,7 +36,7 @@ float calcDistance(Waypoint a, Waypoint b){
 	return 2. * earthRad * atan2( sqrt(chord), sqrt(1.-chord) );
 }
 Waypoint
-extrapPosition(Waypoint position, float bearing, float distance){ //degrees,miles
+extrapPosition(Waypoint position, float bearing, float distance){//degrees,miles
 	float rlat, rlng;
 	float pRlat = position.radLatitude();
 	float pRlng = position.radLongitude();

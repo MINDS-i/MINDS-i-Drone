@@ -1,7 +1,6 @@
 #include "SpatialMath.h"
 
 #define INVSQRTHACK false
-
 float
 toRad(float degrees){
 	degrees /= 180.l;
@@ -24,12 +23,12 @@ invSqrt(float x){
 	return 1./sqrt(x);
 #endif
 }
-float //was inlined
+float
 saSin(float t){
 	if(fabs(t) >= .22) return sin(t);
 	return t;
 }
-float //was inlined
+float
 saCos(float t){
 	if(fabs(t) >= .64) return cos(t);
 	return 1.l-((t*t)/2);

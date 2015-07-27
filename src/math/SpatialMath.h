@@ -6,7 +6,7 @@
 float toRad(float degrees);
 float toDeg(float radians);
 float invSqrt(float x);
-float saSin(float t); //was inlined
-float saCos(float t); //was inlined
+float saSin(float t);
+float saCos(float t);
 
 #endif

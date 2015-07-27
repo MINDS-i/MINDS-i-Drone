@@ -56,8 +56,8 @@ class ThrottleCurve{
     /**
      * Built from a cubic function (a*x^3 + b*x^2 + c*x + d) defined at
      * f(-1) = 0
-     * f(1)  = 1
-     * f(0)  = hoverPoint
+     * f( 1) = 1
+     * f( 0) = hoverPoint
      * with the last degree of freedom setting the x^3 vs x balance
      *     which corresponds to how "linear" the curve is
      */
