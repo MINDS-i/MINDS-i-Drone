@@ -22,8 +22,7 @@ float calcHeading(Waypoint a, Waypoint b){
 	float bRlat = b.radLatitude();
 	float bRlng = b.radLongitude();
 	float y = sin(bRlng - aRlng) * cos(bRlat);
-	float x = cos(aRlat)*sin(bRlat)
-					- sin(aRlat)*cos(bRlat)*cos(bRlng - aRlng);
+	float x = cos(aRlat)*sin(bRlat) - sin(aRlat)*cos(bRlat)*cos(bRlng - aRlng);
 	return toDeg(  atan2(y,x)  );
 }
 float calcDistance(Waypoint a, Waypoint b){
