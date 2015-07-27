@@ -6,9 +6,10 @@ HardwareSerial *commSerial  = &Serial;
 CommManager     comms(commSerial, eeStorage::getInstance());
 RCFilter        orientation(0.05, 0.0);
 
-LEA6H     gps;
 MPU6000   mpu;
 HMC5883L  cmp;
+LEA6H     gps;
+MS5611    baro;
 Sensor* sens[2] = {&mpu, &cmp};
 InertialManager sensors(sens, 2);
 #define Output_t HK_ESCOutputDevice
@@ -21,7 +22,8 @@ OutputManager output(outDev);
 PIDparameters pitchPID(0,0,0,-1,1), rollPID(0,0,0,-1,1);
 PIDparameters yawPID(0,0,0,-1,1);
 ThrottleCurve throttleCurve(0.33, 0.4);
-Horizon horizon(&pitchPID, &rollPID, &yawPID, &throttleCurve);
+Horizon       horizon(&pitchPID, &rollPID, &yawPID, &throttleCurve);
+HLA           altitude(1, 0);
 
 ///////////
 void arm();
@@ -30,12 +32,12 @@ void setupQuad();
 void loopQuad();
 ///////////
 
-void isrCallback(){
-    sensors.update();
+void isrCallback() {
     tic(0);
+    sensors.update();
     orientation.update(sensors);
-    toc(0);
     output.update(orientation);
+    toc(0);
 }
 void updatePID(float d){
     using namespace AirSettings;
@@ -84,6 +86,7 @@ void setupSettings(){
     settings.attach(YAW_V_TERM, 1.00f , callback<Horizon, &horizon, &Horizon::setYawFac>);
     settings.attach(HOVER_THL , 0.40f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setHoverPoint>);
     settings.attach(THL_LINITY, 0.30f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setLinearity>);
+    settings.attach(BARO_HL   , 1.00f , callback<HLA, &altitude, &HLA::setHalfLife>);
 }
 void arm(){
     delay(500);
@@ -101,8 +104,10 @@ void setupQuad() {
     setupSettings();
 
     sensors.start();
+    baro.init();
     gps.init();
     sensors.calibrate();
+    baro.calibrate();
 
     arm();
     output.setMode(&horizon);
@@ -113,4 +118,6 @@ void setupQuad() {
 void loopQuad() {
     comms.update();
     gps.update();
+    baro.update();
+    altitude.update(baro.getAltitude());
 }
