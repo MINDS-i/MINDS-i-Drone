@@ -1,16 +1,15 @@
 #include "GreatCircle.h"
 
-const float _eRad = 3963.1676; //earth's radius in miles
+namespace{ //keep these constants to this file
+	const float earthRad = 3958.761; //radius in miles
+	const float twoPI    = 6.283185307179586476925; // one revolution in radians
+}
 
-#define TEST(a) Serial.print(#a);Serial.print(": ");Serial.print(a);Serial.print("\t");
-
-/*make integer versions*/
-#define TWO_M_PI 6.283185307179586476925
 float simplifyRadian(float ref, float val){
 	ref += M_PI;
 	float diff = ref - val;
-	if(diff < 0.0f) diff += TWO_M_PI * ceil(diff / -TWO_M_PI);
-	return ref - fmod(diff, TWO_M_PI);
+	if(diff < 0.0f) diff += twoPI * ceil(diff / -twoPI);
+	return ref - fmod(diff, twoPI);
 }
 float simplifyDegree(float ref, float val){
 	ref += 180.0f;
@@ -18,11 +17,11 @@ float simplifyDegree(float ref, float val){
 	if(diff < 0.0f) diff += 360.0f * ceil(diff / -360.0f);
 	return ref - fmod(diff, 360.0f);
 }
-float distanceRadian(float   a, float   b){ return simplifyRadian(0, b-a); }
-float distanceDegree(float   a, float   b){ return simplifyDegree(0, b-a); }
-float truncateRadian(float val){ return simplifyRadian(0, val); }
-float truncateDegree(float val){ return simplifyDegree(0, val); }
-float trunkAngle(float angle)  { return simplifyDegree(0, angle); }
+inline float distanceRadian(float   a, float   b){ return simplifyRadian(0, b-a); }
+inline float distanceDegree(float   a, float   b){ return simplifyDegree(0, b-a); }
+inline float truncateRadian(float val){ return simplifyRadian(0, val); }
+inline float truncateDegree(float val){ return simplifyDegree(0, val); }
+inline float trunkAngle(float angle)  { return simplifyDegree(0, angle); }
 
 float
 calcHeading(Waypoint a, Waypoint b){
@@ -44,7 +43,7 @@ calcDistance(Waypoint a, Waypoint b){
 	float sinlat = sin((aRlat - bRlat)/2.);
 	float sinlng = sin((aRlng - bRlng)/2.);
 	float chord = sinlat*sinlat + sinlng*sinlng*cos(aRlat)*cos(bRlat);
-	return 2. * _eRad * atan2( sqrt(chord), sqrt(1.-chord) );
+	return 2. * earthRad * atan2( sqrt(chord), sqrt(1.-chord) );
 }
 
 Waypoint
@@ -52,11 +51,11 @@ extrapPosition(Waypoint position, float bearing, float distance){ //degrees,mile
 	float rlat, rlng;
 	float pRlat = position.radLatitude();
 	float pRlng = position.radLongitude();
-	rlat = asin(sin(pRlat)*cos(distance/_eRad) +
-					 cos(pRlat)*sin(distance/_eRad)*cos(toRad(bearing)));
+	rlat = asin(sin(pRlat)*cos(distance/earthRad) +
+					 cos(pRlat)*sin(distance/earthRad)*cos(toRad(bearing)));
 	rlng = pRlng+
-		atan2(	(sin(toRad(bearing))*sin(distance/_eRad)*cos(pRlat)),
-				(cos(distance/_eRad)-sin(pRlat)*sin(rlat)) );
+		atan2(	(sin(toRad(bearing))*sin(distance/earthRad)*cos(pRlat)),
+				(cos(distance/earthRad)-sin(pRlat)*sin(rlat)) );
 	Waypoint destination(rlat, rlng, true);
 	return destination;
 }
