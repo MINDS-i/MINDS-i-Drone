@@ -1,8 +1,6 @@
 #ifndef UM7_H
 #define UM7_H
-
 #include "Arduino.h"
-
 class UM7{
 private:
 	static const uint8_t HEADER_SIZE = 3;
@@ -108,5 +106,4 @@ UM7::splitData(uint8_t address, uint8_t batch, uint8_t* buf){
 		updateData(address+i, data);
 	}
 }
-
 #endif

@@ -1,12 +1,10 @@
 #ifndef HLA_H
 #define HLA_H
-
 #include "Arduino.h"
 #include "math.h"
 
 //Time controlled exponential running average
 //set the half-life in milliseconds
-
 class HLA{
 private:
 	float halfLife;
@@ -44,5 +42,4 @@ public:
 		halfLife = half*1000.0f;
 	}
 };
-
 #endif

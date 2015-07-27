@@ -6,6 +6,8 @@ template<typename C, C *inst, void (C::*func)(float)>
 void callback(float a){
 	(inst->*func)(a);
 }
+//used to set number C to the argument
+//usage: callback<type, &var>
 template<typename C, C *val>
 void callback(float a){
 	*val = (C) a;

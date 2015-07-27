@@ -1,13 +1,10 @@
 #ifndef LTATune_H
 #define LTATune_H
 #include "math/Algebra.h"
-
 //Linear Three Axis Tune
-// a = (a+shift)*scalar
+// A = (a+shift)*scalar
 //shift should be applied before scalar
-
 #pragma GCC diagnostic ignored "-pedantic"
-
 struct LTATune{
 	union{
 		float params[2][3];
@@ -139,7 +136,5 @@ struct LTATune{
         return tune;
     }
 };
-
 #pragma GCC diagnostic pop
-
 #endif
