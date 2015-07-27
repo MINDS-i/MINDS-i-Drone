@@ -4,27 +4,26 @@
  * This class is used to control the SPI chip select lines
  * Sensors will each own an SPIcontroller and put all
  * calls to SPI within a capture() and a release()
- *
- * Note that the SPI library can do a better job of preventing interrupted
- * transactions then this can through SPI.usingInterruts(int_num);
  */
 class SPIcontroller{
 private:
-    static uint8_t controllerCount;
-    static SPIcontroller* activeController;
+    static volatile uint8_t controllerCount;
 
-    uint8_t csBit;
-    volatile uint8_t* csReg;
     SPISettings settings;
+    const uint8_t csBit;
+    volatile uint8_t * const csReg;
+
+    uint8_t SREG_store;
 public:
-    SPIcontroller(uint8_t chipSelect, SPISettings set):settings(set){
+    SPIcontroller(uint8_t chipSelect, SPISettings set) :
+        settings(set), csBit(digitalPinToBitMask(chipSelect)),
+        csReg(portOutputRegister(digitalPinToPort(chipSelect)))
+    {
         if(controllerCount == 0){
             SPI.begin();
         }
         controllerCount++;
 
-        csBit = digitalPinToBitMask(chipSelect);
-        csReg = portOutputRegister(digitalPinToPort(chipSelect));
         pinMode(chipSelect, OUTPUT);
         digitalWrite(chipSelect, HIGH);
         //digitalWrite is slower, but turns off PWM if necessary for us
@@ -35,22 +34,18 @@ public:
             SPI.end();
         }
     }
-    void capture(){
-        if(activeController != NULL) activeController->release();
-        activeController = this;
+    void capture() __attribute__ ((optimize(0))) {
+        SREG_store = SREG;
+        cli();
         SPI.beginTransaction(settings);
         *csReg &= ~csBit;
     }
-    boolean release(){
+    boolean release() __attribute__ ((optimize(0))) {
         *csReg |= csBit;
         SPI.endTransaction();
-        boolean interrupted = (activeController != this);
-        if(!interrupted) {
-            activeController = NULL;
-        }
-        return interrupted;
+        SREG = SREG_store;
+        return true;
     }
 };
-uint8_t        SPIcontroller::controllerCount  = 0;
-SPIcontroller* SPIcontroller::activeController = NULL;
+volatile uint8_t SPIcontroller::controllerCount  = 0;
 #endif
