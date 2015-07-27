@@ -17,11 +17,6 @@ float simplifyDegree(float ref, float val){
 	if(diff < 0.0f) diff += 360.0f * ceil(diff / -360.0f);
 	return ref - fmod(diff, 360.0f);
 }
-inline float distanceRadian(float   a, float   b){ return simplifyRadian(0, b-a); }
-inline float distanceDegree(float   a, float   b){ return simplifyDegree(0, b-a); }
-inline float truncateRadian(float val){ return simplifyRadian(0, val); }
-inline float truncateDegree(float val){ return simplifyDegree(0, val); }
-inline float trunkAngle(float angle)  { return simplifyDegree(0, angle); }
 
 float
 calcHeading(Waypoint a, Waypoint b){

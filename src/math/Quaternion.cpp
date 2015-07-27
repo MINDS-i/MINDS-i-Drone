@@ -1,4 +1,5 @@
 #include "Quaternion.h"
+
 Quaternion::Quaternion(const Vec3& euler){
 	float c1 = cos(euler.x/2.f); //pitch
 	float s1 = sin(euler.x/2.f);
@@ -240,3 +241,4 @@ Quaternion
 operator - (const Quaternion& l, const Quaternion& r){
 	return Quaternion(l.w-r.w, l.x-r.x, l.y-r.y, l.z-r.z);
 }
+
