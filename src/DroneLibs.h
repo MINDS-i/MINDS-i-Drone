@@ -5,6 +5,7 @@
 #include "SPI.h"
 #include "Wire.h"
 #include "Servo.h"
+
 /*
 Copyright 2015 MINDS-i Inc.
 
@@ -21,8 +22,10 @@ Copyright 2015 MINDS-i Inc.
    limitations under the License.
 */
 
+//#pragma GCC optimize ("Os")
+
 //these macros can be turned off to save space
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
     #define TEST(a) Serial.print(#a);Serial.print(": ");Serial.print(a);Serial.print("\t");
     #define FAIL(a) {Serial.print("\nERROR:>"); Serial.println(a); return false; }
@@ -57,6 +60,7 @@ Copyright 2015 MINDS-i Inc.
 #include "input/InertialManager.h"
 #include "input/Sensor.h"
 #include "input/SPIcontroller.h"
+#include "input/UM7.h"
 
 #include "math/GreatCircle.h"
 #include "math/Quaternion.h"
@@ -89,6 +93,5 @@ Copyright 2015 MINDS-i Inc.
 #include "util/PIDcontroller.h"
 #include "util/PIDparameters.h"
 #include "util/profile.h"
-#include "util/UM7.h"
 
 #endif
