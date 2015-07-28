@@ -195,6 +195,39 @@ void printTune(LTATune tune){
 void calculateResults(){
     LTATune newAccl = LTATune::FitEllipsoid(acclLog);
     LTATune newMagn = LTATune::FitEllipsoid(magnLog);
+
+//{"-X","+X","-Y","+Y","-Z","+Z"}
+
+
+    Serial.println();
+    for(int i=0; i<3; i++){
+        float a = magnLog[i*2+0][i];
+        float b = magnLog[i*2+1][i];
+        newMagn.calibrate(a, i);
+        newMagn.calibrate(b, i);
+        a *= -1;
+        if(a < 0 && b < 0){
+            Serial.print("Mag axis ");
+            Serial.print(i);
+            Serial.println(" is inverted");
+            newMagn.scalar[i] *= -1;
+        }
+    }
+/*
+    Serial.println();
+    for(int j=0; j<6; j++){
+        float data[3];
+        for(int i=0; i<3; i++) data[i] = magnLog[j][i];
+        newMagn.calibrate(data);
+        float val = data[j/2] * ((j%2)? 1.0 : -1.0);
+        Serial.print(j/2);
+        Serial.print("\t");
+        Serial.print(val);
+        Serial.print("\t");
+        Serial.println();
+    }
+*/
+
     Serial.println("res = (raw+shift)*scalar");
     Serial.println("New accelerometer tune:");
     printTune(newAccl);

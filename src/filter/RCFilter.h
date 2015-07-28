@@ -88,7 +88,7 @@ RCFilter::update(InertialManager& sensors){
     //make gyro vector
     Vec3 gyro( g[1], g[0],-g[2]);
     Vec3 rawA(-a[1],-a[0], a[2]);
-    Vec3 rawM(-m[1], m[0],-m[2]);
+    Vec3 rawM( m[1], m[0], m[2]);
 
     //reference frame mahoney filter 2.2ms
     //delta is build from cross products rawAxdown and rawMxnorth, which both
