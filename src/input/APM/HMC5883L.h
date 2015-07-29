@@ -15,7 +15,7 @@ public:
     void  end();
     Sensor::Status  status();
     void  calibrate();
-    void  update(InertialManager& man);
+    void  update(InertialManager& man, Translator axis);
     void  tune(LTATune t);
     void  rawValues(int& x, int& y, int& z);
     float getAzimuth();
@@ -61,12 +61,12 @@ HMC5883L::calibrate(){
 
 }
 void
-HMC5883L::update(InertialManager& man){
+HMC5883L::update(InertialManager& man, Translator axis){
     int m[3];
     rawValues(m[0], m[1], m[2]);
     float M[3];
     LTA.calibrate<int>(m,M);
-    man.updateMagField(M[0],M[1],M[2]);
+    man.mag = axis(M);
 }
 void
 HMC5883L::rawValues(int& x, int& y, int& z){

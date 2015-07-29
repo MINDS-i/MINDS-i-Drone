@@ -5,6 +5,7 @@
 
 #include "input/altIMU/STMtwi.h"
 #include "input/InertialManager.h"
+#include "input/AxisTranslator.h"
 
 //L3GD20H Gyroscope
 class L3GD20H : public STMtwiDev {
@@ -53,7 +54,7 @@ public:
 	void end();
 	Sensor::Status status();
 	void calibrate();
-	void update(InertialManager& man);
+	void update(InertialManager& man, Translator axis);
 	void getRawGyro(int16_t* buf);
 };
 const float L3GD20H::OUTPUT_CONVERSION_FACTOR = .07f*.001*PI/180.f;
@@ -87,7 +88,7 @@ L3GD20H::calibrate(){
 	for(int i=0; i<3; i++) lowPass[i] = average[i];
 }
 void
-L3GD20H::update(InertialManager& man){
+L3GD20H::update(InertialManager& man, Translator axis){
 	float rate[3];
 	int16_t data[3];
 	getRawGyro(data);
@@ -96,7 +97,8 @@ L3GD20H::update(InertialManager& man){
 		rate[i]    = ((float)data[i])-lowPass[i];
 		rate[i]   *= OUTPUT_CONVERSION_FACTOR;//convert to rps
 	}
-	man.updateRotRates(rate[0], rate[1], rate[2]);
+
+	man.gyro = axis(rate);
 }
 void
 L3GD20H::getRawGyro(int16_t* buf){

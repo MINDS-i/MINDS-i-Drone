@@ -1,6 +1,7 @@
 #include "input/InertialManager.h"
 #include "input/Sensor.h"
 #include "input/SPIcontroller.h"
+#include "input/AxisTranslator.h"
 #include "util/byteConv.h"
 #include "util/LTATune.h"
 #include <SPI.h>
@@ -36,7 +37,7 @@ public:
     void end();
     Sensor::Status status();
     void calibrate();
-    void update(InertialManager& man);
+    void update(InertialManager& man, Translator axis);
     //end of sensor interface
     void getSensors(int16_t (&accl)[3], int16_t (&gyro)[3]);
     void tuneAccl(LTATune t);
@@ -124,7 +125,7 @@ MPU6000::calibrate(){
     //calibrate gyro
 }
 void
-MPU6000::update(InertialManager& man){
+MPU6000::update(InertialManager& man, Translator axis){
     rawData data = readSensors();
 
     float accl[3];
@@ -134,8 +135,9 @@ MPU6000::update(InertialManager& man){
     for(int i=0; i<3; i++){
         gyro[i] = (((float)data.gyro[i])*GYRO_CONVERSION_FACT);
     }
-    man.updateRotRates(gyro[0], gyro[1], gyro[2]);
-    man.updateLinAccel(accl[0], accl[1], accl[2]);
+
+    man.gyro = axis(gyro);
+    man.accl = axis(accl);
 }
 void
 MPU6000::getSensors(int16_t (&accl)[3], int16_t (&gyro)[3]){

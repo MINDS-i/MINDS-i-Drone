@@ -36,7 +36,6 @@ public:
 	void end();
 	Sensor::Status status();
 	void calibrate();
-	void update(InertialManager& man);
 	int32_t getRawPressure();
 };
 void
@@ -56,12 +55,6 @@ LPS25H::status(){
 void
 LPS25H::calibrate(){
 	this->write(CTRL_REG2, 0x02);
-}
-void
-LPS25H::update(InertialManager& man){
-	int32_t pressure = getRawPressure();
-	float pascals = (100.f/4096.f)*((float)pressure);
-	man.updatePressure(pascals);
 }
 int32_t
 LPS25H::getRawPressure(){

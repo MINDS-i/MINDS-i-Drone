@@ -2,6 +2,7 @@
 #define LMS303D_H
 
 #include "Wire.h"
+#include "input/AxisTranslator.h"
 
 //LSM303D Accelerometer and Magnometer
 class LSM303D : public STMtwiDev {
@@ -73,7 +74,7 @@ public:
 	void end();
 	Sensor::Status status();
 	void calibrate();
-	void update(InertialManager& man);
+	void update(InertialManager& man, Translator axis);
 	void getRawAccl(int16_t* buf);
 	void getRawMag(int16_t* buf);
 };
@@ -99,7 +100,7 @@ void
 LSM303D::calibrate(){
 }
 void
-LSM303D::update(InertialManager& man){
+LSM303D::update(InertialManager& man, Translator axis){
 	int16_t rA[3];
 	int16_t rM[3];
 	getRawAccl(rA);
@@ -112,8 +113,8 @@ LSM303D::update(InertialManager& man){
 		 mag[i] = ((float)rM[i])*MAG_CONVERSION_FACTOR;
 	}
 
-	man.updateLinAccel(accl[0], accl[1], accl[2]);
-	man.updateMagField( mag[0],  mag[1],  mag[2]);
+	man.accl = axis(accl);
+	man.mag  = axis(mag);
 }
 void
 LSM303D::getRawAccl(int16_t* buf){

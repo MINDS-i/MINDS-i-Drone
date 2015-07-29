@@ -1,6 +1,7 @@
 #ifndef SENSOR_VIRTUAL_H
 #define SENSOR_VIRTUAL_H
 
+#include "input/AxisTranslator.h"
 /*
 -Abstract base class for sensors that will be managed by an Inertial Manager
 	Instance
@@ -25,10 +26,9 @@ public:
 };
 
 class InertialManager;
-class InertialVec{
+class InertialVec : public Sensor{
 public:
-	virtual void update(InertialManager& man) = 0;
-	friend InertialManager;
+	virtual void update(InertialManager& man, Translator axis) = 0;
 };
 
 #endif

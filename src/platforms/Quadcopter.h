@@ -10,7 +10,7 @@ MPU6000   mpu;
 HMC5883L  cmp;
 LEA6H     gps;
 MS5611    baro;
-Sensor* sens[2] = {&mpu, &cmp};
+InertialVec* sens[2] = {&mpu, &cmp};
 InertialManager sensors(sens, 2);
 #define Output_t HK_ESCOutputDevice
 Output_t esc[4] =
@@ -104,8 +104,8 @@ void setupQuad() {
     setupSettings();
 
     sensors.start();
-    baro.init();
-    gps.init();
+    baro.begin();
+    gps.begin();
     sensors.calibrate();
     baro.calibrate();
 

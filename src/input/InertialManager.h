@@ -2,6 +2,7 @@
 #define INERTIAL_MANAGER_H
 #include "filter/OrientationEngine.h"
 #include "input/Sensor.h"
+#include "input/AxisTranslator.h"
 #include "Arduino.h"
 /*
 -Inertial Manager is given an array of Inertial Sensors on intialization.
@@ -14,108 +15,85 @@
 */
 
 class InertialManager{
+    friend class HMC5883L;
+    friend class MPU6000;
+    friend class L3GD20H;
+    friend class LSM303D;
 private:
-	Sensor** sensor;
+	InertialVec** sensor;
+    //Translator*   translator;
 	uint8_t numSensors;
-	float rotRates[3]; //X,Y,Z
-	float linAccel[3];
-	float magField[3];
-	float pressure[1];
+    Vec3 accl; //G's
+    Vec3 gyro; //Radians per millisecond
+    Vec3 mag;  //(local earth field)'s
 public:
-	InertialManager(Sensor** s, uint8_t num)
+	InertialManager(InertialVec** s, uint8_t num)
 		: sensor(s), numSensors(num) {}
 
     void update(){
-
+        for(int i=0; i<numSensors; i++) sensor[i]->update(*this, Translators::ident);
     }
-
-    void
-    start(){
+    void start(){
         for(int i=0; i<numSensors; i++) sensor[i]->begin();
     }
-    void
-    calibrate(){
+    void calibrate(){
         for(int i=0; i<numSensors; i++) sensor[i]->calibrate();
     }
-    void
-    update(OrientationEngine &orientation){
+    void update(OrientationEngine &orientation){
         update();
         orientation.update(*this);
     }
-    void
-    stop(){
+    void stop(){
         for(int i=0; i<numSensors; i++) sensor[i]->end();
     }
 
-	//rad per millisecond
-	void updateRotRates(float dx, float dy, float dz){
-		rotRates[0] = dx;
-		rotRates[1] = dy;
-		rotRates[2] = dz;
-	}
-	void updateRotRates(float (&delta)[3]){
-		rotRates[0] = delta[0];
-		rotRates[1] = delta[1];
-		rotRates[2] = delta[2];
-	}
-	void getRotRates(float& dx, float& dy, float& dz){//rad per millisecond
-		dx = rotRates[0];
-		dy = rotRates[1];
-		dz = rotRates[2];
+    Vec3 getGyro(){
+        return gyro;
+    }
+    const Vec3* gyroRef(){
+        return &gyro;
+    }
+    Vec3 getAccl(){
+        return accl;
+    }
+    const Vec3* acclRef(){
+        return &accl;
+    }
+    Vec3 getMag(){
+        return mag;
+    }
+    const Vec3* magRef(){
+        return &mag;
+    }
+	void getRotRates(float& dx, float& dy, float& dz){
+		dx = gyro[0];
+		dy = gyro[1];
+		dz = gyro[2];
 	}
 	void getRotRates(float (&v)[3]){
-		v[0] = rotRates[0];
-		v[1] = rotRates[1];
-		v[2] = rotRates[2];
-	}
-	//G's
-	void updateLinAccel(float  x, float  y, float  z){
-		linAccel[0] = x;
-		linAccel[1] = y;
-		linAccel[2] = z;
-	}
-	void updateLinAccel(float (&v)[3]){
-		linAccel[0] = v[0];
-		linAccel[1] = v[1];
-		linAccel[2] = v[2];
+		v[0] = gyro[0];
+		v[1] = gyro[1];
+		v[2] = gyro[2];
 	}
 	void getLinAccel(float&  x, float&  y, float&  z){
-		x = linAccel[0];
-		y = linAccel[1];
-		z = linAccel[2];
+		x = accl[0];
+		y = accl[1];
+		z = accl[2];
 	}
 	void getLinAccel(float (&v)[3]){
-		v[0] = linAccel[0];
-		v[1] = linAccel[1];
-		v[2] = linAccel[2];
-	}
-	//Gauss
-	void updateMagField(float  x, float  y, float  z){
-		magField[0] = x;
-		magField[1] = y;
-		magField[2] = z;
-	}
-	void updateMagField(float (&v)[3]){
-		magField[0] = v[0];
-		magField[1] = v[1];
-		magField[2] = v[2];
+		v[0] = accl[0];
+		v[1] = accl[1];
+		v[2] = accl[2];
 	}
 	void getMagField(float&  x, float&  y, float&  z){
-		x = magField[0];
-		y = magField[1];
-		z = magField[2];
+		x = mag[0];
+		y = mag[1];
+		z = mag[2];
 	}
 	void getMagField(float (&v)[3]){
-		v[0] = magField[0];
-		v[1] = magField[1];
-		v[2] = magField[2];
-	}
-	//Pascals
-	void updatePressure(float  p){
-		pressure[0] = p;
-	}
-	void getPressure(float&  p){
-		p = pressure[0];
+		v[0] = mag[0];
+		v[1] = mag[1];
+		v[2] = mag[2];
 	}
 };
 #endif
