@@ -11,8 +11,9 @@ HMC5883L  cmp;
 LEA6H     gps;
 MS5611    baro;
 InertialVec* sens[2] = {&cmp, &mpu};
-Translator   conv[2] = {Translators::identity, Translators::APM_MPU};
+Translator   conv[2] = {Translators::APM_MPU, Translators::APM_MPU};
 InertialManager sensors(sens, conv, 2);
+
 #define Output_t HK_ESCOutputDevice
 Output_t esc[4] =
     { Output_t(12), Output_t(11)

@@ -7,7 +7,7 @@ const uint32_t UPDATE_INTERVAL = 5;
 MPU6000   mpu;
 HMC5883L  cmp;
 InertialVec* sens[2] = {&mpu, &cmp};
-Translator   conv[2] = {Translators::APM, Translators::APM};
+Translator   conv[2] = {Translators::identity, Translators::identity};
 InertialManager sensors(sens, conv, 2);
 
 Settings set(eeStorage::getInstance());
@@ -41,9 +41,9 @@ void loop(){
 		sensors.getMagField(magn[0], magn[1], magn[2]);
 
 		//display(time);
-		for(int i=0; i<3; i++) display(accl[i]);
+		//for(int i=0; i<3; i++) display(accl[i]);
 		//for(int i=0; i<3; i++) display(gyro[i]*1000);
-		//for(int i=0; i<3; i++) display(magn[i]);
+		for(int i=0; i<3; i++) display(magn[i]);
 
 		Serial.print("\n");
 	}

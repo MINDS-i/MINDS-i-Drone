@@ -207,7 +207,7 @@ void calculateResults(){
         newMagn.calibrate(a, i);
         newMagn.calibrate(b, i);
         a *= -1;
-        if(a < 0 && b < 0){
+        if(a > 0 && b > 0){
             Serial.print("Mag axis ");
             Serial.print(i);
             Serial.println(" is inverted");
