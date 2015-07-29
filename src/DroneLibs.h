@@ -61,6 +61,7 @@ Copyright 2015 MINDS-i Inc.
 #include "input/Sensor.h"
 #include "input/SPIcontroller.h"
 #include "input/UM7.h"
+#include "input/AxisTranslator.h"
 
 #include "math/GreatCircle.h"
 #include "math/Quaternion.h"

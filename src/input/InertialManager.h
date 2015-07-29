@@ -21,17 +21,17 @@ class InertialManager{
     friend class LSM303D;
 private:
 	InertialVec** sensor;
-    //Translator*   translator;
+    Translator*   translator;
 	uint8_t numSensors;
     Vec3 accl; //G's
     Vec3 gyro; //Radians per millisecond
     Vec3 mag;  //(local earth field)'s
 public:
-	InertialManager(InertialVec** s, uint8_t num)
-		: sensor(s), numSensors(num) {}
+	InertialManager(InertialVec** s, Translator* ts, uint8_t num)
+		: sensor(s), translator(ts), numSensors(num) {}
 
     void update(){
-        for(int i=0; i<numSensors; i++) sensor[i]->update(*this, Translators::ident);
+        for(int i=0; i<numSensors; i++) sensor[i]->update(*this, translator[i]);
     }
     void start(){
         for(int i=0; i<numSensors; i++) sensor[i]->begin();

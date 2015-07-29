@@ -5,7 +5,13 @@
 class Quaternion;
 class Vec3{
 private:
-	float x,y,z;
+	union {
+		struct {
+			float x,y,z;
+		};
+		float data[3];
+	};
+	//float x,y,z;
 public:
 	Vec3(): x(0.f), y(0.f), z(0.f) {}
 	Vec3(float X, float Y, float Z): x(X), y(Y), z(Z) {}
@@ -20,7 +26,7 @@ public:
 	void	lerpWith(const Vec3& l, float percentNew);
 	void	rotateBy(const Quaternion& l);
 	//operators
-	float& operator[] (int x);
+	float& operator[] (int index){ return data[index]; }
 	void	operator*= (float s);
 	void	operator/= (float s);
 	void	operator+= (const Vec3& r);

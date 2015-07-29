@@ -47,7 +47,7 @@ Vec3::rotateBy(const Quaternion& q){
 	t.crossWith(q.axis());
 	*this += t;
 }
-float&
+/*float&
 Vec3::operator[] (int index){
 	switch(index){
 		case 0: return x;
@@ -55,7 +55,7 @@ Vec3::operator[] (int index){
 		case 2: return z;
 		default:return x;
 	}
-}
+}*/
 void
 Vec3::operator*= (float s){
 	x *= s;

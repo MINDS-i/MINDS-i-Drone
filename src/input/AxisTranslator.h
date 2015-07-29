@@ -11,7 +11,11 @@ namespace Translators{
                      (ys)? -in[y] : in[y],
                      (zs)? -in[z] : in[z] );
     }
-    static const Translator ident = &write<false,false,false,0,1,2>;
-    static const Translator APM = &write<false,false,true,1,0,2>;
+    static const Translator identity = &write<false, 0,
+                                           false, 1,
+                                           false, 2 >;
+    static const Translator APM = &write<false, 1,
+                                         false, 0,
+                                          true, 2 >;
 }
 #endif

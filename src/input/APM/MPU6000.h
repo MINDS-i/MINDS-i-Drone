@@ -50,7 +50,7 @@ public:
     float pitch();
     float roll();
 };
-const float MPU6000::SAMPLE_RATE     = 200; //sample at 200Hz
+const float MPU6000::SAMPLE_RATE = 200; //sample at 200Hz
 const float MPU6000::dPlsb = 2.f*(2.f/65535.f);
 const float MPU6000::GYRO_CONVERSION_FACT =  2.f*(2.f/65535.f) *PI/180.l;
 rawData
