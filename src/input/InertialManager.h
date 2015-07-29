@@ -32,8 +32,6 @@ public:
 	void calibrate();
 	void stop();
 
-	//variable setters/getters - implicitly inlined
-
 	//rad per millisecond
 	void updateRotRates(float dx, float dy, float dz){
 		rotRates[0] = dx;

@@ -12,10 +12,9 @@ const uint8_t VoltagePin  = 67;
 const uint8_t LEDpin[]    = {25, 26, 27}; //blue, yellow, red
 const uint8_t PingPin[]	  = {A0, A1, A2, A3, A4}; //left to right
 const uint8_t ServoPin[]  = {12, 11,  8};//drive, steer, backS; APM 1,2,3 resp.
-const uint8_t RadioPin[]  = {0, 7, 6}; //auto switch, drive, steer
+const uint8_t RadioPin[]  = {7, 0, 1}; //auto switch, drive, steer
 const uint8_t EncoderPin[]= {2, 3};
 const double  pAngle[5]   = { 79.27, 36.83, 0.0, -36.83, -79.27};
-const double  dplsb       = 4.f/float(0xffff); //dps Per leastSigBit for gyro
 const int ScheduleDelay   = 22;
 const uint16_t warn[]     = {1000, 1600, 3000, 1600, 1000};
 const double PointRadius  = .001; //in miles, margin for error in rover location
@@ -78,7 +77,7 @@ void newPIDparam(float x){
 	using namespace groundSettings;
 	cruisePID = PIDparameters(settings.get(CRUISE_P),
                               settings.get(CRUISE_I),
-                              settings.get(CRUISE_D) );
+                              settings.get(CRUISE_D), -90, 90 );
 }
 
 void setupSettings(){
@@ -191,16 +190,16 @@ void navigate(){
 		}
 
 		outputAngle = toDeg(atan2(y,x))+steerCenter;
-		constrain(outputAngle,
-				  double(steerCenter-steerThrow),
-			 	  double(steerCenter+steerThrow));
+		outputAngle = constrain(outputAngle,
+				  				double(steerCenter-steerThrow),
+			 	  				double(steerCenter+steerThrow));
 
 		float disp  = steerThrow - abs(steerCenter-outputAngle);
 		float speed = (distance*5280.l);
 		speed = min(speed, disp)/6.f; //logical speed clamps
 		float approachSpeed = manager.getTargetWaypoint().getApproachSpeed();
 		speed = min(speed, approachSpeed); //put in target approach speed
-		constrain(speed, minFwd, maxFwd);
+		speed = constrain(speed, minFwd, maxFwd);
 
 		if(stop) output(0 , steerCenter);
 		else     output(speed, outputAngle);
@@ -221,7 +220,8 @@ void updateGPS(){
 void waypointUpdated(){
 	if(manager.numWaypoints() > 0 && !gps.getWarning()){
 		stop = false;
- 		distance = calcDistance(manager.getTargetWaypoint(), location);
+ 		distance = calcDistance(manager.getTargetWaypoint(),  location);
+
 		if(distance > PointRadius)  return;
 
 		if(manager.getTargetIndex() < manager.numWaypoints()-1){
@@ -240,10 +240,10 @@ void waypointUpdated(){
 
 void updateGyro(){
 	float dt = lowFilter.millisSinceUpdate();
-	float Gz = mpu.gyroZ();
+	float Gz = -toDeg(mpu.gyroZ());
 	lowFilter.update(Gz);
 	highFilter.update(Gz-lowFilter.get());
-	trueHeading = trunkAngle(trueHeading + dt*(highFilter.get())*dplsb);
+	trueHeading = trunkAngle(trueHeading + dt*(highFilter.get()));
 
 	if(gpsHalfTime < millis() && gpsHalfTime!=0){
 		gyroHalf = trueHeading;
@@ -253,11 +253,13 @@ void updateGyro(){
 
 void syncHeading(){
 	if(!gps.getWarning() && gps.getCourse()!=0){
+		trueHeading = gps.getCourse();
+		/*
 		if(millis() - gpsTime < 1500) //dont use gyrohalf if it is too old
 			trueHeading = trunkAngle(gps.getCourse() + trueHeading - gyroHalf);
 		else
 			trueHeading = trunkAngle(gps.getCourse());
-		gpsHalfTime = millis()+(millis()-gpsTime)/2;
+		gpsHalfTime = millis()+(millis()-gpsTime)/2;*/
 	}
 	else if(stop) trueHeading = pathHeading;
 }
@@ -312,16 +314,17 @@ void reportLocation(){
 	manager.sendTelem(Protocol::telemetryType(LATITUDE),    location.degLatitude());
 	manager.sendTelem(Protocol::telemetryType(LONGITUDE),   location.degLongitude());
 	manager.sendTelem(Protocol::telemetryType(HEADING),     trueHeading);
-	manager.sendTelem(Protocol::telemetryType(PITCH),       pitch.get()*180/PI);
-	manager.sendTelem(Protocol::telemetryType(ROLL),        roll.get()*180/PI);
+	manager.sendTelem(Protocol::telemetryType(PITCH),       toDeg(pitch.get())-90);
+	manager.sendTelem(Protocol::telemetryType(ROLL),        toDeg(roll.get())-90);
 	manager.sendTelem(Protocol::telemetryType(GROUNDSPEED), RPMtoMPH(encoder::getRPM()));
 	manager.sendTelem(Protocol::telemetryType(VOLTAGE),     voltage);
+	manager.sendTelem(Protocol::telemetryType(VOLTAGE+1),   amperage);
 }
 
 void calibrateGyro(){ //takes one second
 	double tmp = 0;
 	for(int i=0; i<100; i++){
-		double Gz = mpu.gyroZ();
+		double Gz = toDeg(mpu.gyroZ());
 		tmp += Gz/100;
 		delay(10);
 	}
