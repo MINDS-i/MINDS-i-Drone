@@ -31,8 +31,9 @@ float magnLog[6][3];
 
 MPU6000  mpu;
 HMC5883L cmp;
-Sensor* sens[2] = {&mpu, &cmp};
-InertialManager sensors(sens, 2);
+InertialVec* sens[2] = {&mpu, &cmp};
+Translator   conv[2] = {Translators::identity, Translators::identity};
+InertialManager sensors(sens, conv, 2);
 Settings set(eeStorage::getInstance());
 
 class datastream{
@@ -89,11 +90,11 @@ void setup(){
     delay(1000);
     sensors.calibrate();
     delay(250);
-    if(mpu.status() == STATUS_BAD){
+    if(mpu.status() == Sensor::BAD){
         Serial.println("Bad MPU6000 status");
         while(true);
     }
-    if(cmp.status() == STATUS_BAD){
+    if(cmp.status() == Sensor::BAD){
         Serial.println("Bad HMC5883L status");
         while(true);
     }

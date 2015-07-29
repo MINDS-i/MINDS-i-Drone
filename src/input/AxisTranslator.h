@@ -12,10 +12,13 @@ namespace Translators{
                      (zs)? -in[z] : in[z] );
     }
     static const Translator identity = &write<false, 0,
-                                           false, 1,
-                                           false, 2 >;
-    static const Translator APM = &write<false, 1,
-                                         false, 0,
-                                          true, 2 >;
+                                              false, 1,
+                                              false, 2 >;
+    static const Translator APM_HMC = &write<true, 1,
+                                             true, 0,
+                                             true, 2 >;
+    static const Translator APM_MPU = &write<false, 1,
+                                             false, 0,
+                                              true, 2 >;
 }
 #endif
