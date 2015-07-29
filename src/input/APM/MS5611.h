@@ -61,12 +61,11 @@ public:
     MS5611(uint8_t cs_pin)
         : spiController(cs_pin, SPISettings(8E6, MSBFIRST, SPI_MODE0)),
           newData(true), TEMP_DUTY_CYCLE(20) {}
-    void init();
-    void stop();
-    bool status();
-    void calibrate();
-    void update(InertialManager& man);
+    void begin();
+    void end();
     void update();
+    Sensor::Status status();
+    void calibrate();
     void setTempDutyCycle(uint16_t cycle);
     float getPascals();
     float getMilliBar();
@@ -113,17 +112,17 @@ MS5611::get16from(uint8_t prom_addr){
     return ((uint16_t) tmp[1] << 8 ) | ( tmp[2] );
 }
 void
-MS5611::init(){
+MS5611::begin(){
     sendCommand(RESET);
     readyTime = millis();
     tempCycle = TEMP_DUTY_CYCLE; //get temperature first
 }
 void
-MS5611::stop(){
+MS5611::end(){
 }
-bool
+Sensor::Status
 MS5611::status(){
-    return STATUS_OK;
+    return Sensor::OK;
 }
 void
 MS5611::calibrate(){
@@ -197,14 +196,6 @@ MS5611::getAltitude(){ // feet
     float tmp = getPascals()/(101325);
     float alt = (1-pow(tmp, 0.190284))*145366.45;
     return alt;
-}
-void
-MS5611::update(InertialManager& man){
-    update();
-    if(newData) {
-        man.updatePressure(P);
-        newData = false;
-    }
 }
 
 #endif

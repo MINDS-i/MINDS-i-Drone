@@ -25,28 +25,31 @@ public:
     #if defined(__AVR_ATmega2560__)
     LEA6H(): stream(Serial1), parser(stream) {}
     #endif
-    void init();
-    void stop() {}
-    bool status() {return !parser.getWarning();}
+    void begin();
+    void end() {}
+    Sensor::Status status();
     void calibrate();
     void update();
-    void update(InertialManager& man);
     //expose interface provided by NMEA parser
-    bool  getWarning()    {return parser.getWarning();     }
-    bool  newData()       {return parser.newData();        }
-    float getCourse()     {return parser.getCourse();      }
-    float getDateOfFix()  {return parser.getDateOfFix();   }
-    float getGroundSpeed(){return parser.getGroundSpeed(); }
-    float getLatitude()   {return parser.getLatitude();    }
-    float getLongitude()  {return parser.getLongitude();   }
-    float getMagVar()     {return parser.getMagVar();      }
-    float getTimeOfFix()  {return parser.getTimeOfFix();   }
+    bool  getWarning()    { update(); return parser.getWarning();     }
+    bool  newData()       { update(); return parser.newData();        }
+    float getCourse()     { update(); return parser.getCourse();      }
+    float getDateOfFix()  { update(); return parser.getDateOfFix();   }
+    float getGroundSpeed(){ update(); return parser.getGroundSpeed(); }
+    float getLatitude()   { update(); return parser.getLatitude();    }
+    float getLongitude()  { update(); return parser.getLongitude();   }
+    float getMagVar()     { update(); return parser.getMagVar();      }
+    float getTimeOfFix()  { update(); return parser.getTimeOfFix();   }
     #ifdef WAYPOINT_H
-    Waypoint getLocation(){return parser.getLocation();    }
+    Waypoint getLocation(){ update(); return parser.getLocation();    }
     #endif
 };
+Sensor::Status
+LEA6H::status(){
+  return (parser.getWarning())? Sensor::BAD : Sensor::OK;
+}
 void
-LEA6H::init(){
+LEA6H::begin(){
     stream.begin(38400);
     sendUBloxMessage(0x06, 0x01, 0x0003, GPRMC_On);
     sendUBloxMessage(0x06, 0x17, 0x0004, CFG_NMEA);
@@ -59,10 +62,6 @@ LEA6H::calibrate(){
 void
 LEA6H::update(){
     parser.update();
-}
-void
-LEA6H::update(InertialManager& man){
-    update();
 }
 void
 LEA6H::sendUBloxMessage(uint8_t Type, uint8_t ID, uint16_t len, const uint8_t* buf){

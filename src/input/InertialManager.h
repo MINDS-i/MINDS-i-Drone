@@ -25,12 +25,27 @@ public:
 	InertialManager(Sensor** s, uint8_t num)
 		: sensor(s), numSensors(num) {}
 
-	void update();
-	void update(OrientationEngine &orientation);
+    void update(){
 
-	void start();
-	void calibrate();
-	void stop();
+    }
+
+    void
+    start(){
+        for(int i=0; i<numSensors; i++) sensor[i]->begin();
+    }
+    void
+    calibrate(){
+        for(int i=0; i<numSensors; i++) sensor[i]->calibrate();
+    }
+    void
+    update(OrientationEngine &orientation){
+        update();
+        orientation.update(*this);
+    }
+    void
+    stop(){
+        for(int i=0; i<numSensors; i++) sensor[i]->end();
+    }
 
 	//rad per millisecond
 	void updateRotRates(float dx, float dy, float dz){

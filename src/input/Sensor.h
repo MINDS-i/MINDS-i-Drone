@@ -11,21 +11,24 @@
 	D: Pass data into corresponding interface of InerialManager when updated
 */
 
-//forward declare InertialManager
-class InertialManager;
-
-const bool STATUS_OK  = true;
-const bool STATUS_BAD = false;
-
 class Sensor{
 protected:
 public:
+	enum Status {
+		OK, BAD
+	};
 	virtual ~Sensor() {};
-	virtual void init() = 0;
-	virtual void stop() = 0;
-	virtual bool status() = 0;
-	virtual void calibrate() = 0;
+	virtual void   begin() = 0;
+	virtual void   calibrate() = 0;
+	virtual Status status() = 0;
+	virtual void   end() = 0;
+};
+
+class InertialManager;
+class InertialVec{
+public:
 	virtual void update(InertialManager& man) = 0;
+	friend InertialManager;
 };
 
 #endif

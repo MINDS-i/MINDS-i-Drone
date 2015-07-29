@@ -2,7 +2,7 @@
 #include "input/Sensor.h"
 
 //HMC5883L Compass
-class HMC5883L : public Sensor{
+class HMC5883L : public InertialVec {
 protected:
     static const uint8_t HMC_I2C_ADDR   = 0x1E;
     static const uint8_t HMC_STATUS_REG = 0x09;
@@ -11,9 +11,9 @@ protected:
 public:
     HMC5883L(): address(HMC_I2C_ADDR) {}
     HMC5883L(uint8_t addr): address(addr) {}
-    void  init();
-    void  stop();
-    bool  status();
+    void  begin();
+    void  end();
+    Sensor::Status  status();
     void  calibrate();
     void  update(InertialManager& man);
     void  tune(LTATune t);
@@ -21,7 +21,7 @@ public:
     float getAzimuth();
 };
 void
-HMC5883L::init(){
+HMC5883L::begin(){
     Wire.begin();
     Wire.setClock(800000L);
     delay(10);
@@ -41,10 +41,10 @@ HMC5883L::tune(LTATune t){
     LTA = t;
 }
 void
-HMC5883L::stop(){
+HMC5883L::end(){
 
 }
-bool
+Sensor::Status
 HMC5883L::status(){
     Wire.beginTransmission(address);
     Wire.write((uint8_t)0x09);
@@ -52,9 +52,9 @@ HMC5883L::status(){
     Wire.requestFrom(address, (uint8_t)0x01);
     if(Wire.available()>=1){
         uint8_t status = Wire.read();
-        if((status&0x3) == 1) return STATUS_OK;
+        if((status&0x3) == 1) return Sensor::OK;
     }
-    return STATUS_BAD;
+    return Sensor::BAD;
 }
 void
 HMC5883L::calibrate(){

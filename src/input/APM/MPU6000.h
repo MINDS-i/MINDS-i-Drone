@@ -13,7 +13,7 @@ namespace{
         struct { int16_t accl[3], temp, gyro[3]; };
     };
 }
-class MPU6000 : public Sensor {
+class MPU6000 : public InertialVec {
 protected:
     static const uint8_t  APM26_CS_PIN    = 53;
     static const uint16_t CAL_SAMPLE_SIZE = 200; //for gyro calibration
@@ -32,9 +32,9 @@ public:
         : spiControl(APM26_CS_PIN, SPISettings(8E6, MSBFIRST, SPI_MODE0)) {}
     MPU6000(uint8_t chip_select)
         : spiControl(chip_select , SPISettings(8E6, MSBFIRST, SPI_MODE0)) {}
-    void init();
-    void stop();
-    bool status();
+    void begin();
+    void end();
+    Sensor::Status status();
     void calibrate();
     void update(InertialManager& man);
     //end of sensor interface
@@ -94,7 +94,7 @@ MPU6000::tuneAccl(LTATune t){
     LTA = t;
 }
 void
-MPU6000::init(){
+MPU6000::begin(){
     //rewrite all of this
     pinMode(40, OUTPUT);
     digitalWrite(40, HIGH); //Turn off barometer SPI line
@@ -109,15 +109,15 @@ MPU6000::init(){
     writeTo(REG_ACCEL_CONFIG, 0x08); //Accel scale 4g
 }
 void
-MPU6000::stop(){
+MPU6000::end(){
 }
-bool
+Sensor::Status
 MPU6000::status(){
     //poll WHO_AM_I to see if its an MPU is present
     uint8_t buf[1];
     readFrom(REG_WHOAMI, 1, buf);
-    if(buf[0] == WHOIIS) return STATUS_OK;//value from specification
-    return STATUS_BAD;
+    if(buf[0] == WHOIIS) return Sensor::OK;//value from specification
+    return Sensor::BAD;
 }
 void
 MPU6000::calibrate(){

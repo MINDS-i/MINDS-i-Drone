@@ -31,27 +31,27 @@ private:
 	static const uint8_t WHO_AM_I                = 0x0F;
 public:
 	LPS25H(): STMtwiDev(0x5D, false) {}
-	~LPS25H() { stop(); }
-	void init();
-	void stop();
-	bool status();
+	~LPS25H() { end(); }
+	void begin();
+	void end();
+	Sensor::Status status();
 	void calibrate();
 	void update(InertialManager& man);
 	int32_t getRawPressure();
 };
 void
-LPS25H::init(){
+LPS25H::begin(){
 	this->write(RES_CONF,  0x0F);
 	this->write(CTRL_REG1, 0xB8);
 	calibrate();
 }
 void
-LPS25H::stop(){
+LPS25H::end(){
 	this->write(CTRL_REG1, 0);
 }
-bool
+Sensor::Status
 LPS25H::status(){
-	return this->read(STATUS_REG)!=0;
+	return (this->read(STATUS_REG)!=0)? Sensor::OK : Sensor::BAD;
 }
 void
 LPS25H::calibrate(){

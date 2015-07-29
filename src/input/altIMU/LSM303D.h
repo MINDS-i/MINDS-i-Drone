@@ -68,10 +68,10 @@ private:
 	static const uint8_t WHO_AM_I 			= 0x0F;
 public:
 	LSM303D(): STMtwiDev(0x1D, true) {}
-	~LSM303D() { stop(); }
-	void init();
-	void stop();
-	bool status();
+	~LSM303D() { end(); }
+	void begin();
+	void end();
+	Sensor::Status status();
 	void calibrate();
 	void update(InertialManager& man);
 	void getRawAccl(int16_t* buf);
@@ -80,7 +80,7 @@ public:
 const float LSM303D::ACC_CONVERSION_FACTOR = (2.f/32767.f);
 const float LSM303D::MAG_CONVERSION_FACTOR = (4.f/32767.f);
 void
-LSM303D::init(){
+LSM303D::begin(){
 	this->write(CTRL1, 0x87); //all accl axis on, 400Hz
 	this->write(CTRL2, 0x00); //773Hz alti-alias; +-2g scale
 	this->write(CTRL5, 0x74); //temp off; mag@100Hz; high res
@@ -88,12 +88,12 @@ LSM303D::init(){
 	this->write(CTRL7, 0x40); //accl high pass
 }
 void
-LSM303D::stop(){
+LSM303D::end(){
 
 }
-bool
+Sensor::Status
 LSM303D::status(){
-	return STATUS_OK;
+	return Sensor::OK;
 }
 void
 LSM303D::calibrate(){

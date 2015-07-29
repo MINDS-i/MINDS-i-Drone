@@ -48,29 +48,29 @@ public:
 		: STMtwiDev(0x6B, true), LPfac(.9999)  {}
 	L3GD20H(float LP)
 		: STMtwiDev(0x6B, true), LPfac(LP)     {}
-	~L3GD20H() { stop(); }
-	void init();
-	void stop();
-	bool status();
+	~L3GD20H() { end(); }
+	void begin();
+	void end();
+	Sensor::Status status();
 	void calibrate();
 	void update(InertialManager& man);
 	void getRawGyro(int16_t* buf);
 };
 const float L3GD20H::OUTPUT_CONVERSION_FACTOR = .07f*.001*PI/180.f;
 void
-L3GD20H::init(){
+L3GD20H::begin(){
 	this->write(CTRL1, 0x8F); //on at 200Hz
 	this->write(CTRL2, 0x15); //high pass filter
 	this->write(CTRL4, 0x30); //2000dps range
 	this->write(CTRL5, 0x10); //enable HPF
 }
 void
-L3GD20H::stop(){
+L3GD20H::end(){
 	this->write(CTRL1, 0);
 }
-bool
+Sensor::Status
 L3GD20H::status(){
-	return STATUS_OK;
+	return Sensor::OK;
 }
 void
 L3GD20H::calibrate(){
