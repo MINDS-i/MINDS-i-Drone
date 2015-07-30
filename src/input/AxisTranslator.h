@@ -20,7 +20,7 @@ namespace Translators{
                                              true, 0,
                                              true, 2 >;
     //frame translation from onboard MPU to NED on APM 2.5+ boards
-    static const Translator APM_MPU = &write<false, 1,
+    static const Translator APM     = &write<false, 1,
                                              false, 0,
                                               true, 2 >;
 }

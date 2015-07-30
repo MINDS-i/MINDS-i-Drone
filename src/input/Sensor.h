@@ -3,15 +3,12 @@
 
 #include "input/AxisTranslator.h"
 /*
--Abstract base class for sensors that will be managed by an Inertial Manager
-	Instance
 -Inheritors of Sensor will
 	A: handle all hardware communication code
 	B: Convert outputs to standard units
 	C: Do preliminary sensor filtering based on a sensor's native properties
-	D: Pass data into corresponding interface of InerialManager when updated
+	D: Keep track of the sensor's status
 */
-
 class Sensor{
 protected:
 public:
@@ -24,7 +21,16 @@ public:
 	virtual Status status() = 0;
 	virtual void   end() = 0;
 };
+/*
+Inertial Vector sensors are sensors that  read a 3-vector relating
+	to the sensor's orientation. They provide an extra method for the
+	inertial manager to call on them, in which they will use the translator
+	to transform from the sensor frame to NED and reference passed in to
+	change the inertial manager's state according to their reading.
 
+	The inertial manager class will need to friend any InertialVecs before
+	they can alter its state
+*/
 class InertialManager;
 class InertialVec : public Sensor{
 public:

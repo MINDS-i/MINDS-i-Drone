@@ -5,15 +5,17 @@
 #include "input/AxisTranslator.h"
 #include "Arduino.h"
 /*
--Inertial Manager is given an array of Inertial Sensors on intialization.
+-Inertial Manager is given an array of InertialVec Sensors on intialization.
 -It will propogate commands to all the sensors it owns
 -when an Inertial Sensor is updated, it will pass the data back up to the
 	Inertial Manager, which will store the values for use by the orientation
 	code
 -Inertial Manager receives unit normalized input, and should not modify the
 	values it receives in any way
+-Inertial Manager keeps track of mounting orientations of the sensors in the
+    form of translators, which the sensors use when setting the state of
+    the inertial manager
 */
-
 class InertialManager{
     friend class HMC5883L;
     friend class MPU6000;
