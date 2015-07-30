@@ -11,7 +11,7 @@ HMC5883L  cmp;
 LEA6H     gps;
 MS5611    baro;
 InertialVec* sens[2] = {&cmp, &mpu};
-Translator   conv[2] = {Translators::APM_MPU, Translators::APM_MPU};
+Translator   conv[2] = {Translators::APM, Translators::APM};
 InertialManager sensors(sens, conv, 2);
 
 #define Output_t HK_ESCOutputDevice
@@ -75,7 +75,7 @@ void setupSettings(){
      */
     using namespace AirSettings;
     settings.attach(INT_PERIOD, 6500  , &changeInterruptPeriod );
-    settings.attach(INRT_U_FAC, 0.05f , callback<RCFilter, &orientation, &RCFilter::setwGain>);
+    settings.attach(INRT_U_FAC, 0.07f , callback<RCFilter, &orientation, &RCFilter::setwGain>);
     settings.attach(GYRO_CMP_F, 0.99999f, callback<RCFilter, &orientation, &RCFilter::setRateGain>);
     settings.attach(TILT_CMP_L, 1.00f , callback<Horizon, &horizon, &Horizon::setTiltCompLimit>);
     settings.attach(ATT_P_TERM, 0.550f, &updatePID);
