@@ -120,10 +120,10 @@ Quaternion::nlerpWith(const Quaternion& l, float percentNew){
 void
 Quaternion::rotateBy(const Quaternion& l){
 	//the hamilton product
-	float W = w;
-	float X = x;
-	float Y = y;
-	float Z = z;
+	const float W = w;
+	const float X = x;
+	const float Y = y;
+	const float Z = z;
 	w = W*l.w - X*l.x - Y*l.y - Z*l.z;
 	x = W*l.x + X*l.w + Y*l.z - Z*l.y;
 	y = W*l.y - X*l.z + Y*l.w + Z*l.x;
@@ -133,7 +133,7 @@ void
 Quaternion::integrate(const Vec3& rotVel){
 	//integrates rotational velocities
 	/*
-	effectivly this:
+	//unrolled version of this:
     Quaternion delta(0,
 		    	       (rate[0]),
 			           (rate[1]),
@@ -142,10 +142,10 @@ Quaternion::integrate(const Vec3& rotVel){
 	delta.rotateBy(attitude); //Must be premultiply
 	attitude += delta;
 	*/
-	float W = w/2;
-	float X = x/2;
-	float Y = y/2;
-	float Z = z/2;
+	const float W = w/2;
+	const float X = x/2;
+	const float Y = y/2;
+	const float Z = z/2;
 	w += -X*rotVel.x - Y*rotVel.y - Z*rotVel.z;
 	x +=  W*rotVel.x + Y*rotVel.z - Z*rotVel.y;
 	y +=  W*rotVel.y - X*rotVel.z + Z*rotVel.x;
@@ -154,10 +154,10 @@ Quaternion::integrate(const Vec3& rotVel){
 void
 Quaternion::preintegrate(const Vec3& rotVel){
 	//this = <0 x y z>.rotateBy(this) /2
-	float W = w/2;
-	float X = x/2;
-	float Y = y/2;
-	float Z = z/2;
+	const float W = w/2;
+	const float X = x/2;
+	const float Y = y/2;
+	const float Z = z/2;
 	w = W - rotVel.x*X - rotVel.y*Y - rotVel.z*Z;
 	x = X + rotVel.x*W + rotVel.y*Z - rotVel.z*Y;
 	y = Y - rotVel.x*Z + rotVel.y*W + rotVel.z*X;
@@ -165,7 +165,7 @@ Quaternion::preintegrate(const Vec3& rotVel){
 }
 void
 Quaternion::normalize(){
-	float inv = 1/length();
+	float inv = 1.0f/length();
 	w *= inv;
 	x *= inv;
 	y *= inv;

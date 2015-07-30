@@ -17,45 +17,45 @@ Vec3::error() const {
 }
 void
 Vec3::crossWith(const Vec3& l) {
-	float X = x;
-	float Y = y;
-	float Z = z;
+	const float X = x;
+	const float Y = y;
+	const float Z = z;
 	x = Y*l.z - Z*l.y;
 	y = Z*l.x - X*l.z;
 	z = X*l.y - Y*l.x;
 }
 void
 Vec3::normalize(){
-	float inv = 1.f / length();
+	const float inv = 1.f / length();
 	x *= inv;
 	y *= inv;
 	z *= inv;
 }
 void
 Vec3::lerpWith(const Vec3& l, float percentNew){
-	float percentOld = 1.f - percentNew;
+	const float percentOld = 1.f - percentNew;
 	x = percentOld * x + percentNew * l.x;
 	y = percentOld * y + percentNew * l.y;
 	z = percentOld * z + percentNew * l.z;
 }
 void
 Vec3::rotateBy(const Quaternion& q){
+/*	//unrolled version of this:
 	Vec3 t = *this;
 	t.crossWith(q.axis());
 	t*=2;
 	*this += t*q.w;
 	t.crossWith(q.axis());
-	*this += t;
+	*this += t;*/
+
+	const float tx = 2*(y*q.z - z*q.y);
+	const float ty = 2*(z*q.x - x*q.z);
+	const float tz = 2*(x*q.y - y*q.x);
+
+	x += tx*q.w + ty*q.z - tz*q.y;
+	y += ty*q.w + tz*q.x - tx*q.z;
+	z += tz*q.w + tx*q.y - ty*q.x;
 }
-/*float&
-Vec3::operator[] (int index){
-	switch(index){
-		case 0: return x;
-		case 1: return y;
-		case 2: return z;
-		default:return x;
-	}
-}*/
 void
 Vec3::operator*= (float s){
 	x *= s;

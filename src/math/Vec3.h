@@ -11,12 +11,11 @@ private:
 		};
 		float data[3];
 	};
-	//float x,y,z;
 public:
 	Vec3(): x(0.f), y(0.f), z(0.f) {}
 	Vec3(float X, float Y, float Z): x(X), y(Y), z(Z) {}
 	//const methods
-	float	length() const;
+	float	length() const ;
 	float	distance(const Vec3& l) const;
 	float	dot(const Vec3& l) const;
 	bool	error() const;

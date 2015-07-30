@@ -90,42 +90,36 @@ RCFilter::update(InertialManager& sensors){
     //by pre-multiplication. Taking the conjugate with attitude transforms it
     //to a post-multiplication that can be combined with the gyro rate
     //update step
-    //updateStateModel();
+
     rawA.rotateBy(~attitude);
     rawM.rotateBy(~attitude);
     Vec3 delta(-rawA[1], rawA[0], -rawM[1]);//post rotation correction delta
-    //attitude.preintegrate(delta*wGain);
     delta.rotateBy(attitude);
 
-    /*
-    rateCal += delta;
-    rateCal *= rateGain;
-    */
-    rateCal = rateCal*rateGain + delta*(1.0f-rateGain);
-
+    rateCal  = rateCal*rateGain + delta*(1.0f-rateGain);
     delta   *= wGain;
+
     updateStateModel(delta*wGain + rateCal);
-
-    /*
-    //madgewick/mahoney filter 2.6ms
-    rawM.normalize();
-    Vec3 tm = rawM;
-    tm.rotateBy(~attitude);
-    //const float tmlen = sqrt(tm[0]*tm[0] + tm[1]*tm[1]);
-
-    Vec3 d = down;
-    Vec3 n = Vec3(tm[0], 0, tm[2]);
-    d.rotateBy(attitude);
-    n.rotateBy(attitude);
-    rawA.crossWith(d);
-    rawM.crossWith(n);
-    const Vec3 delta = (rawA + rawM)*wGain;
-    rate = gyro;
-    updateStateModel(delta);
-    */
 
     if(attitude.error()) attitude = Quaternion();
     attitude.normalize();
     updatePRY();
 }
+/*
+//madgewick/mahoney filter 2.6ms
+rawM.normalize();
+Vec3 tm = rawM;
+tm.rotateBy(~attitude);
+//const float tmlen = sqrt(tm[0]*tm[0] + tm[1]*tm[1]);
+
+Vec3 d = down;
+Vec3 n = Vec3(tm[0], 0, tm[2]);
+d.rotateBy(attitude);
+n.rotateBy(attitude);
+rawA.crossWith(d);
+rawM.crossWith(n);
+const Vec3 delta = (rawA + rawM)*wGain;
+rate = gyro;
+updateStateModel(delta);
+*/
 #endif
