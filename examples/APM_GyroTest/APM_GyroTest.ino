@@ -6,8 +6,9 @@ const float INT_PERIOD = 5000;
 
 Settings        settings(eeStorage::getInstance());
 MPU6000         mpu;
-Sensor*        sens[1] = {&mpu};
-InertialManager sensors(sens, 1);
+InertialVec*    sens[1] = {&mpu};
+Translator      conv[1] = {Translators::APM};
+InertialManager sensors(sens, conv, 1);
 GyroOnly        orientation;
 
 const float I = 4.0f;

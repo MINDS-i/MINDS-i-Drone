@@ -13,6 +13,8 @@ void setup(){
     Serial.begin(57600);
     cmp.tune(set.getMagTune());
     table.attach(A0);
+    cmp.begin();
+    delay(1000);
 }
 void loop(){
     float tmp = cmp.getAzimuth();

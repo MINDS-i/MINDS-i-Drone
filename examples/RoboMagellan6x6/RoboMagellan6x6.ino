@@ -106,10 +106,9 @@ inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
 void setup() {
 	setupSettings();
 
-	gps.init();
-	mpu.init();
+	gps.begin();
+	mpu.begin();
 	commSerial->begin(Protocol::BAUD_RATE);
-	pinMode(40, OUTPUT); digitalWrite(40, HIGH); //SPI select pin
 	for(int i=0; i<3; i++) pinMode(LEDpin[i], OUTPUT);
 	for(int i=0; i<3; i++) servo[i].attach(ServoPin[i]);
 	output(0.0f,steerCenter);

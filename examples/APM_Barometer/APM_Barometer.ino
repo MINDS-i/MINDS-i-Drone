@@ -12,7 +12,7 @@ MS5611 baro;
 void setup(){
     Serial.begin(9600);
 
-    baro.init();
+    baro.begin();
     delay(100);
     baro.calibrate();
 }

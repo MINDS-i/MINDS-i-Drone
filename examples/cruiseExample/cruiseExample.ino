@@ -15,7 +15,7 @@ inline float MPHtoRPM(float mph){ return (mph*MPHvRPM)/tireDiameter; }
 inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
 
 PIDparameters param(0.05 ,0.1,0.0);
-PIDcontroller cruise(param);
+PIDcontroller cruise(&param);
 Servo drive, steer, backsteer;
 
 void setup(){

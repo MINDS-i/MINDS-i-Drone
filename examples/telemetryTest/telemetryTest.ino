@@ -15,8 +15,8 @@ HLA             roll (100, 0);
 
 void setup(){
     commSerial->begin(Protocol::BAUD_RATE);
-    mpu.init();
-    gps.init();
+    mpu.begin();
+    gps.begin();
     manager.requestResync();
 }
 void loop(){

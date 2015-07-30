@@ -6,12 +6,13 @@ const float INT_PERIOD = 5000;
 
 Settings        settings(eeStorage::getInstance());
 MPU6000         mpu;
-Sensor* sens[1] = {&mpu};
-InertialManager sensors(sens, 1);
+InertialVec*    sens[1] = {&mpu};
+Translator      conv[1] = {Translators::APM};
+InertialManager sensors(sens, conv, 1);
 DualErrorFilter orientation(1.0f, 1000.0f, 1000000.0f);
 
 PIDparameters tune(30.0f,400.0f,0.0f);
-PIDcontroller pid(tune);
+PIDcontroller pid(&tune);
 Servo output;
 
 void isrCallback(){

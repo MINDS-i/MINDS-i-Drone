@@ -13,10 +13,8 @@ HLA             roll ( 100, 0);
 
 void setup(){
     commSerial->begin(Protocol::BAUD_RATE);
-    mpu.init();
-    pinMode(40, OUTPUT); digitalWrite(40, HIGH); //SPI select pin
-
-    gps.init();
+    mpu.begin();
+    gps.begin();
 }
 void loop(){
     updateGPS();

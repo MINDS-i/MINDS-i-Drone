@@ -2,11 +2,7 @@
 #include "SPI.h"
 #include "Servo.h"
 #include "DroneLibs.h"
-/*
-GPS, store position data every 2 seconds or so, if possible? The idea would be
-to have them walk around and have it data log
-as a standalone device no telemetry.
-*/
+
 List<Waypoint> *eeList;
 const uint32_t  UPDATE_INTERVAL = 4000;
 LEA6H           gps;
@@ -14,7 +10,7 @@ LEA6H           gps;
 void setup(){
     eeList = EEPROMlist::getInstance();
     Serial.begin(9600);
-    gps.init();
+    gps.begin();
 
     showList();
     Serial.println("Press C to clear");
