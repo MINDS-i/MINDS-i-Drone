@@ -33,7 +33,7 @@ public:
          wGain(gain), attitude(), rate(0,0,0),
          stateTime(0),
          pitch(0), roll(0), yaw(0),
-         north(1,0,0), east(0,1,0), down(0,0,1)
+         north(1,0,0), east(0,1,0), down(0,0,-1)
          {}
 	void update(InertialManager& sensors);
     void calibrate(bool mode);
@@ -63,18 +63,9 @@ SQEFilter::updateStateModel(){
 }
 void
 SQEFilter::update(InertialManager& sensors){
-	//collect raw inertial readings
-	float g[3];
-    float a[3];
-    float m[3];
-    sensors.getRotRates(g);
-    sensors.getLinAccel(a);
-    sensors.getMagField(m);
-
-    //make gyro vector
-    Vec3 gyro( g[1], g[0],-g[2]);
-    Vec3 rawA(-a[1],-a[0], a[2]);
-    Vec3 rawM( m[1], m[0], m[2]);
+    Vec3 gyro = sensors.getGyro();
+    Vec3 rawA = sensors.getAccl();
+    Vec3 rawM = sensors.getMag();
 
     if(calMode == true){
         rateCal -= gyro;
@@ -143,8 +134,8 @@ SQEFilter::calibrate(bool calibrate){
         down.normalize();
 
         //transform down and north into earth frame
-        Quaternion level(Vec3(0,0,1), down);
-        down = Vec3(0,0,1);
+        Quaternion level(Vec3(0,0,-1), down);
+        down = Vec3(0,0,-1);
         north.rotateBy(~level);
 
         // get east by cross product and normalize

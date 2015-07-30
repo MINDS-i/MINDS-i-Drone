@@ -73,27 +73,21 @@ DualErrorFilter::updateStateModel(){
 }
 void
 DualErrorFilter::update(InertialManager& sensors){
-	//collect raw inertial readings
-	float rawGyro[3], rawAccl[3];
-	sensors.getRotRates(rawGyro);
-	sensors.getLinAccel(rawAccl);
+    rate = *sensors.gyroRef();
+    Vec3 rawA = sensors.getAccl();
 
-	//make gyro vector
-	Vec3 gyro( rawGyro[1], rawGyro[0], -rawGyro[2]);
-
-	if(!calMode) gyro += rateCal;
+	if(!calMode) rate += rateCal;
 	else {
-		rateCal -= gyro;
+		rateCal -= rate;
 		calTrack++;
 	}
 
 	//make accelerometer quaternion
-	Vec3 raw(-rawAccl[1], -rawAccl[0], rawAccl[2]);
-	Quaternion accl(Vec3(0,0,1), raw);
+	Quaternion accl(Vec3(0,0,-1), rawA);
 
 	//calculate adjusted accelerometer MSE
 
-	float tmp = raw.length()-1.0f;
+	float tmp = rawA.length()-1.0f;
 	float oE  = fabs(tmp);
 
 	float aMSE = acclMSE
@@ -103,7 +97,6 @@ DualErrorFilter::update(InertialManager& sensors){
 	float acclGain = computeGain(estimateMSE, aMSE);
 
 	//run model and lerp
-	rate = gyro;
 	updateStateModel();
 	if(attitude.error()) attitude = accl;
 	else 				 attitude.nlerpWith(accl, acclGain);

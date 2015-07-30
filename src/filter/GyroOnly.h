@@ -23,7 +23,7 @@ public:
 	void update(InertialManager& sensors);
 	void calibrate(bool mode);
 	Quaternion getAttitude(){ return attitude; }
-	Vec3  getRate(){ return rate;}
+	Vec3  getRate(){ return rate; }
 	float getPitchRate(){ return rate[1]; }
 	float getRollRate(){  return rate[0]; }
 	float getYawRate(){   return rate[2]; }
@@ -42,14 +42,7 @@ GyroOnly::calibrate(bool mode){
 }
 void
 GyroOnly::update(InertialManager& sensors){
-	//collect raw inertial readings
-	float rawGyro[3];
-	sensors.getRotRates(rawGyro);
-
-	//make gyro vector
-	Vec3 gyro( rawGyro[1], rawGyro[0],-rawGyro[2]);
-
-	rate = gyro;
+    rate = *sensors.gyroRef();
 	updateStateModel();
 	if(attitude.error()) attitude = Quaternion();
 	attitude.normalize();

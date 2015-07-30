@@ -31,12 +31,7 @@ AcclOnly::calibrate(bool mode){
 }
 void
 AcclOnly::update(InertialManager& sensors){
-	//collect raw inertial readings
-	float rawAccl[3];
-	sensors.getLinAccel(rawAccl);
-
-	//make accelerometer quaternion
-	Vec3 tmp(-rawAccl[1], -rawAccl[0], rawAccl[2]);
-	attitude = Quaternion(Vec3(0,0,1),tmp);
+	Vec3 rawA = sensors.getAccl();
+	attitude = Quaternion(Vec3(0,0,-1),rawA);
 }
 #endif

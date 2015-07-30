@@ -77,20 +77,6 @@ RCFilter::calibrate(bool calibrate){
 }
 void
 RCFilter::update(InertialManager& sensors){
-	//collect raw inertial readings
-/*	float g[3];
-    float a[3];
-    float m[3];
-    sensors.getRotRates(g);
-    sensors.getLinAccel(a);
-    sensors.getMagField(m);
-
-    //make gyro vector
-    Vec3 gyro( g[1], g[0],-g[2]);
-    Vec3 rawA(-a[1],-a[0], a[2]);
-    Vec3 rawM( m[1], m[0], m[2]);
-*/
-
     rate = *sensors.gyroRef();
     Vec3 rawA = sensors.getAccl();
     Vec3 rawM = sensors.getMag();
