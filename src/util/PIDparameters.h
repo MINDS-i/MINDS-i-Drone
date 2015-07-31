@@ -1,7 +1,7 @@
 #ifndef PID_PARAMETERS_H
 #define PID_PARAMETERS_H
 struct PIDparameters{
-	float P,I,D;
+	float P,I,D; //stored in ideal form for calculations
 	float acc;
     float lowerBound, upperBound;
 	PIDparameters()

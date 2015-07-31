@@ -35,8 +35,7 @@ public:
 		time = millis();
 
 		const float error = setPoint-current;
-		//integrate with midpoint rule
-		const float newAcc = param->acc + error*dt;//((error+lastError)*dt)/2.f;
+		const float newAcc = param->acc + error*dt;
 
 		const float output = param->P * error
 					       + param->I * newAcc
@@ -48,11 +47,10 @@ public:
 			return param->upperBound;
 		} else if (output <= param->lowerBound) {
 			return param->lowerBound;
-		} else {
-			//to prevent integral windup, we only integrate if the output
-				//is not fully saturated
-			param->acc = newAcc;
 		}
+		//to prevent integral windup, we only change the integral if the output
+		//is not fully saturated
+		param->acc = newAcc;
 
 		return output;
 	}
