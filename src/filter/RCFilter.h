@@ -101,8 +101,8 @@ RCFilter::update(InertialManager& sensors){
 
     updateStateModel(delta*wGain + rateCal);
 
-    if(attitude.error()) attitude = Quaternion();
     attitude.normalize();
+    if(attitude.error()) attitude = Quaternion();
     updatePRY();
 }
 /*
