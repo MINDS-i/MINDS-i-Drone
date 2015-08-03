@@ -1,6 +1,11 @@
 #ifndef PIDCONTROLLER_H
 #define PIDCONTROLLER_H
+#include "Arduino.h"
 #include "util/PIDparameters.h"
+
+namespace{
+	const float SECOND = 1024.0f * 1024.0f;
+}
 
 class PIDcontroller{
 private:
@@ -26,15 +31,15 @@ public:
 	}
 	float update(float current){
 		if(stopped) {
-			time = millis();
+			time = micros();
 			previous = 0;
 			return 0;
 		}
 
-		const float dt = ((float)min( millis()-time, 1024 ))/1024.f;
-		time = millis();
+		const float dt = ((float)min( micros()-time, SECOND))/SECOND;
+		time = micros();
 
-		const float error = setPoint-current;
+		const float error  = setPoint-current;
 		const float newAcc = param->acc + error*dt;
 
 		const float output = param->P * error
