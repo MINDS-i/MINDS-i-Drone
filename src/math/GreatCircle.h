@@ -2,9 +2,6 @@
 #define GREATCIRCLE_H
 #include "math.h"
 #include "Waypoint.h"
-#ifdef STAND_ALONE_MATH
-	#include <stdint.h>
-#endif
 
 //return val in a +/- half turn range to ref
 float simplifyRadian(float ref, float val);
