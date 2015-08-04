@@ -12,12 +12,13 @@ private:
 	PIDparameters*	param;
 	float 			setPoint;
 	float			previous;
+	float           acc;
 	boolean			stopped;
 	uint32_t		time;
 public:
 	PIDcontroller(PIDparameters* pid): param(pid) {}
 	void tune(PIDparameters* pid){ param = pid; }
-	void clearAccumulator(){ param->resetAccumulator(); }
+	void clearAccumulator(){ acc = 0; }
 	void set(float input){
 		setPoint = input;
 		stopped = false;
@@ -40,7 +41,7 @@ public:
 		time = micros();
 
 		const float error  = setPoint-current;
-		const float newAcc = param->acc + error*dt;
+		const float newAcc = acc + error*dt;
 
 		const float output = param->P * error
 					       + param->I * newAcc
@@ -55,7 +56,7 @@ public:
 		}
 		//to prevent integral windup, we only change the integral if the output
 		//is not fully saturated
-		param->acc = newAcc;
+		acc = newAcc;
 
 		return output;
 	}
