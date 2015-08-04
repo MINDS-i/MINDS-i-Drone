@@ -41,32 +41,19 @@ void isrCallback() {
     output.update(orientation);
     toc(0);
 }
-void updatePID(float d){
+void updatePID(float v){
     using namespace AirSettings;
-    PIDparameters newPID = PIDparameters( settings.get(ATT_P_TERM),
-                                          settings.get(ATT_I_TERM),
-                                          settings.get(ATT_D_TERM),
-                                          -1, 1 );
-    pitchPID = newPID;
-    rollPID  = newPID;
-}
-void updateYawPID(float d){
-    using namespace AirSettings;
-    yawPID = PIDparameters( settings.get(YAW_P_TERM),
-                            settings.get(YAW_I_TERM),
-                            settings.get(YAW_D_TERM),
-                            -1, 1 );
+    float p = settings.get(ATT_P_TERM);
+    float i = settings.get(ATT_I_TERM);
+    float d = settings.get(ATT_D_TERM);
+    pitchPID.setIdeal(p,i,d);
+    rollPID.setIdeal(p,i,d);
 }
 void changeInterruptPeriod(float newPeriod){
     if(newPeriod < MINIMUM_INT_PERIOD) newPeriod = MINIMUM_INT_PERIOD;
     startInterrupt(isrCallback, newPeriod);
 }
 void setupSettings(){
-    /*
-     1E8 1E1 1E3
-     374 0.001425 2,214
-     334633 1.0 0.0212
-     */
      /*
      TTC 0.85
      PID: 0.6, 0.06, 0.0225, 6.5
@@ -82,9 +69,9 @@ void setupSettings(){
     settings.attach(ATT_I_TERM, 0.060f, &updatePID);
     settings.attach(ATT_D_TERM, 0.023f, &updatePID);
     settings.attach(ATT_V_TERM, 6.50f , callback<Horizon, &horizon, &Horizon::setVelFac>);
-    settings.attach(YAW_P_TERM, 0.00f , &updateYawPID);
-    settings.attach(YAW_I_TERM, 0.00f , &updateYawPID);
-    settings.attach(YAW_D_TERM, 0.00f , &updateYawPID);
+    settings.attach(YAW_P_TERM, 0.00f , callback<PIDparameters, &yawPID, &PIDparameters::setIdealP>);
+    settings.attach(YAW_I_TERM, 0.00f , callback<PIDparameters, &yawPID, &PIDparameters::setIdealI>);
+    settings.attach(YAW_D_TERM, 0.00f , callback<PIDparameters, &yawPID, &PIDparameters::setIdealD>);
     settings.attach(YAW_V_TERM, 1.00f , callback<Horizon, &horizon, &Horizon::setYawFac>);
     settings.attach(HOVER_THL , 0.40f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setHoverPoint>);
     settings.attach(THL_LINITY, 0.30f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setLinearity>);
