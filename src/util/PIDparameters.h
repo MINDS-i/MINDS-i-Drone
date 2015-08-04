@@ -20,16 +20,20 @@ struct PIDparameters{
 
     void setStandard(float kp, float ti, float td){
         P = kp;
-        I = kp/ti;
+        if(ti == 0) I = 0;
+        else I = P/ti;
         D = kp*td;
     }
     void setStandardP(float kp){
-        I *= (kp/P); //recalculate I and D with new parameter
-        D *= (kp/P);
+        if(P != 0){
+            I *= (kp/P); //recalculate I and D with new parameter
+            D *= (kp/P);
+        }
         P = kp;
     }
     void setStandardI(float ti){
-        I = P/ti;
+        if(ti == 0) I = 0;
+        else I = P/ti;
     }
     void setStandardD(float td){
         D = P*td;
