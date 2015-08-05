@@ -60,12 +60,12 @@ void setupSettings(){
     settings.attach(INRT_U_FAC, 0.075f, callback<RCFilter, &orientation, &RCFilter::setwGain>);
     settings.attach(GYRO_CMP_F, 0.99999f, callback<RCFilter, &orientation, &RCFilter::setRateGain>);
     settings.attach(TILT_CMP_L, 1.00f , callback<Horizon, &horizon, &Horizon::setTiltCompLimit>);
-    settings.attach(ATT_P_TERM, 0.550f, callback<PIDparameters, &attPID, &PIDparameters::setIdealP>);
-    settings.attach(ATT_I_TERM, 0.060f, callback<PIDparameters, &attPID, &PIDparameters::setIdealI>);
-    settings.attach(ATT_D_TERM, 0.023f, callback<PIDparameters, &attPID, &PIDparameters::setIdealD>);
-    settings.attach(ATT_VP_TERM,6.50f , callback<PIDparameters, &attVel, &PIDparameters::setIdealP>);
-    settings.attach(ATT_VI_TERM,0.00f , callback<PIDparameters, &attVel, &PIDparameters::setIdealI>);
-    settings.attach(ATT_VD_TERM,0.00f , callback<PIDparameters, &attVel, &PIDparameters::setIdealD>);
+    settings.attach(ATT_P_TERM, 0.020f, callback<PIDparameters, &attPID, &PIDparameters::setIdealP>);
+    settings.attach(ATT_I_TERM, 0.000f, callback<PIDparameters, &attPID, &PIDparameters::setIdealI>);
+    settings.attach(ATT_D_TERM, 0.003f, callback<PIDparameters, &attPID, &PIDparameters::setIdealD>);
+    settings.attach(ATT_VP_TERM,5.00f , callback<PIDparameters, &attVel, &PIDparameters::setIdealP>);
+    settings.attach(ATT_VI_TERM,0.80f , callback<PIDparameters, &attVel, &PIDparameters::setIdealI>);
+    settings.attach(ATT_VD_TERM,0.30f , callback<PIDparameters, &attVel, &PIDparameters::setIdealD>);
     settings.attach(YAW_P_TERM, -1.0f , callback<PIDparameters, &yawPID, &PIDparameters::setIdealP>);
     settings.attach(YAW_I_TERM, 0.00f , callback<PIDparameters, &yawPID, &PIDparameters::setIdealI>);
     settings.attach(YAW_D_TERM, 0.00f , callback<PIDparameters, &yawPID, &PIDparameters::setIdealD>);
