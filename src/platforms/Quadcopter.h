@@ -57,7 +57,7 @@ void setupSettings(){
      */
     using namespace AirSettings;
     settings.attach(INT_PERIOD, 6500  , &changeInterruptPeriod );
-    settings.attach(INRT_U_FAC, 0.075f, callback<RCFilter, &orientation, &RCFilter::setwGain>);
+    settings.attach(INRT_U_FAC, 0.0038f, callback<RCFilter, &orientation, &RCFilter::setwGain>);
     settings.attach(GYRO_CMP_F, 0.99999f, callback<RCFilter, &orientation, &RCFilter::setRateGain>);
     settings.attach(TILT_CMP_L, 1.00f , callback<Horizon, &horizon, &Horizon::setTiltCompLimit>);
     settings.attach(ATT_P_TERM, 0.020f, callback<PIDparameters, &attPID, &PIDparameters::setIdealP>);
