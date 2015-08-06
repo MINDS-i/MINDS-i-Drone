@@ -23,6 +23,7 @@ OutputManager output(outDev);
 
 PIDparameters attPID(0,0,0,-100,100), yawPID(0,0,0,-1,1);
 PIDparameters attVel(0,0,0,-100,100), yawVel(0,0,0,-1,1);
+PIDparameters altHoldParams(0,0,0, 0.0, 1.0);
 ThrottleCurve throttleCurve(0.33, 0.4);
 Horizon       horizon(&attPID, &attVel,
                       &attPID, &attVel,
@@ -59,7 +60,7 @@ void setupSettings(){
     settings.attach(INRT_U_FAC, 0.0038f, callback<RCFilter, &orientation, &RCFilter::setwGain>);
     settings.attach(GYRO_CMP_F, 0.99999f, callback<RCFilter, &orientation, &RCFilter::setRateGain>);
     settings.attach(TILT_CMP_L, 1.00f , callback<Horizon, &horizon, &Horizon::setTiltCompLimit>);
-    settings.attach(ATT_P_TERM, 0.025f, callback<PIDparameters, &attPID, &PIDparameters::setIdealP>);
+    settings.attach(ATT_P_TERM, 0.250f, callback<PIDparameters, &attPID, &PIDparameters::setIdealP>);
     settings.attach(ATT_I_TERM, 0.000f, callback<PIDparameters, &attPID, &PIDparameters::setIdealI>);
     settings.attach(ATT_D_TERM, 0.003f, callback<PIDparameters, &attPID, &PIDparameters::setIdealD>);
     settings.attach(ATT_VP_TERM,5.00f , callback<PIDparameters, &attVel, &PIDparameters::setIdealP>);
@@ -72,6 +73,11 @@ void setupSettings(){
     settings.attach(HOVER_THL , 0.40f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setHoverPoint>);
     settings.attach(THL_LINITY, 0.37f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setLinearity>);
     settings.attach(BARO_HL   , 500.f , callback<HLA, &altitude, &HLA::setHalfLife>);
+    // alt hold pid
+    settings.attach(BARO_P, 0.f , callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealP>);
+    settings.attach(BARO_I, 0.f , callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealI>);
+    settings.attach(BARO_D, 0.f , callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealD>);
+
 }
 void arm(){
     delay(500);

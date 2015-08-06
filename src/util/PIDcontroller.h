@@ -19,6 +19,9 @@ public:
 	PIDcontroller(PIDparameters* pid): param(pid) {}
 	void tune(PIDparameters* pid){ param = pid; }
 	void clearAccumulator(){ acc = 0; }
+	void train(float out){
+		acc = out/param->I;
+	}
 	void set(float input){
 		setPoint = input;
 		stopped = false;
@@ -57,6 +60,11 @@ public:
 		//to prevent integral windup, we only change the integral if the output
 		//is not fully saturated
 		acc = newAcc;
+		//what iff acc gets send so far off that P and D can't get it back below
+		//the maximum? it would never get reset
+
+		//gotta change this so acc is in output units
+		//and capped at the upper/lower bounds
 
 		return output;
 	}
