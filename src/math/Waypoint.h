@@ -3,6 +3,7 @@
 
 #include "Arduino.h"
 #include "SpatialMath.h"
+#include <stdint.h>
 
 class Waypoint{
 public:

@@ -6,7 +6,7 @@
 #include "math/Quaternion.h"
 #include "math/Vec3.h"
 #include "math/SpatialMath.h"
-#ifdef STAND_ALONE_MATH
+#ifdef STAND_ALONE_TEST
     #include "micros.h"
 #else
     #include "util/profile.h"
@@ -19,10 +19,11 @@ private:
     Vec3              rateCal;
     Quaternion        attitude;
     float             wGain, rateGain;
+    float             calTrack;
     Vec3              rate;
     float             pitch, roll, yaw;
     void updateStateModel(Vec3 correction);
-    void updateStateModel();
+    void updateStateModel(){ updateStateModel(Vec3()); }
     void updatePRY();
 public:
     RCFilter(float gain, float rGain)
@@ -60,18 +61,14 @@ RCFilter::updateStateModel(Vec3 correction){
 	attitude.integrate(rate*dt + correction);
 }
 void
-RCFilter::updateStateModel(){
-    //keep track of passing time
-    float dt = (micros()-stateTime);
-    stateTime = micros();
-    dt /= 1000.f;
-    attitude.integrate(rate*dt);
-}
-void
 RCFilter::calibrate(bool calibrate){
-    if(calibrate == true && calMode == false) {
-        //attitude = Quaternion(); //reset state when calibrate is called
+    if(calMode == true && calibrate == false){
+        if(calTrack != 0) {
+            rateCal = rateCal/calTrack;
+        }
+    } else if (calMode == false && calibrate == true){
         rateCal  = Vec3();
+        calTrack = 0;
     }
     calMode = calibrate;
 }
@@ -96,8 +93,12 @@ RCFilter::update(InertialManager& sensors){
     Vec3 delta(-rawA[1], rawA[0], -rawM[1]);//post rotation correction delta
     delta.rotateBy(attitude);
 
-    rateCal  = rateCal*rateGain + delta*(1.0f-rateGain);
-    delta   *= wGain;
+    //rateCal  = rateCal*rateGain + delta*(1.0f-rateGain);
+    if(!calMode) rate += rateCal;
+    else {
+        rateCal -= rate;
+        calTrack++;
+    }
 
     updateStateModel(delta*wGain + rateCal);
 

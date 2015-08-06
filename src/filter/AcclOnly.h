@@ -6,10 +6,8 @@
 #include "math/Quaternion.h"
 #include "math/Vec3.h"
 #include "math/SpatialMath.h"
-#ifdef STAND_ALONE_MATH
+#ifdef STAND_ALONE_TEST
 	#include "micros.h"
-#else
-	#include "util/profile.h"
 #endif
 
 class AcclOnly : public OrientationEngine {
