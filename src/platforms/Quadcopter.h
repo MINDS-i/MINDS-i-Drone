@@ -26,8 +26,7 @@ PIDparameters attVel(0,0,0,-100,100), yawVel(0,0,0,-1,1);
 ThrottleCurve throttleCurve(0.33, 0.4);
 Horizon       horizon(&attPID, &attVel,
                       &attPID, &attVel,
-                      &yawPID, &yawVel,
-                      &throttleCurve);
+                      &yawPID, &yawVel );
 HLA           altitude(1, 0);
 
 ///////////

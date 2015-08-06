@@ -9,22 +9,18 @@ private:
     PIDcontroller  pitchPID, pError;
     PIDcontroller   rollPID, rError;
     PIDcontroller    yawPID, yError;
-    ThrottleCurve* tCurve;
     float          throttle;
     float          pitch, roll, yaw;
     float          velFac, yawFac;
     float          tiltCompLimit;
     bool           standbyOn;
 public:
-    float testPoint[4];
     Horizon(PIDparameters* pitchI, PIDparameters* pitchO,
             PIDparameters*  rollI, PIDparameters*  rollO,
-            PIDparameters*   yawI, PIDparameters*   yawO,
-            ThrottleCurve* tc ) :
+            PIDparameters*   yawI, PIDparameters*   yawO ) :
                 pitchPID(pitchI), pError(pitchO),
                  rollPID( rollI), rError( rollO),
-                  yawPID(  yawI), yError(  yawO),
-                tCurve(tc) {}
+                  yawPID(  yawI), yError(  yawO) {}
     void update(OrientationEngine& orientation, float (&torques)[4]){
         if(standbyOn){
             torques[0] = 0;
@@ -47,11 +43,6 @@ public:
         torques[1] = rollPID.update(orientation.getRollRate()*1024.f);  //to rad/second
         torques[2] = yawPID.update(orientation.getYawRate()*1024.f);
         torques[3] = throttle;
-        //debugging test points
-        testPoint[0] = pitch;
-        testPoint[1] = orientation.getPitch();
-        testPoint[2] = p;
-        testPoint[3] = torques[0];
     }
     void standby(){
         standbyOn = true;
@@ -77,15 +68,12 @@ public:
         this->pitch    = pitch;
         this->roll     = roll;
         this->yaw      = yaw;
-        this->throttle = tCurve->get(throttle);
+        this->throttle = throttle;
     }
     float getTiltCompLimit(){
         return tiltCompLimit;
     }
     void setTiltCompLimit(float tcl){
         tiltCompLimit = tcl;
-    }
-    void setThrottleCurve(ThrottleCurve* tc){
-        tCurve = tc;
     }
 };
