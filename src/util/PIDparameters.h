@@ -4,11 +4,17 @@ struct PIDparameters{
 	float P,I,D; //stored in ideal form for calculations
     float lowerBound, upperBound;
 	PIDparameters()
-        : P(0), I(0), D(0), lowerBound(0), upperBound(1) {};
+        : P(0), I(0), D(0),
+          lowerBound(-INFINITY), upperBound(INFINITY) {};
+    PIDparameters(float lb, float ub)
+        : P(0), I(0), D(0),
+          lowerBound(lb), upperBound(ub) {};
     PIDparameters(float p, float i, float d)
-        : P(p), I(i), D(d), lowerBound(0), upperBound(1) {};
+        : P(p), I(i), D(d),
+          lowerBound(-INFINITY), upperBound(INFINITY) {};
     PIDparameters(float p, float i, float d, float l, float u)
-        : P(p), I(i), D(d), lowerBound(l), upperBound(u) {};
+        : P(p), I(i), D(d),
+          lowerBound(l), upperBound(u) {};
     void setBounds(float lower, float upper){
         lowerBound = lower;
         upperBound = upper;
