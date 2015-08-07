@@ -73,11 +73,9 @@ void setupSettings(){
     settings.attach(HOVER_THL , 0.40f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setHoverPoint>);
     settings.attach(THL_LINITY, 0.37f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setLinearity>);
     settings.attach(BARO_HL   , 500.f , callback<HLA, &altitude, &HLA::setHalfLife>);
-    // alt hold pid
     settings.attach(BARO_P, 0.f , callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealP>);
     settings.attach(BARO_I, 0.f , callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealI>);
     settings.attach(BARO_D, 0.f , callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealD>);
-
 }
 void arm(){
     delay(500);
