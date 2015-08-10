@@ -6,6 +6,7 @@
 #include "util/LTATune.h"
 
 namespace AirSettings{
+    //note: These settings need to match the dashboard's resource_air file
 	enum Air{
 		INT_PERIOD =  0,
 		INRT_U_FAC =  1,
@@ -32,6 +33,7 @@ namespace AirSettings{
 	};
 }
 namespace groundSettings{
+	//note: These settings need to match the dashboard's resource_ground file
 	enum Ground{
 		LINE_GRAV	=  0,
 		STEER_THROW	=  1,
