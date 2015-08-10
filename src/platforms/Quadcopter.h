@@ -21,10 +21,10 @@ Output_t esc[4] =
 OutputDevice* outDev[4] = {&esc[0], &esc[1], &esc[2], &esc[3]};
 OutputManager output(outDev);
 
-PIDparameters attPID(0,0,0,-100,100), yawPID(0,0,0,-1,1);
-PIDparameters attVel(0,0,0,-100,100), yawVel(0,0,0,-1,1);
-PIDparameters altHoldParams(0,0,0, 0.0, 1.0);
-ThrottleCurve throttleCurve(0.33, 0.4);
+PIDparameters attPID(  -1,  1), yawPID(  -1,  1);
+PIDparameters attVel(-100,100), yawVel(-100,100);
+PIDparameters altHoldParams(0.0, 1.0);
+ThrottleCurve throttleCurve(0.37, 0.4);
 Horizon       horizon(&attPID, &attVel,
                       &attPID, &attVel,
                       &yawPID, &yawVel );
@@ -55,6 +55,7 @@ void setupSettings(){
           0.8, 4.00 0.023 ; 6.5 0.0 0.0
           0.2  0.0  0.005;  8.0 0.5 0.5
      */
+    //note: These settings need to match the dashboard's resource_air file
     using namespace AirSettings;
     settings.attach(INT_PERIOD, 6500  , &changeInterruptPeriod );
     settings.attach(INRT_U_FAC, 0.0038f, callback<RCFilter, &orientation, &RCFilter::setwGain>);
@@ -72,10 +73,10 @@ void setupSettings(){
     settings.attach(YAW_V_TERM, 8.00f , callback<PIDparameters, &yawVel, &PIDparameters::setIdealP>);
     settings.attach(HOVER_THL , 0.40f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setHoverPoint>);
     settings.attach(THL_LINITY, 0.37f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setLinearity>);
-    settings.attach(BARO_HL   , 500.f , callback<HLA, &altitude, &HLA::setHalfLife>);
-    settings.attach(BARO_P, 0.f , callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealP>);
-    settings.attach(BARO_I, 0.f , callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealI>);
-    settings.attach(BARO_D, 0.f , callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealD>);
+    settings.attach(BARO_HL   , 350.f , callback<HLA, &altitude, &HLA::setHalfLife>);
+    settings.attach(BARO_P    , 0.008f, callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealP>);
+    settings.attach(BARO_I    , 0.001f, callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealI>);
+    settings.attach(BARO_D    , 0.013f, callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealD>);
 }
 void arm(){
     delay(500);
@@ -97,6 +98,7 @@ void setupQuad() {
     gps.begin();
     sensors.calibrate();
     baro.calibrate();
+    baro.setTempDutyCycle(4);
 
     arm();
     output.setMode(&horizon);

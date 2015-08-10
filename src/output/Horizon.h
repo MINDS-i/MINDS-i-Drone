@@ -53,11 +53,17 @@ public:
     }
     void reset(){
         pitchPID.clearAccumulator();
+        pitchPID.set(0);
         pError.clearAccumulator();
+        pError.set(0);
         rollPID.clearAccumulator();
+        rollPID.set(0);
         rError.clearAccumulator();
+        rError.set(0);
         yawPID.clearAccumulator();
+        yawPID.set(0);
         yError.clearAccumulator();
+        yError.set(0);
     }
     void set(float (&setps)[4]){
         if(standbyOn) activate();
