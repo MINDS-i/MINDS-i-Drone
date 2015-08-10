@@ -78,12 +78,12 @@ RCFilter::update(InertialManager& sensors){
     Vec3 rawA = sensors.getAccl();
     Vec3 rawM = sensors.getMag();
 
-    //reference frame mahoney filter 2.2ms
-    //delta is build from cross products rawAx(-down) and rawMxnorth, which both
-    //equal the derivatives of the quaternion mapping the paired vectors onto
+    //reference frame mahoney filter 2.0ms
+    //delta is built from cross products rawAx(-down) and rawMxnorth, which both
+    //equal the derivative of the quaternions mapping the paired vectors onto
     //eachother. Since rawA and rawM were already rotated into the global frame
-    //by the best estimate attitude, the composite delta is the rate
-    //that should be applied to the current rotation to map together the vectors
+    //by the best estimate attitude, the composite delta is the delta
+    //that should be applied to the current rotation to become the mapping
     //by pre-multiplication. Taking the conjugate with attitude transforms it
     //to a post-multiplication that can be combined with the gyro rate
     //update step
@@ -93,14 +93,17 @@ RCFilter::update(InertialManager& sensors){
     Vec3 delta(-rawA[1], rawA[0], -rawM[1]);//post rotation correction delta
     delta.rotateBy(attitude);
 
-    //rateCal  = rateCal*rateGain + delta*(1.0f-rateGain);
     if(!calMode) rate += rateCal;
     else {
         rateCal -= rate;
         calTrack++;
     }
+    updateStateModel(delta*wGain);
 
+    /*
+    rateCal  = rateCal*rateGain + delta*(1.0f-rateGain);
     updateStateModel(delta*wGain + rateCal);
+    */
 
     attitude.normalize();
     if(attitude.error()) attitude = Quaternion();
