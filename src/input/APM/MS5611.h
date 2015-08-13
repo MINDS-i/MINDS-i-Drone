@@ -178,7 +178,7 @@ MS5611::calculateDT(uint32_t D2){
 }
 float
 MS5611::getPascals(){
-    update();
+    //update();
     return ((float) P);
 }
 float
@@ -187,7 +187,7 @@ MS5611::getMilliBar(){
 }
 float
 MS5611::getCelsius(){
-    update();
+    //update();
     int32_t temp = 2000 + ((int64_t) dT * TEMPSENS) / 8388608;
     return ((float) temp)/100.f;
 }

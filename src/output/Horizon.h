@@ -15,6 +15,7 @@ private:
     float          tiltCompLimit;
     bool           standbyOn;
 public:
+    float testPoint[2];
     Horizon(PIDparameters* pitchI, PIDparameters* pitchO,
             PIDparameters*  rollI, PIDparameters*  rollO,
             PIDparameters*   yawI, PIDparameters*   yawO ) :
@@ -43,6 +44,9 @@ public:
         torques[1] = rollPID.update(orientation.getRollRate()*1024.f);  //to rad/second
         torques[2] = yawPID.update(orientation.getYawRate()*1024.f);
         torques[3] = throttle;
+
+        testPoint[0] = y;
+        testPoint[1] = torques[2];
     }
     void standby(){
         standbyOn = true;
