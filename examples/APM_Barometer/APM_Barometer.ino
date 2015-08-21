@@ -17,6 +17,8 @@ void setup(){
     baro.calibrate();
 }
 void loop(){
+    baro.update();
+
     float temp = baro.getCelsius();
     float bar  = baro.getMilliBar();
     float alt  = baro.getAltitude();
