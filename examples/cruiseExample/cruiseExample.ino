@@ -5,6 +5,9 @@
 #include "Encoder.h"
 #include "DroneLibs.h"
 
+const uint8_t EncoderPin[]= { 2,  3 }; //apm 6,7
+const uint8_t ServoPin[]  = {12, 11,  8};//drive, steer, backS; APM 1,2,3 resp.
+const uint8_t RadioPin[]  = { 0,  1 }; //drive, steer
 const float maxMPH        = 6.0;
 const float tireDiameter  = 5.85;
                             //tire circ in miles per inch diameter * diff ratio
@@ -21,20 +24,25 @@ Servo drive, steer, backsteer;
 void setup(){
     Serial.begin(9600);
 
-    drive.attach(4);
-    steer.attach(5);
-    backsteer.attach(6);
+    drive.attach(ServoPin[0]);
+    steer.attach(ServoPin[1]);
+    backsteer.attach(ServoPin[2]);
     drive.write(90);
     steer.write(90);
     backsteer.write(90);
     delay(2000);
 
-    encoder::begin(0, 1);
+    setupAPM2radio();
+    encoder::begin(EncoderPin[0], EncoderPin[1]);
 }
 
 void loop(){
-    float   mph = ((getRadio(2)-90) / 90.f)*maxMPH;
-    uint8_t str = getRadio(3);
+    /* for a leonardo w/ shield, use getRadio, and plug the radio into 0 and 1
+    float   mph = ((getRadio(RadioPin[1])-90) / 90.f)*maxMPH;
+    uint8_t str =   getRadio(RadioPin[2]);
+    */
+    float   mph = ((getAPM2Radio(RadioPin[1])-90) / 90.f)*maxMPH;
+    uint8_t str =   getAPM2Radio(RadioPin[2]);
 
     if(abs(mph)<0.5f){
         cruise.stop();
