@@ -25,7 +25,7 @@ void loop(){
 
     //update the gps and store good readings periodically
     gps.update();
-    if(gps.newData() && gps.status()){
+    if(gps.newData() && gps.status()==Sensor::OK){
         Waypoint newPoint = gps.getLocation();
         static uint32_t intervalTimer;
         if(millis()>intervalTimer){
@@ -40,10 +40,14 @@ void loop(){
 void addToList(Waypoint point){
     if(eeList->size() == eeList->maxSize()) eeList->popTop();
     eeList->pushBottom(point);
+    Serial.println("Adding point");
 }
 
 void showList(){
-    Serial.println("Printing all stored waypoints:");
+    Serial.print("Printing all ");
+    Serial.print(eeList->size());
+    Serial.print(" stored waypoints:");
+    Serial.println();
     for(int i=0; i<eeList->size(); i++){
         Waypoint point = eeList->get(i);
         display(point);
