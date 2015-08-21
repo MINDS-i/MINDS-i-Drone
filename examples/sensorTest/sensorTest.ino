@@ -40,9 +40,9 @@ void loop(){
 		sensors.getRotRates(gyro[0], gyro[1], gyro[2]);
 		sensors.getMagField(magn[0], magn[1], magn[2]);
 
-		//display(time);
-		//for(int i=0; i<3; i++) display(accl[i]);
-		//for(int i=0; i<3; i++) display(gyro[i]*1000);
+		display(time);
+		for(int i=0; i<3; i++) display(accl[i]);
+		for(int i=0; i<3; i++) display(gyro[i]*1000);
 		for(int i=0; i<3; i++) display(magn[i]);
 
 		Serial.print("\n");
