@@ -175,7 +175,7 @@ CommManager::loopWaypoints(){
 }
 void
 CommManager::setTargetIndex(uint16_t index){
-	if(index >= waypoints->size() || index < 0) return;
+	if(index >= waypoints->size()) return;
 	targetIndex = index;
 	cachedTarget = getWaypoint(index);
 	sendCommand(commandType(TARGET), targetIndex);
