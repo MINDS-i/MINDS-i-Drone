@@ -1,0 +1,3 @@
+[submodule "Drone-Tests"]
+	path = Drone-Tests
+	url = https://github.com/MINDS-i/Drone-Tests.git
