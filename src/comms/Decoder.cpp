@@ -1,9 +1,5 @@
 #include "Decoder.h"
 
-/**
- * Decodes packets of the form <header+><signifier>data<checksum+><footer+>
- */
-
 //when a header is found, a one byte signifier follows
 //receivers will claim the signifier and return the maximum length of that packet
 //when a footer is found, see if the checksum matches

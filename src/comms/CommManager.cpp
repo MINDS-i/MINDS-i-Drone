@@ -1,6 +1,6 @@
 #include "CommManager.h"
 
-using namespace Protocol;
+using namespace DroneProtocol;
 
 CommManager::CommManager(HardwareSerial *inStream, Storage<float> *settings):
 		stream(inStream),
@@ -114,7 +114,7 @@ CommManager::handleWord(uint8_t* msg, uint8_t length){
 			break;
 		case SYNC:
 			onConnect();
-			if(a == Protocol::SYNC_REQUEST) sendSyncMessage(Protocol::SYNC_RESPOND);
+			if(a == SYNC_REQUEST) sendSyncMessage(SYNC_RESPOND);
 			break;
 		case COMMAND:
 			handleCommands(a,b);
@@ -211,7 +211,7 @@ CommManager::getSetting(uint8_t id){
 }
 void
 CommManager::requestResync(){
-	sendSyncMessage(Protocol::SYNC_REQUEST);
+	sendSyncMessage(SYNC_REQUEST);
 }
 void
 CommManager::setConnectCallback(void (*call)(void)){
@@ -236,7 +236,7 @@ CommManager::sendTelem(uint8_t id, float value){
 					id,
 					data.bytes[3], data.bytes[2],
 					data.bytes[1], data.bytes[0], };
-	Protocol::sendMessage(tmp, 6, stream);
+	sendMessage(tmp, 6, stream);
 }
 void
 CommManager::sendSetting(uint8_t id, float value){
@@ -246,12 +246,12 @@ CommManager::sendSetting(uint8_t id, float value){
 					id,
 					data.bytes[3], data.bytes[2],
 					data.bytes[1], data.bytes[0], };
-	Protocol::sendMessage(tmp, 6, stream);
+	sendMessage(tmp, 6, stream);
 }
 void
 CommManager::sendCommand(uint8_t id, uint8_t data){
 	byte tmp[3] = { buildMessageLabel(wordSubtype(COMMAND)), id, data };
-	Protocol::sendMessage(tmp, 3, stream);
+	sendMessage(tmp, 3, stream);
 }
 void
 CommManager::sendSyncMessage(uint8_t syncMsg){
@@ -261,16 +261,16 @@ CommManager::sendSyncMessage(uint8_t syncMsg){
 void
 CommManager::sendString(int type, const char* msg, uint8_t len){
 	//defer to protocol for more complicated procedure
-	Protocol::sendStringMessage(buildMessageLabel(stringSubtype(type))
+	sendStringMessage(buildMessageLabel(stringSubtype(type))
 									, msg, len, stream);
 }
 void
 CommManager::sendString(char const * msg){
 	uint8_t len = strnlen(msg, 0xFF);
-	sendString(Protocol::stringSubtype(STATE), msg, len);
+	sendString(stringSubtype(STATE), msg, len);
 }
 void
 CommManager::sendError(char const * msg){
 	uint8_t len = strnlen(msg, 0xFF);
-	sendString(Protocol::stringSubtype(ERROR), msg, len);
+	sendString(stringSubtype(ERROR), msg, len);
 }

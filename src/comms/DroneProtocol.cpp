@@ -1,8 +1,8 @@
-#include "Protocol.h"
+#include "DroneProtocol.h"
 #include <inttypes.h>
 #include "Arduino.h"
 
-namespace Protocol{
+namespace DroneProtocol{
 	uint16_t
 	fletcher16(uint8_t const *data, int length){
 		return fletcher16_resume(data, length, 0xFFFF);
@@ -27,14 +27,14 @@ namespace Protocol{
 			return (Bsum << 8) | Asum;
 	}
 	bool
-	fletcher(uint8_t* data, int length){
+	fletcher(const uint8_t* data, int length){
 		uint16_t foundSum = data[length-2]<<8 | data[length-1];
 		uint16_t calcSum = fletcher16(data, length-2);
 		return foundSum==calcSum;
 	}
 	void
 	sendMessage(uint8_t* data, int length, HardwareSerial *stream){
-		uint16_t sum = Protocol::fletcher16(data, length);
+		uint16_t sum = fletcher16(data, length);
 		stream->write(HEADER, HEADER_SIZE);
 		stream->write(data,length);
 		stream->write(sum>>8);
@@ -43,8 +43,8 @@ namespace Protocol{
 	}
 	void
 	sendStringMessage(uint8_t label, const char * msg, int len, HardwareSerial* stream){
-		uint16_t labelSum = Protocol::fletcher16(&label, 1);
-		uint16_t sum = Protocol::fletcher16_resume((uint8_t const*)msg, len, labelSum);
+		uint16_t labelSum = fletcher16(&label, 1);
+		uint16_t sum = fletcher16_resume((uint8_t const*)msg, len, labelSum);
 		stream->write(HEADER, HEADER_SIZE);
 		stream->write(label);
 		stream->write(msg,len);

@@ -6,6 +6,7 @@
 
 #include "comms/NMEA.h"
 #include "comms/Protocol.h"
+#include "comms/DroneProtocol.h"
 #include "math/GreatCircle.h"
 #include "math/Waypoint.h"
 #include "storage/List.h"
@@ -13,21 +14,9 @@
 #include "storage/Storage.h"
 #include "util/byteConv.h"
 
-using namespace Protocol;
+using namespace DroneProtocol;
 
 const uint8_t BUFF_LEN = 32;
-
-//Settings -- container supplied by outside world
-//write setting
-//read setting
-
-//Messages -- send and forget message passing system
-//send message
-//attach message callback
-
-//Waypoints -- uses self contained List implementation
-//interface unchanged for now
-
 
 class CommManager{
 	HardwareSerial 		*stream;
