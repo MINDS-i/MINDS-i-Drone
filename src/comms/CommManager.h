@@ -5,8 +5,8 @@
 #include <inttypes.h>
 
 #include "comms/NMEA.h"
-#include "comms/Protocol.h"
 #include "comms/DroneProtocol.h"
+#include "decoder/Protocol.h"
 #include "math/GreatCircle.h"
 #include "math/Waypoint.h"
 #include "storage/List.h"

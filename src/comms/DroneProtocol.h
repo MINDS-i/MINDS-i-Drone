@@ -4,7 +4,7 @@
 #include <inttypes.h>
 #include "Arduino.h"
 #include "storage/EEPROMconfig.h"
-#include "Protocol.h"
+#include "decoder/Protocol.h"
 
 /* messages are minumum of 3 bytes, max of 19 bytes, constructed as
     HEADER :(label[1 bytes] : data[length bytes] : checksum [2 bytes]): FOOTER
