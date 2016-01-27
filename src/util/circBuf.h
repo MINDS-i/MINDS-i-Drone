@@ -3,6 +3,12 @@
 
 #include "Arduino.h" //for stdint
 
+/*
+ * A circular buffer of type T that holds up to S elements
+ * looping over the buffer should be done from start() to end() by incrementing
+ * When the buffer is full, adding new elements will delete the oldest ones
+ */
+
 template<typename T, int S>
 class circBuf{
 private:

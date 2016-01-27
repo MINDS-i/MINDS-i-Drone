@@ -17,7 +17,9 @@ void setup(){
     baro.calibrate();
 }
 void loop(){
+    uint32_t time = -micros();
     baro.update();
+    time += micros();
 
     float temp = baro.getCelsius();
     float bar  = baro.getMilliBar();
@@ -25,11 +27,11 @@ void loop(){
 
     Serial.print("temp: ");
     Serial.print(temp);
-    Serial.print("\t");
-    Serial.print("mbar: ");
+    Serial.print("\tmbar: ");
     Serial.print(bar);
-    Serial.print("\t");
-    Serial.print("alt: ");
+    Serial.print("\talt: ");
     Serial.print(alt);
+    Serial.print("\tin: ");
+    Serial.print(time);
     Serial.println();
 }
