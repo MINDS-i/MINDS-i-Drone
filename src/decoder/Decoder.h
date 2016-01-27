@@ -31,12 +31,18 @@ private:
     Protocol* protocol;
     Receiver** receivers;
     int num_receivers;
-    circBuf<int, BUF_SIZE> buffer;
+    circBuf<char, BUF_SIZE> buffer;
     circBuf<Packet, 4> packets;
+    /** receive a char, buffer it, check for packet matches */
     void receive(char);
-    bool bufferMatch(int, const char *, int);
-    int  findReceiver(char);
-    void checkPackets(int);
+    /** check for a match with `str` of length `len` that ends at `end` */
+    bool bufferMatch(int end, const char * str, int len);
+    /** return the index of the receiver that accepts the passed in signifier
+      * returns -1 if no receiver is found
+      */
+    int  findReceiver(char sig);
+    /** check and handle packets ending at `end` */
+    void checkPackets(int end);
 };
 
 #endif
