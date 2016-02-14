@@ -39,7 +39,8 @@ Copyright 2015 MINDS-i Inc.
 
 #include "comms/CommManager.h"
 #include "comms/NMEA.h"
-#include "comms/Protocol.h"
+
+#include "decoder/Protocol.h"
 
 #include "filter/OrientationEngine.h"
 #include "filter/AcclOnly.h"

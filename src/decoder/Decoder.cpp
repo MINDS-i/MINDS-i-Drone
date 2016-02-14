@@ -8,10 +8,8 @@
 //When a message goes past its maximum length without a matching checksum, dump it
 //When a message gets matched, dump all older messages
 void Decoder::update(){
-    char c = read();
-    while(c != 0) {
-        receive(c);
-        c = read();
+    while(input->available()){
+        receive(input->read());
     }
 }
 
@@ -42,7 +40,7 @@ bool Decoder::bufferMatch(int end, const char * str, int len){
 
 int Decoder::findReceiver(char sig){
     for(int i=0; i<num_receivers; i++){
-        if(receivers[i]->claim(sig)) return i;
+        if(receivers[i]->claim(sig) != -1) return i;
     }
     return -1;
 }
