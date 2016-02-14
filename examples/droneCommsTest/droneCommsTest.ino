@@ -29,8 +29,8 @@ void loop(){
 		time += walkInterval;
 
 		loc = manager.getTargetWaypoint();
-		manager.sendTelem(Protocol::telemetryType(LATITUDE) , loc.degLatitude());
-		manager.sendTelem(Protocol::telemetryType(LONGITUDE), loc.degLongitude());
+		manager.sendTelem(DroneProtocol::telemetryType(LATITUDE) , loc.degLatitude());
+		manager.sendTelem(DroneProtocol::telemetryType(LONGITUDE), loc.degLongitude());
 		manager.sendTelem(2, manager.numWaypoints());
 
 		manager.sendString("Hello from the arduino!");
