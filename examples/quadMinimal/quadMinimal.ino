@@ -20,15 +20,11 @@ void sendTelemetry(){
     if(sendTime < millis()){
         sendTime += 50;
 
-        Quaternion attitude = orientation.getAttitude();
         using namespace Protocol;
-        //comms.sendTelem(LATITUDE   , horizon.testPoint*100.0);
-        //comms.sendTelem(LONGITUDE  , ((float)getAPM2Radio(RADIO_YAW)-90)/-90.0);
-        comms.sendTelem(HEADING    , toDeg(orientation.getYaw()));
+        comms.sendTelem(HEADING    , toDeg(orientation.getYaw()  ));
         comms.sendTelem(PITCH      , toDeg(orientation.getPitch()));
-        comms.sendTelem(ROLL       , toDeg(orientation.getRoll()));
+        comms.sendTelem(ROLL       , toDeg(orientation.getRoll() ));
         comms.sendTelem(GROUNDSPEED, profile[0]);
-        comms.sendTelem(VOLTAGE    , esc[0].get());
 
         Serial.println();
         Serial.flush();
