@@ -31,6 +31,8 @@ enum RadioChannel{
 typedef bool (*boolfunc)();
 template<boolfunc Func> uint32_t timeState();
 
+float outputThrottleInstrument;
+
 void setup() {
     setupQuad();
 }
@@ -155,6 +157,7 @@ void fly(){
 
     }
 
+    outputThrottleInstrument = throttleOut;
     comms.sendTelem(VOLTAGE+2  , throttleOut);
     horizon.set(pitchCmd, rollCmd, yawTarget, throttleOut);
 }
@@ -162,22 +165,23 @@ void fly(){
 void sendTelemetry(){
     static uint32_t sendTime = millis();
     if(sendTime < millis()){
-        sendTime += 50;
 
-        float voltage  = float(analogRead(67)/1024.l*5.l*10.1f);
+        Vec3 accl = sensors.getAccl();
+        accl.rotateBy(~orientation.getAttitude());
 
-        using namespace Protocol;
-        comms.sendTelem(LATITUDE   , state);
-        comms.sendTelem(LONGITUDE  , ((float)getAPM2Radio(RADIO_THROTTLE)-25)/130.0 );
-        comms.sendTelem(HEADING    , toDeg(orientation.getYaw()));
-        comms.sendTelem(PITCH      , toDeg(orientation.getPitch()));
-        comms.sendTelem(ROLL       , toDeg(orientation.getRoll()));
-        comms.sendTelem(GROUNDSPEED, horizon.testPoint[0]);//profile[0]);
-        comms.sendTelem(VOLTAGE    , voltage);
-        comms.sendTelem(VOLTAGE+1  , altitude.get());
+        struct Data{
+            uint32_t millis;
+            float throttle;
+            float altitude;
+            float acceleration;
+        } data = {millis(), outputThrottleInstrument, baro.getAltitude(), accl[2]};
 
-        Serial.println();
-        Serial.flush();
+        const uint8_t footer[] = {0xAA, 0xAA, 0xAA, 0xAA};
+
+        Serial.write((uint8_t*)&data, sizeof(Data));
+        Serial.write(footer, sizeof(footer));
+
+        sendTime += 10; //100Hz
     }
 }
 

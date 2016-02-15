@@ -91,7 +91,7 @@ void calibrateESCs(){
     output.calibrate();
 }
 void setupQuad() {
-    Serial.begin(Protocol::BAUD_RATE);
+    Serial.begin(19200);//Protocol::BAUD_RATE);
 
     mpu.tuneAccl(settings.getAccelTune());
     cmp.tune(settings.getMagTune());
