@@ -1,6 +1,8 @@
 #ifndef AxisTranslator_H
 #define AxisTranslator_H
 
+#include "math/Vec3.h"
+
 typedef Vec3 (*Translator)(float (&in)[3]);
 namespace Translators{
     template<bool xs, int x,
