@@ -169,7 +169,7 @@ void sendTelemetry(){
         Vec3 accl = sensors.getAccl();
         accl.rotateBy(~orientation.getAttitude());
 
-        struct Data{
+/*        struct Data{
             uint32_t millis;
             float throttle;
             float altitude;
@@ -179,7 +179,12 @@ void sendTelemetry(){
         const uint8_t footer[] = {0xAA, 0xAA, 0xAA, 0xAA};
 
         Serial.write((uint8_t*)&data, sizeof(Data));
-        Serial.write(footer, sizeof(footer));
+        Serial.write(footer, sizeof(footer));*/
+
+        comms.sendTelem(0, millis());
+        comms.sendTelem(1, outputThrottleInstrument);
+        comms.sendTelem(2, baro.getAltitude());
+        comms.sendTelem(3, accl[2]);
 
         sendTime += 10; //100Hz
     }
