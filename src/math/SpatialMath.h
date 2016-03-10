@@ -3,8 +3,12 @@
 
 #include <math.h>
 
-float toRad(float degrees);
-float toDeg(float radians);
+float inline toRad(float degrees) {
+    return degrees * (M_PI/180.0);
+}
+float inline toDeg(float radians) {
+    return radians * (180.0/M_PI);
+}
 float invSqrt(float x);
 float saSin(float t);
 float saCos(float t);

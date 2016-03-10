@@ -1,18 +1,7 @@
 #include "SpatialMath.h"
 
 #define INVSQRTHACK false
-float
-toRad(float degrees){
-	degrees /= 180.l;
-	degrees *= M_PI;
-	return degrees;
-}
-float
-toDeg(float radians){
-	radians /= M_PI;
-	radians *= 180.l;
-	return radians;
-}
+
 float
 invSqrt(float x){
 #if INVSQRTHACK
