@@ -1,273 +1,188 @@
 #include "NMEA.h"
-NMEA::NMEA(Stream& stream):
-	latitude(0),
-	longitude(0),
-	timeOfFix(0), dateOfFix(0),
-	warning(false),
-	groundSpeed(0),
-	course(0),
-	magVar(0),
-	bufferSize(100),
-	bufferPos(0),
-	isNew(false),
-	inStream(stream) {
-}
 
-void NMEA::newStream(Stream& stream){
-	inStream = stream;
+namespace{
+	float inline toDecDegrees(float degreeDecimalMinutes){
+	    float minutes = fmod(degreeDecimalMinutes,100.0);
+	    float degrees = (degreeDecimalMinutes - minutes) / 100.0;
+	    float decimalDegrees = degrees + (minutes/60.0);
+	    return decimalDegrees;
+	}
+
+	float inline toMilesPerHours(float knots){
+		return knots * 1.15077945;
+	}
 }
 
 void NMEA::update(){
 	while(inStream.available()){
-		char tmp = inStream.read();
-		if(tmp != '$') {
-			buffer[bufferPos] = tmp;
-			bufferPos++;
-			if(bufferPos >= bufferSize) bufferPos = 0;
-		} else {
-			parseLine(buffer, bufferPos);
-			isNew = true;
-			bufferPos = 0;
-		}
-	}
-}
+		char n = inStream.read();
 
-bool NMEA::newData(){
-	return isNew;
-}
-
-float NMEA::getLatitude(){
-	isNew = false;
-	return latitude;
-}
-
-float NMEA::getLongitude(){
-	isNew = false;
-	return longitude;
-}
-
-float NMEA::getTimeOfFix(){
-	isNew = false;
-	return timeOfFix;
-}
-
-float NMEA::getDateOfFix(){
-	isNew = false;
-	return dateOfFix;
-}
-
-bool NMEA::getWarning(){
-	isNew = false;
-	return warning;
-}
-
-float NMEA::getGroundSpeed(){
-	isNew = false;
-	return groundSpeed;
-}
-
-float NMEA::getCourse(){
-	isNew = false;
-	return course;
-}
-
-float NMEA::getMagVar(){
-	isNew = false;
-	return magVar;
-}
-
-void NMEA::parseLine(char* buffer, int endPos){
-	char* endPtr = buffer+endPos;
-	if( overlap(buffer,"GPRMC") ){
-		buffer += 5;
-		for(int i=0; i<11; i++){
-			if(buffer!=endPtr && *buffer == ','){
-				buffer++;
-				takeData(buffer, endPtr, i);
+		// $ only appears at the beggining of a nmea string
+		if(n == '$') {
+			seqPos = 0;
+			sectionBufPos = 0;
+		} else if (seqPos != -1) {
+			if(n != ','){
+				sectionBuf[sectionBufPos] = n;
+				sectionBufPos++;
+				if(sectionBufPos >= sizeSectionBuf){
+					seqPos = -1; //overflow, reset parser
+				}
 			} else {
-				return;
+				bool parseSuccess = handleSections();
+				sectionBufPos = 0;
+				seqPos = (parseSuccess)? seqPos+1 : -1; //reset parser on fail
+				if(seqPos >= NumSections) {
+					isNew = true;
+					seqPos = -1; //done reading
+				}
 			}
 		}
 	}
 }
 
-void NMEA::takeData(char*& buffer, char* endPtr, int type){
-	switch(type){
-		case 0: //system time
-			timeOfFix = parseFloat(buffer, endPtr);
-			break;
-		case 1: //warning
-			if(*buffer == 'A') warning = false;
-			else if (*buffer == 'V') warning = true;
-			buffer++;
-			break;
-		case 2: //latitude digits
-			{
-				float tmp = parseFloat(buffer, endPtr);
-				latitude  = fmod(tmp, 100);
-				latitude  = ((tmp-latitude)/100) + (latitude/60.f);
-			} break;
-		case 3: //latitude direction
-			if(*buffer == 'N') buffer++;
-			else if(*buffer == 'S') {
-				buffer++;
-				latitude *= -1;
-			} else {
-				//Error
-			}
-			break;
-		case 4: //longitude digits
-			{
-				float tmp = parseFloat(buffer, endPtr);
-				longitude  = fmod(tmp, 100);
-				longitude  = ((tmp-longitude)/100) + (longitude/60.f);
-			} break;
-		case 5: //longitude direction
-			if(*buffer == 'E') buffer++;
-			else if(*buffer == 'W') {
-				buffer++;
-				longitude *= -1;
-			} else{
-				//Error
-			}
-			break;
-		case 6: //speed over ground
-			groundSpeed = parseFloat(buffer, endPtr);
-			groundSpeed *= 1.15077945l; //convert to MPH
-			break;
-		case 7: //Course made true
-			course = parseFloat(buffer, endPtr);
-			break;
-		case 8: //date of fix
-			dateOfFix = parseFloat(buffer, endPtr);
-			break;
-		case 9: //magnetic variation
-			magVar = parseFloat(buffer, endPtr);
-			break;
-		case 10: //checksum
-			break;
-		default: //Error
-			break;
-	}
+bool NMEA::readFloat(float& store){
+	char* endptr;
+	float tmp = strtod(sectionBuf, &endptr);
+	if(endptr == sectionBuf) return false;
+	store = tmp;
+	return true;
 }
 
-float NMEA::parseFloat(char*& buffer, char* endPtr){
-	float out=0;
-	float decPlcs=0;
-	bool isNegative = false;
-	if(*buffer == '-'){
-		isNegative = true;
-		buffer++;
-	}
+/*const SectionHandler NMEA::sectionHandlers[] {
+	//GPRMC
+	[](NMEA& nmea) -> bool { return strcmp("GPRMC", nmea.sectionBuf) == 0; },
+	//TimeOfFix
+	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.timeOfFix); },
+	//Status
+	[](NMEA& nmea) -> bool {
+		if(nmea.sectionBufPos != 1) return false;
+		else if(nmea.sectionBuf[0] == 'A') nmea.warning = false;
+		else if(nmea.sectionBuf[0] == 'V') nmea.warning = true;
+		else return false;
+		return true;
+	},
+	//Latitude
+	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.tmpLatLon); },
+	//Latitude Hemisphere
+	[](NMEA& nmea) -> bool {
+		if(nmea.sectionBufPos != 1) return false;
+		else if(nmea.sectionBuf[0] == 'N')
+			nmea.latitude =  toDecDegrees(nmea.tmpLatLon);
+		else if(nmea.sectionBuf[0] == 'S')
+			nmea.latitude = -toDecDegrees(nmea.tmpLatLon);
+		else return false;
+		return true;
+	},
+	//Longitude
+	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.tmpLatLon); },
+	//Longitude Hemisphere
+	[](NMEA& nmea) -> bool {
+		if(nmea.sectionBufPos != 1) return false;
+		else if(nmea.sectionBuf[0] == 'E')
+			nmea.longitude =  toDecDegrees(nmea.tmpLatLon);
+		else if(nmea.sectionBuf[0] == 'W')
+			nmea.longitude = -toDecDegrees(nmea.tmpLatLon);
+		else return false;
+		return true;
+	},
+	//Ground Speed
+	[](NMEA& nmea) -> bool {
+		bool success = nmea.readFloat(nmea.groundSpeed);
+		if(success) nmea.groundSpeed = toMilesPerHours(nmea.groundSpeed);
+		return success;
+	},
+	//Track Angle
+	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.course); },
+	//Date
+	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.dateOfFix); },
+	//Magnetic Variation
+	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.magVar); },
+};
+const int NMEA::NumSections =sizeof(sectionHandlers)/sizeof(sectionHandlers[0]);
+*/
+//const SectionHandler NMEA::sectionHandlers[] = {};
 
-	while(buffer != endPtr && *buffer != ','){
-		switch(*buffer){
-			case '.':
-				decPlcs = 1;
-				break;
-			case '0':
-				if(decPlcs != 0) decPlcs*=10;
-				else out*=10;
-				break;
-			case '1':
-				if(decPlcs != 0){
-					decPlcs*=10;
-					out += (1./decPlcs);
-				} else {
-					out *= 10;
-					out += 1;
-				}
-				break;
-			case '2':
-				if(decPlcs != 0){
-					decPlcs*=10;
-					out += (2./decPlcs);
-				} else {
-					out *= 10;
-					out += 2;
-				}
-				break;
-			case '3':
-				if(decPlcs != 0){
-					decPlcs*=10;
-					out += (3./decPlcs);
-				} else {
-					out *= 10;
-					out += 3;
-				}
-				break;
-			case '4':
-				if(decPlcs != 0){
-					decPlcs*=10;
-					out += (4./decPlcs);
-				} else {
-					out *= 10;
-					out += 4;
-				}
-				break;
-			case '5':
-				if(decPlcs != 0){
-					decPlcs*=10;
-					out += (5./decPlcs);
-				} else {
-					out *= 10;
-					out += 5;
-				}
-				break;
-			case '6':
-				if(decPlcs != 0){
-					decPlcs*=10;
-					out += (6./decPlcs);
-				} else {
-					out *= 10;
-					out += 6;
-				}
-				break;
-			case '7':
-				if(decPlcs != 0){
-					decPlcs*=10;
-					out += (7./decPlcs);
-				} else {
-					out *= 10;
-					out += 7;
-				}
-				break;
-			case '8':
-				if(decPlcs != 0){
-					decPlcs*=10;
-					out += (8./decPlcs);
-				} else {
-					out *= 10;
-					out += 8;
-				}
-				break;
-			case '9':
-				if(decPlcs != 0){
-					decPlcs*=10;
-					out += (9./decPlcs);
-				} else {
-					out *= 10;
-					out += 9;
-				}
-				break;
+
+/*
+
+switch:
+Loaded 26942 .text at address 0x0
+Loaded 2896 .data
+benchmark 0 --------------------------> passed (33316 cycles)
+benchmark 1 --------------------------> passed (32984 cycles)
+benchmark 2 --------------------------> passed (31875 cycles)
+benchmark 3 --------------------------> passed (35619 cycles)
+benchmark 4 --------------------------> passed (33112 cycles)
+benchmark 5 --------------------------> passed (663518 cycles)
+
+
+
+lambdas:
+Loaded 27076 .text at address 0x0
+Loaded 2896 .data
+benchmark 0 --------------------------> passed (33176 cycles)
+benchmark 1 --------------------------> passed (32842 cycles)
+benchmark 2 --------------------------> passed (31733 cycles)
+benchmark 3 --------------------------> passed (35477 cycles)
+benchmark 4 --------------------------> passed (32968 cycles)
+benchmark 5 --------------------------> passed (663191 cycles)
+
+switch - lambda
+-134 (switch)
+0 (tie)
+140 (lambda)
+142 (l)
+142 (l)
+142 (l)
+144 (l)
+327 (l)
+*/
+const int NMEA::NumSections = 11;
+
+bool NMEA::handleSections(){
+	sectionBuf[sectionBufPos] = '\0';
+	//return sectionHandlers[seqPos](*this);
+	switch(seqPos){
+	case 0: //GPRMC
+		return strcmp("GPRMC", sectionBuf) == 0;
+	case 1: //TimeOfFix
+		return readFloat(timeOfFix);
+	case 2: //Status
+		if(sectionBufPos != 1) return false;
+		else if(sectionBuf[0] == 'A') warning = false;
+		else if(sectionBuf[0] == 'V') warning = true;
+		else return false;
+		return true;
+	case 3: //Latitude
+		return readFloat(tmpLatLon);
+	case 4: //Latitude Hemisphere
+		if(sectionBufPos != 1) return false;
+		else if(sectionBuf[0] == 'N') latitude =  toDecDegrees(tmpLatLon);
+		else if(sectionBuf[0] == 'S') latitude = -toDecDegrees(tmpLatLon);
+		else return false;
+		return true;
+	case 5: //Longitude
+		return readFloat(tmpLatLon);
+	case 6: //Longitude Hemisphere
+		if(sectionBufPos != 1) return false;
+		else if(sectionBuf[0] == 'E') longitude =  toDecDegrees(tmpLatLon);
+		else if(sectionBuf[0] == 'W') longitude = -toDecDegrees(tmpLatLon);
+		else return false;
+		return true;
+	case 7: //Ground Speed
+		{
+			bool success = readFloat(groundSpeed);
+			if(success) groundSpeed = toMilesPerHours(groundSpeed);
+			return success;
 		}
-		buffer++;
+	case 8: //Track Angle
+		return readFloat(course);
+	case 9: //Date
+		return readFloat(dateOfFix);
+	case 10: //Magnetic Variation
+		return readFloat(magVar);
 	}
-
-	if(isNegative) out*=-1;
-	return out;
-}
-
-bool NMEA::overlap(char* buffer, String input){
-	bool tmp = true;
-	for (uint16_t i = 0; i < input.length(); ++i){
-		tmp &= (buffer[i] == input[i]);
-	}
-	return tmp;
-}
-
-Waypoint NMEA::getLocation(){
-	isNew = false;
-	return Waypoint(latitude,longitude);
+	return false;
 }
 
