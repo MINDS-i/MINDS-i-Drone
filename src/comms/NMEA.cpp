@@ -29,7 +29,8 @@ void NMEA::update(){
 				bool success = pushToBuffer(n);
 				if(!success) seqPos = -1; //buffer full
 			} else {
-				bool parseSuccess = handleSections();
+				// two consective commas is not an error, just skip it
+				bool parseSuccess = (sectionBufPos==0)? true : handleSections();
 				seqPos = (parseSuccess)? seqPos+1 : -1; //reset parser on fail
 				clearBuffer();
 				if(seqPos >= NumSections) {
