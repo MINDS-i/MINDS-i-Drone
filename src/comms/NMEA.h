@@ -71,22 +71,31 @@ private:
 	float groundSpeed = 0;
 	float course = 0;
 	float magVar = 0;
+	//holds a section between commas in a GPRMC string
+	char sectionBuf[16];
+	int sectionBufPos = 0;
+	const int sizeSectionBuf = sizeof(sectionBuf)/sizeof(sectionBuf[0]);
+	void clearBuffer(){ //here for inlining
+		sectionBufPos = 0;
+	}
+	bool pushToBuffer(char c){ //here for inlining
+		if(sectionBufPos >= sizeSectionBuf) return false;
+		sectionBuf[sectionBufPos] = c;
+		sectionBufPos++;
+		return true;
+	}
 	/**
 	 * Try and read a float off the sectionBuf, wich will be terminated by '\0'
      * on success, return true and update `store`
      * on failure, return false and leave `store` alone
 	 */
 	bool readFloat(float& store);
-	//holds a section between commas in a GPRMC string
-	char sectionBuf[16];
-	int sectionBufPos = 0;
-	const int sizeSectionBuf = sizeof(sectionBuf)/sizeof(sectionBuf[0]);
 	//holds the parsers sequence position in the $GPRMC string, -1 otherwise
 	int seqPos = -1;
 	//holds a temporary latitude or longitude value that has not been fully read
 	float tmpLatLon;
 	//an array of section handlers, coresponding to sections of a GPRMC string
-	//static const SectionHandler sectionHandlers[];
+	static const SectionHandler sectionHandlers[];
 	static const int NumSections;
 
 	bool handleSections();

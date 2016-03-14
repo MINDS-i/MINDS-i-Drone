@@ -17,21 +17,21 @@ void NMEA::update(){
 	while(inStream.available()){
 		char n = inStream.read();
 
-		// $ only appears at the beggining of a nmea string
+		// NMEA strings always begin with a '$', followed by comma sep. values
+		// Attempt to parse any NMEA string, parsing each value as it comes
+		// until the end of the string is reached or a value fails to parse
+
 		if(n == '$') {
 			seqPos = 0;
-			sectionBufPos = 0;
+			clearBuffer();
 		} else if (seqPos != -1) {
 			if(n != ','){
-				sectionBuf[sectionBufPos] = n;
-				sectionBufPos++;
-				if(sectionBufPos >= sizeSectionBuf){
-					seqPos = -1; //overflow, reset parser
-				}
+				bool success = pushToBuffer(n);
+				if(!success) seqPos = -1; //buffer full
 			} else {
 				bool parseSuccess = handleSections();
-				sectionBufPos = 0;
 				seqPos = (parseSuccess)? seqPos+1 : -1; //reset parser on fail
+				clearBuffer();
 				if(seqPos >= NumSections) {
 					isNew = true;
 					seqPos = -1; //done reading
@@ -49,7 +49,18 @@ bool NMEA::readFloat(float& store){
 	return true;
 }
 
-/*const SectionHandler NMEA::sectionHandlers[] {
+
+bool NMEA::handleSections(){
+	sectionBuf[sectionBufPos] = '\0';
+	return sectionHandlers[seqPos](*this);
+}
+
+/* using an array of lambdas:
+	forces a consecutive ordering
+	automatically determines number of sections
+	is slightly faster than a switch statement
+*/
+const SectionHandler NMEA::sectionHandlers[] {
 	//GPRMC
 	[](NMEA& nmea) -> bool { return strcmp("GPRMC", nmea.sectionBuf) == 0; },
 	//TimeOfFix
@@ -100,89 +111,3 @@ bool NMEA::readFloat(float& store){
 	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.magVar); },
 };
 const int NMEA::NumSections =sizeof(sectionHandlers)/sizeof(sectionHandlers[0]);
-*/
-//const SectionHandler NMEA::sectionHandlers[] = {};
-
-
-/*
-
-switch:
-Loaded 26942 .text at address 0x0
-Loaded 2896 .data
-benchmark 0 --------------------------> passed (33316 cycles)
-benchmark 1 --------------------------> passed (32984 cycles)
-benchmark 2 --------------------------> passed (31875 cycles)
-benchmark 3 --------------------------> passed (35619 cycles)
-benchmark 4 --------------------------> passed (33112 cycles)
-benchmark 5 --------------------------> passed (663518 cycles)
-
-
-
-lambdas:
-Loaded 27076 .text at address 0x0
-Loaded 2896 .data
-benchmark 0 --------------------------> passed (33176 cycles)
-benchmark 1 --------------------------> passed (32842 cycles)
-benchmark 2 --------------------------> passed (31733 cycles)
-benchmark 3 --------------------------> passed (35477 cycles)
-benchmark 4 --------------------------> passed (32968 cycles)
-benchmark 5 --------------------------> passed (663191 cycles)
-
-switch - lambda
--134 (switch)
-0 (tie)
-140 (lambda)
-142 (l)
-142 (l)
-142 (l)
-144 (l)
-327 (l)
-*/
-const int NMEA::NumSections = 11;
-
-bool NMEA::handleSections(){
-	sectionBuf[sectionBufPos] = '\0';
-	//return sectionHandlers[seqPos](*this);
-	switch(seqPos){
-	case 0: //GPRMC
-		return strcmp("GPRMC", sectionBuf) == 0;
-	case 1: //TimeOfFix
-		return readFloat(timeOfFix);
-	case 2: //Status
-		if(sectionBufPos != 1) return false;
-		else if(sectionBuf[0] == 'A') warning = false;
-		else if(sectionBuf[0] == 'V') warning = true;
-		else return false;
-		return true;
-	case 3: //Latitude
-		return readFloat(tmpLatLon);
-	case 4: //Latitude Hemisphere
-		if(sectionBufPos != 1) return false;
-		else if(sectionBuf[0] == 'N') latitude =  toDecDegrees(tmpLatLon);
-		else if(sectionBuf[0] == 'S') latitude = -toDecDegrees(tmpLatLon);
-		else return false;
-		return true;
-	case 5: //Longitude
-		return readFloat(tmpLatLon);
-	case 6: //Longitude Hemisphere
-		if(sectionBufPos != 1) return false;
-		else if(sectionBuf[0] == 'E') longitude =  toDecDegrees(tmpLatLon);
-		else if(sectionBuf[0] == 'W') longitude = -toDecDegrees(tmpLatLon);
-		else return false;
-		return true;
-	case 7: //Ground Speed
-		{
-			bool success = readFloat(groundSpeed);
-			if(success) groundSpeed = toMilesPerHours(groundSpeed);
-			return success;
-		}
-	case 8: //Track Angle
-		return readFloat(course);
-	case 9: //Date
-		return readFloat(dateOfFix);
-	case 10: //Magnetic Variation
-		return readFloat(magVar);
-	}
-	return false;
-}
-
