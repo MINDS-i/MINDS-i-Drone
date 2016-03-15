@@ -2,7 +2,7 @@
 
 namespace{ //keep these constants to this file
 	const float earthRad = 3958.761; //radius in miles
-	const float twoPI    = 6.283185307179586476925; // one revolution in radians
+	const float twoPI    = 2.0*M_PI; // one revolution in radians
 }
 float simplifyRadian(float ref, float val){
 	ref += M_PI;

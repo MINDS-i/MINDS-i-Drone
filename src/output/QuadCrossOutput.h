@@ -24,7 +24,7 @@ The file is based on a plus flying configuration - The model matrix:
 
 Simple arithmetical optimizations are left to the gcc
 */
-void solveOutputs(float (&input)[4], float (&out)[4]){
+void solveOutputs(const float (&input)[4], float (&out)[4]){
 	float y[4];
 
 	y[0] = input[0];
