@@ -19,7 +19,7 @@ using namespace DroneProtocol;
 const uint8_t BUFF_LEN = 32;
 
 class CommManager{
-	HardwareSerial 		*stream;
+	Stream 			    *stream;
 	uint8_t 			buf[BUFF_LEN];
 	uint8_t 			bufPos;
 	Storage<float>*		storage;
@@ -31,7 +31,7 @@ class CommManager{
 	void (*connectCallback)(void);
 	void (*eStopCallback)(void);
 public:
-	CommManager(HardwareSerial *inStream, Storage<float> *settings);
+	CommManager(Stream *inStream, Storage<float> *settings);
 	bool 	 loopWaypoints();
 	float    getSetting(uint8_t id);
 	uint16_t getTargetIndex();

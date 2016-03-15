@@ -33,7 +33,7 @@ namespace DroneProtocol{
 		return foundSum==calcSum;
 	}
 	void
-	sendMessage(uint8_t* data, int length, HardwareSerial *stream){
+	sendMessage(uint8_t* data, int length, Stream *stream){
 		uint16_t sum = fletcher16(data, length);
 		stream->write(HEADER, HEADER_SIZE);
 		stream->write(data,length);
@@ -42,7 +42,7 @@ namespace DroneProtocol{
 		stream->write(FOOTER, FOOTER_SIZE);
 	}
 	void
-	sendStringMessage(uint8_t label, const char * msg, int len, HardwareSerial* stream){
+	sendStringMessage(uint8_t label, const char * msg, int len, Stream* stream){
 		uint16_t labelSum = fletcher16(&label, 1);
 		uint16_t sum = fletcher16_resume((uint8_t const*)msg, len, labelSum);
 		stream->write(HEADER, HEADER_SIZE);
