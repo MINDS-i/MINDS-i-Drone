@@ -48,7 +48,7 @@ void isrCallback() {
 }
 void changeInterruptPeriod(float newPeriod){
     if(newPeriod < MINIMUM_INT_PERIOD) newPeriod = MINIMUM_INT_PERIOD;
-    startInterrupt(isrCallback, newPeriod);
+    //startInterrupt(isrCallback, newPeriod);
 }
 void setupSettings(){
      /*
@@ -59,7 +59,7 @@ void setupSettings(){
      */
     //note: These settings need to match the dashboard's resource_air file
     using namespace AirSettings;
-    settings.attach(INT_PERIOD, 6500  , &changeInterruptPeriod );
+    //settings.attach(INT_PERIOD, 8000  , &changeInterruptPeriod );
     settings.attach(INRT_U_FAC, 0.0038f, callback<RCFilter, &orientation, &RCFilter::setwGain>);
     settings.attach(GYRO_CMP_F, 0.99999f, callback<RCFilter, &orientation, &RCFilter::setRateGain>);
     settings.attach(TILT_CMP_L, 1.00f , callback<Horizon, &horizon, &Horizon::setTiltCompLimit>);
@@ -104,8 +104,8 @@ void setupQuad() {
     baro.calibrate();
     baro.setTempDutyCycle(4);
 
-    arm();
-    output.setMode(&horizon);
+    //arm();
+    //output.setMode(&horizon);
 
     setupAPM2radio();
     comms.requestResync();
