@@ -17,10 +17,6 @@ private:
 		index = index+1;
 		if(index >= maxSize) index -= maxSize;
 	}
-	void retard(uint8_t& index){
-		index = index-1;
-		if(index < 0) index += maxSize;
-	}
 public:
 	SimpleQueue(T* array, const uint8_t &size):
 			data(array), maxSize(size), next(0), end(0), full(false) {
