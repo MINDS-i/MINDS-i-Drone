@@ -2,7 +2,7 @@
 
 using namespace DroneProtocol;
 
-CommManager::CommManager(HardwareSerial *inStream, Storage<float> *settings):
+CommManager::CommManager(Stream *inStream, Storage<float> *settings):
 		stream(inStream),
 		bufPos(0),
 		storage(settings),
