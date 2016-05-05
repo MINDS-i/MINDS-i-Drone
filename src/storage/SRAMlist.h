@@ -1,5 +1,7 @@
 #ifndef SRAMLIST_H
 #define SRAMLIST_H
+#include <stdlib.h>
+
 /*
 	AVR's are very susceptable to memory fragmentation due to the very limited
 	amount of RAM, so a Linked List Implementation using a constant number of
@@ -16,7 +18,7 @@ namespace{
 template<typename T>
 class SRAMlist : public List<T>{
 public:
-	explicit SRAMlist(uint16_t numberOfNodes);
+	explicit SRAMlist(uint16_t maximumElements);
 	~SRAMlist();
 	uint16_t size();
 	uint16_t maxSize();
@@ -42,8 +44,8 @@ private:
 	Node<T>* getNode(uint16_t index);
 };
 template<typename T>
-SRAMlist<T>::SRAMlist(uint16_t numberOfNodes)
-		:curSize(0), maxNodes(numberOfNodes), root(0), last(0){
+SRAMlist<T>::SRAMlist(uint16_t maximumElements)
+		:curSize(0), maxNodes(maximumElements), root(0), last(0){
 	raw = malloc( maxNodes*sizeof(Node<T>) );
 	if(raw == 0) maxNodes = 0; //not enough memory; disable the list
 	freeRoot = (Node<T>*) raw;
@@ -68,7 +70,7 @@ Node<T>* SRAMlist<T>::popFree(){
 }
 template<typename T> inline
 Node<T>* SRAMlist<T>::getNode(uint16_t index){
-	if(index > curSize) return false;
+	if(index > curSize) return NULL;
 	Node<T> *cur = root;
 	for(int i=0; i<index; i++) cur = cur->next;
 	return cur;

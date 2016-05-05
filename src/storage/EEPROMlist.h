@@ -1,6 +1,7 @@
 #ifndef EEPROMLIST_H
 #define EEPROMLIST_H
 
+#include "stdint.h"
 #include "math/Waypoint.h"
 #include "storage/EEPROMconfig.h"
 #include "storage/EEPROMsubsystem.h"
@@ -8,6 +9,10 @@
 
 //disable strict aliasing for now, its the only way this code can work
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+
+#if !defined(FAIL)
+#define FAIL(a) return false;
+#endif
 
 namespace EENode{
     //node is EEaddr next; EEaddr prev; EE_LIST_TYPE data;
@@ -17,7 +22,7 @@ namespace EENode{
         void write(T newData, EEaddr address){
             if(address < EE_LIST_START) return;
             if(address >= EE_MAX) return;
-            byte data[sizeof(T)];
+            uint8_t data[sizeof(T)];
             *((T*)data) = newData;
             for(int i=0; i<sizeof(T); i++){
                 eeprom::safeWrite(address+i, data[i]);
@@ -27,7 +32,7 @@ namespace EENode{
         T read(EEaddr address){
             if(address < EE_LIST_START) return T();
             if(address >= EE_MAX) return T();
-            byte data[sizeof(T)];
+            uint8_t data[sizeof(T)];
             for(int i=0; i<sizeof(T); i++){
                 data[i] = eeprom::safeRead(address+i);
             }
@@ -74,6 +79,7 @@ class EEPROMlist : public List<EE_LIST_TYPE>{
      */
 public:
     static EEPROMlist* getInstance(){
+        printf("Getting Instance");
         if(m_instance == NULL) m_instance = new EEPROMlist();
         return m_instance;
     }
@@ -103,19 +109,30 @@ private:
     eeNodePtr getNode(uint16_t index);
     friend void runEEListTest();
 };
+
+
+
+#include "stdio.h"
+
 EEPROMlist* EEPROMlist::m_instance = NULL;
 EEPROMlist::EEPROMlist(): curSize(0) {
+    eeprom::setup();
+    printf("Constructing EEPROMlist");
     bool foundList = readList();
+    printf("found? %i", foundList);
     if(!foundList) {
+        printf("Constructing a new list in memory\n");
         constructList();
     }
+    printf("Finished constructor");
 }
+
+
 /**
  * try and deduce the roots af lasts of free and data lists
  * return true if every node is accounted for
  * return false if a valid list could not be salvaged
  */
-
 bool EEPROMlist::readList(){
     dataRoot.addr = 0;
     dataLast.addr = 0;
@@ -218,6 +235,7 @@ void EEPROMlist::constructList(){
         here.setPrev(prev);
         prev = here;
         here = next;
+        return;
     }
     freeLast = prev;
     freeLast.setNext(FREE_TERM);
@@ -243,8 +261,8 @@ eeNodePtr EEPROMlist::popFree(){
         freeLast.setNext(FREE_TERM);
     }
     return freed;
-} inline
-eeNodePtr EEPROMlist::getNode(uint16_t index){
+}
+inline eeNodePtr EEPROMlist::getNode(uint16_t index){
     if(index > curSize) return eeNodePtr(EENULL);
 
     eeNodePtr cur;

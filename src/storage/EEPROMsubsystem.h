@@ -3,6 +3,7 @@
 
 #include "Arduino.h"
 #include "avr/io.h"
+#include "avr/interrupt.h"
 #include "storage/EEPROMconfig.h"
 #include "storage/queue.h"
 #include "util/byteConv.h"
@@ -36,17 +37,22 @@ private:
 	static boolean safeToRead();
 	eeprom(){}
 };
+#include "stdio.h"
 void
 eeprom::setup(){
+	printf("EEPROM setup\n");
 	bitClear(EECR, EEPM0);
 	bitClear(EECR, EEPM1);
 }
 void
 eeprom::disableInterrupt(){
+	printf("interrupt disabled\n");
 	bitClear(EECR, EERIE);
 }
 void
 eeprom::enableInterrupt(){
+	printf("interrupt enabled\n");
+	sei();
 	bitSet(EECR, EERIE);
 }
 void
@@ -107,6 +113,7 @@ eeprom::readFloat(EEaddr addr){
 	return data.f;
 }
 ISR(EE_READY_vect){
+	printf("ready vect");
 	//cycle queue through writing process and write
 	uint8_t oldSREG = SREG;
 	if(_eepromWriteQueue.isEmpty()){
