@@ -4,7 +4,6 @@
 #include "Arduino.h"
 #include "SPI.h"
 #include "Wire.h"
-#include "Servo.h"
 
 /*
 Copyright 2015 MINDS-i Inc.
@@ -36,6 +35,7 @@ Copyright 2015 MINDS-i Inc.
 
 #include "APM/MegaInterrupts.h"
 #include "APM/APMRadioInput.h"
+#include "APM/OutputGenerator.h"
 
 #include "comms/CommManager.h"
 #include "comms/NMEA.h"
