@@ -23,7 +23,7 @@ void setupAPM2radio(){
 
 ISR(TIMER5_CAPT_vect){
 	static uint8_t  cNum; //channel Number
-	uint16_t dt = TCNT5-_pTime;
+	uint16_t dt = ICR5-_pTime;
 
 	if (dt > 42000) { //sync pulse detected
 		cNum = 0;
@@ -31,7 +31,7 @@ ISR(TIMER5_CAPT_vect){
 		_pulse[cNum] = dt;
 		cNum = (cNum+1) % 8;
 	}
-	_pTime = TCNT5;
+	_pTime = ICR5;
 }
 
 uint8_t getAPM2Radio(uint8_t num){
