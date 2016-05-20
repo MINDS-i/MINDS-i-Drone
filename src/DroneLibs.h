@@ -35,7 +35,8 @@ Copyright 2015 MINDS-i Inc.
 
 #include "APM/MegaInterrupts.h"
 #include "APM/APMRadioInput.h"
-#include "APM/OutputGenerator.h"
+//#include "APM/OutputGenerator.h"
+//#include "APM/OutputGenerator.h"
 
 #include "comms/CommManager.h"
 #include "comms/NMEA.h"
