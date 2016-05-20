@@ -1,6 +1,5 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "Servo.h"
 #include "DroneLibs.h"
 
 const uint32_t UPDATE_INTERVAL = 5;

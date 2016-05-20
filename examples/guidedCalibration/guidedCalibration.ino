@@ -1,6 +1,5 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "Servo.h"
 #include "DroneLibs.h"
 
 enum ProgramState {
