@@ -1,12 +1,12 @@
 #ifndef SERVO_OUTPUT_DEV_H
 #define SERVO_OUTPUT_DEV_H
 
-#include "Servo.h"
 #include "output/OutputDevice.h"
+#include "APM/ServoGenerator.h"
 //wrapper for arduino Servo Library to OutputDevice type
 class ServoOutput: public OutputDevice{
 private:
-	Servo servo;
+	ServoGenerator::Servo servo;
 	int pin;
 public:
 	ServoOutput(int in): pin(in) {}
@@ -22,7 +22,7 @@ public:
 		servo.detach();
 	}
 	float get() {
-		return ((float)servo.readMicroseconds()-1000.)/1000.;
+		return 0;//((float)servo.readMicroseconds()-1000.)/1000.;
 	}
 };
 #endif
