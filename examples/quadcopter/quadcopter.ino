@@ -32,6 +32,7 @@ template<boolfunc Func> uint32_t timeState();
 
 void setup() {
     setupQuad();
+    horizon.standby();
 }
 
 void loop() {

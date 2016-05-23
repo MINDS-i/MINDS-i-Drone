@@ -72,6 +72,7 @@ Copyright 2015 MINDS-i Inc.
 #include "math/Algebra.h"
 
 #include "output/HK_ESCOutputDevice.h"
+#include "output/AfroESC.h"
 #include "output/OutputDevice.h"
 #include "output/OutputManager.h"
 #include "output/ServoOutputDevice.h"

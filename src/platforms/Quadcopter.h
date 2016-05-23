@@ -14,7 +14,7 @@ InertialVec* sens[2] = {&cmp, &mpu};
 Translator   conv[2] = {Translators::APM, Translators::APM};
 InertialManager sensors(sens, conv, 2);
 
-#define Output_t HK_ESCOutputDevice
+#define Output_t AfroESC
 Output_t esc[4] =
     { Output_t(12), Output_t(11)
      ,Output_t( 8), Output_t( 7) };
