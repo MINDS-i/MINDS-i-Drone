@@ -14,9 +14,10 @@ private:
 	ServoGenerator::Servo 	servo;
 	uint8_t	pin;
 public:
-	HK_ESCOutputDevice(uint8_t in): servo(6000), pin(in) {}
+	HK_ESCOutputDevice(uint8_t in): pin(in) {}
 	~HK_ESCOutputDevice(){ stop(); }
 	void  startArming()	{
+		ServoGenerator::setup(6000);
 		servo.attach(pin);
 	}
 	boolean continueArming(uint32_t dt){
@@ -28,6 +29,7 @@ public:
 		return true;
 	}
 	void startCalibrate(){
+		ServoGenerator::setup(6000);
 		servo.attach(pin);
 	}
 	boolean continueCalibrate(uint32_t dt){

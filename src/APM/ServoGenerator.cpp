@@ -87,7 +87,6 @@ namespace ServoGenerator{
     }
 
     void setup(uint16_t refreshIntervalMicroseconds){
-        setupActions();
         ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
             // CTC, clear when TCNT == ICR, prescalar = 8
             TCCRA = 0;
