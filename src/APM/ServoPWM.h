@@ -3,33 +3,33 @@
 namespace ServoPWM{
     void setup(uint16_t frameMicroseconds){
         uint16_t frameTicks = frameMicroseconds * 2;
-        // This code is taken from Ardupilot temporarily
 
-        // WGM: 1 1 1 0. Clear Timer on Compare, TOP is ICR1.
-        // CS11: prescale by 8 => 0.5us tick
+        // Fast PWM mode; WGM = 14 (0b1110)
+        //   TOP is ICRn
+        //   TOVn flag set on TOP
+        //   OCRnX updated at BOTTOM
+        // 8x prescalar; CS = 2 (0b010)
+        //   One tick per 8 clock cycles
+
         TCCR1A =((1<<WGM11));
         TCCR1B = (1<<WGM13)|(1<<WGM12)|(1<<CS11);
-        ICR1 = frameTicks;
-        OCR1A = 0xFFFF; // Init OCR registers to nil output signal
-        OCR1B = 0xFFFF;
+        ICR1   = frameTicks;
+        OCR1A  = 0xFFFF;
+        OCR1B  = 0xFFFF;
 
-        // WGM: 1 1 1 0. Clear Timer on Compare, TOP is ICR4.
-        // CS41: prescale by 8 => 0.5us tick
         TCCR4A =((1<<WGM41));
         TCCR4B = (1<<WGM43)|(1<<WGM42)|(1<<CS41);
-        OCR4A = 0xFFFF; // Init OCR registers to nil output signal
-        OCR4B = 0xFFFF;
-        OCR4C = 0xFFFF;
-        ICR4 = frameTicks;
+        ICR4   = frameTicks;
+        OCR4A  = 0xFFFF;
+        OCR4B  = 0xFFFF;
+        OCR4C  = 0xFFFF;
 
-        // WGM: 1 1 1 0. Clear timer on Compare, TOP is ICR3
-        // CS31: prescale by 8 => 0.5us tick
         TCCR3A =((1<<WGM31));
         TCCR3B = (1<<WGM33)|(1<<WGM32)|(1<<CS31);
-        OCR3A = 0xFFFF; // Init OCR registers to nil output signal
-        OCR3B = 0xFFFF;
-        OCR3C = 0xFFFF;
-        ICR3 = frameTicks;
+        ICR3   = frameTicks;
+        OCR3A  = 0xFFFF;
+        OCR3B  = 0xFFFF;
+        OCR3C  = 0xFFFF;
 
         pinMode(12, OUTPUT); // CH_1 (PB6/OC1B)
         pinMode(11, OUTPUT); // CH_2 (PB5/OC1A)
@@ -51,6 +51,7 @@ namespace ServoPWM{
     }
 
     void set(uint8_t output, uint16_t us){
+        // in mode 14 (Fast PWM) OCRnX is buffered automatically
         uint16_t pwm = us*2;
         switch(output){
             case 0:  OCR1B=pwm; break;  // out1
