@@ -64,28 +64,30 @@ namespace {
 }
 
 namespace ServoGenerator{
-    void set(int channel, uint16_t us){
+    void set(uint8_t channel, uint16_t us){
         output[channel].highTime = intervalFromMicros(us);
     }
 
-    void disable(int channel){
+    void disable(uint8_t channel){
         if(output[channel].enabled()){
             output[channel].disable();
             activeOutputs--;
         }
     }
 
-    bool enable(int channel, int pin){
-        pinMode(pin, OUTPUT);
-        output[channel].setPin(pin);
+    bool enable(uint8_t channel, int pin){
+        bool pass = false;
         if(!output[channel].enabled()){
             activeOutputs++;
-            return true;
+            pass = true;
         }
-        return false;
+        pinMode(pin, OUTPUT);
+        output[channel].setPin(pin);
+        return pass;
     }
 
     void setup(uint16_t refreshIntervalMicroseconds){
+        setupActions();
         ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
             // CTC, clear when TCNT == ICR, prescalar = 8
             TCCRA = 0;
@@ -105,27 +107,21 @@ namespace ServoGenerator{
         }
     }
 
-    Servo::Servo(): channel(-1) {
-        setup(20000);
-    }
-    Servo::Servo(uint16_t frameUs): channel(-1) {
-        setup(frameUs);
-    }
+    Servo::Servo(): channel(-1) {}
     bool Servo::attach(uint8_t arduinopin){
         if(channel != -1) return false; //already attached
 
         //find open channel, try to attach
-        uint8_t ch = -1;
-        for(uint8_t i; i<MAX_OUTPUTS; i++){
-            if(!output[i].enabled()){
-                ch = i;
-                break;
-            }
+        uint8_t ch = 0;
+        for(; ch<MAX_OUTPUTS; ch++){
+            if(!output[ch].enabled()) break;
         }
-        if(ch == -1) return false;
-        enable(ch, arduinopin);
-        channel = ch;
-        return true;
+        if(ch < MAX_OUTPUTS){
+            enable(ch, arduinopin);
+            channel = ch;
+            return true;
+        }
+        return false;
     }
     void Servo::detach(){
         if(channel != -1)
@@ -134,7 +130,8 @@ namespace ServoGenerator{
     }
     void Servo::write(uint8_t sig){
         if(channel != -1)
-            set(channel, sig*10 + 600); // convert [0,180] to [600,2400]
+            // convert [0,180] to [600,2400]
+            set(channel, ((uint16_t)sig)*10 + 600);
     }
     void Servo::writeMicroseconds(uint16_t us){
         if(channel != -1)
