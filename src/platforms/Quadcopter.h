@@ -16,8 +16,8 @@ InertialManager sensors(sens, conv, 2);
 
 #define Output_t AfroESC
 Output_t esc[4] =
-    { Output_t(12), Output_t(11)
-     ,Output_t( 8), Output_t( 7) };
+    { Output_t(1), Output_t(2)
+     ,Output_t(3), Output_t(4) };
 OutputDevice* outDev[4] = {&esc[0], &esc[1], &esc[2], &esc[3]};
 OutputManager output(outDev);
 
