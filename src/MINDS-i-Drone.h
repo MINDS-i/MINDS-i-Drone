@@ -1,5 +1,5 @@
-#ifndef DRONELIBS_H
-#define DRONELIBS_H
+#ifndef MINDSIDRONELIBS_H
+#define MINDSIDRONELIBS_H
 
 #include "Arduino.h"
 #include "SPI.h"

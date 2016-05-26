@@ -1,6 +1,5 @@
 #ifndef PROFILE_H
 #define PROFILE_H
-#include "DroneLibs.h"
 #if DEBUG
 const int NUM_PROFILES = 16;
 volatile uint32_t profile[NUM_PROFILES];

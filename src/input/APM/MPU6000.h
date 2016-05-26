@@ -114,6 +114,8 @@ MPU6000::end(){
 }
 Sensor::Status
 MPU6000::status(){
+    /*#MPUFAIL No response was received from the <b>MPU6000</b> */
+
     //poll WHO_AM_I to see if its an MPU is present
     uint8_t buf[1];
     readFrom(REG_WHOAMI, 1, buf);

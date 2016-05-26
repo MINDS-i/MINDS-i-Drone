@@ -1,5 +1,3 @@
-#include "DroneLibs.h"
-
 #include "util/PIDcontroller.h"
 #include "util/PIDparameters.h"
 #include "math/GreatCircle.h"
