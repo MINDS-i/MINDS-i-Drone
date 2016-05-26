@@ -67,7 +67,7 @@ public:
     }
     float getAverage(){
         float sum = 0.0f;
-        for(int i=0; i<AVSIZE; i++){
+        for(uint16_t i=0; i<AVSIZE; i++){
             sum += average[i];
         }
         float av = sum/((float)AVSIZE);
