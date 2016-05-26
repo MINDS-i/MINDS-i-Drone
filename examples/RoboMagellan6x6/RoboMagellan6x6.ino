@@ -2,7 +2,7 @@
 #include "Wire.h"
 #include "MINDSi.h"
 #include "Encoder.h"
-#include "DroneLibs.h"
+#include "MINDS-i-Drone.h"
 #include "util/callbackTemplate.h"
 
 //Constants that should never change during driving and never/rarely tuned

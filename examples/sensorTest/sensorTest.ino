@@ -1,6 +1,6 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "DroneLibs.h"
+#include "MINDS-i-Drone.h"
 
 const uint32_t UPDATE_INTERVAL = 5;
 MPU6000   mpu;

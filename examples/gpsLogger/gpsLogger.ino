@@ -1,6 +1,6 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "DroneLibs.h"
+#include "MINDS-i-Drone.h"
 
 List<Waypoint> *eeList;
 const uint32_t  UPDATE_INTERVAL = 4000;

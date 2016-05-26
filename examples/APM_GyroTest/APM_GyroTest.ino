@@ -1,6 +1,6 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "DroneLibs.h"
+#include "MINDS-i-Drone.h"
 const float INT_PERIOD = 5000;
 
 Settings        settings(eeStorage::getInstance());
