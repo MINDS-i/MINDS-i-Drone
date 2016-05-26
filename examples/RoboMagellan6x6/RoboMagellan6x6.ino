@@ -35,9 +35,9 @@ HLA				lowFilter (600000, 0);//10 minutes
 HLA				highFilter(    10, 0);//10 milliseconds
 HLA 			pitch( 100, 0);
 HLA 			roll ( 100, 0);
-Servo			servo[3]; //drive, steer, backSteer
 PIDparameters   cruisePID(0,0,0,-90,90);
 PIDcontroller   cruise(&cruisePID);
+ServoGenerator::Servo servo[3]; //drive, steer, backSteer
 		//scheduler, navigation, obstacle, stop times
 uint32_t uTime = 0, nTime = 0, oTime = 0, sTime = 0;
 uint32_t gpsHalfTime = 0, gpsTime = 0;
@@ -51,6 +51,10 @@ double   distance;
 boolean  stop = true;
 boolean  backDir;
 
+void checkPing();
+void readAccelerometer();
+void reportLocation();
+void extrapPosition();
 void (*schedule[])(void) = {	extrapPosition,
 								checkPing,
 								readAccelerometer,
@@ -104,6 +108,7 @@ inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
 
 void setup() {
 	setupSettings();
+    ServoGenerator::setup(20000);
 
 	gps.begin();
 	mpu.begin();

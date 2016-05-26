@@ -1,6 +1,5 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "Servo.h"
 #include "DroneLibs.h"
 const float INT_PERIOD = 5000;
 
@@ -13,7 +12,7 @@ DualErrorFilter orientation(1.0f, 1000.0f, 1000000.0f);
 
 PIDparameters tune(30.0f,400.0f,0.0f);
 PIDcontroller pid(&tune);
-Servo output;
+ServoGenerator::Servo output;
 
 void isrCallback(){
     sensors.update(orientation);
@@ -21,6 +20,7 @@ void isrCallback(){
 
 void setup() {
     Serial.begin(9600);
+    ServoGenerator::setup(20000);
     mpu.tuneAccl(settings.getAccelTune());
     sensors.start();
     sensors.calibrate();

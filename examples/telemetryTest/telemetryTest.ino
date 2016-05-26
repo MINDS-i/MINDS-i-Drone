@@ -1,6 +1,5 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "Servo.h"
 #include "DroneLibs.h"
 
 const int       UPDATE_INTERVAL = 100; //ms between transmits

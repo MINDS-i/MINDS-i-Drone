@@ -1,4 +1,3 @@
-#include "Servo.h"
 #include "SPI.h"
 #include "Wire.h"
 #include "MINDSi.h"
@@ -19,10 +18,11 @@ inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
 
 PIDparameters param(0.05 ,0.1,0.0);
 PIDcontroller cruise(&param);
-Servo drive, steer, backsteer;
+ServoGenerator::Servo drive, steer, backsteer;
 
 void setup(){
     Serial.begin(9600);
+    ServoGenerator::setup(20000);
 
     drive.attach(ServoPin[0]);
     steer.attach(ServoPin[1]);

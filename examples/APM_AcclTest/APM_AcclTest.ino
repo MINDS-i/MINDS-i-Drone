@@ -1,6 +1,5 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "Servo.h"
 #include "DroneLibs.h"
 
 const float INT_PERIOD = 5000;
@@ -14,14 +13,15 @@ AcclOnly        orientation;
 
 const float I = 4.0f;
 float integral;
-Servo output;
+ServoGenerator::Servo output;
 
 void isrCallback(){
     sensors.update(orientation);
 }
 
 void setup() {
-    Serial.begin (9600);
+    Serial.begin(9600);
+    ServoGenerator::setup(20000);
     mpu.tuneAccl(settings.getAccelTune());
     sensors.start();
     sensors.calibrate();
