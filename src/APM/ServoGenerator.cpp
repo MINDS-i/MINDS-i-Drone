@@ -87,23 +87,7 @@ namespace ServoGenerator{
     }
 
     void setup(uint16_t refreshIntervalMicroseconds){
-        ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
-            // CTC, clear when TCNT == ICR, prescalar = 8
-            TCCRA = 0;
-            TCCRB = _BV(WGM13) | _BV(WGM12) | _BV(CS11);
 
-            // enable the ICF (TCNT==ICR) and OCRA (TCNT==OCRA) interrupt
-            TIMSK |= _BV(ICIE1);
-            TIMSK |= _BV(OCIE1A);
-
-            ICR  = intervalFromMicros(refreshIntervalMicroseconds);
-            OCRA = 0xffff;
-
-            // clear the timer count and pending interrupts
-            TCNT   = 0;
-            TIFR  |= _BV(OCF1A);
-            TIFR  |= _BV(ICF1);
-        }
     }
 
     Servo::Servo(): channel(-1) {}

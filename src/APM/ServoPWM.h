@@ -54,14 +54,14 @@ namespace ServoPWM{
         // in mode 14 (Fast PWM) OCRnX is buffered automatically
         uint16_t pwm = us*2;
         switch(output){
-            case 0:  OCR1B=pwm; break;  // out1
-            case 1:  OCR1A=pwm; break;  // out2
-            case 2:  OCR4C=pwm; break;  // out3
-            case 3:  OCR4B=pwm; break;  // out4
-            case 4:  OCR4A=pwm; break;  // out5
-            case 5:  OCR3C=pwm; break;  // out6
-            case 6:  OCR3B=pwm; break;  // out7
-            case 7:  OCR3A=pwm; break;  // out8
+            case 1:  OCR1B=pwm; break;  // out1
+            case 2:  OCR1A=pwm; break;  // out2
+            case 3:  OCR4C=pwm; break;  // out3
+            case 4:  OCR4B=pwm; break;  // out4
+            case 5:  OCR4A=pwm; break;  // out5
+            case 6:  OCR3C=pwm; break;  // out6
+            case 7:  OCR3B=pwm; break;  // out7
+            case 8:  OCR3A=pwm; break;  // out8
         }
     }
 
