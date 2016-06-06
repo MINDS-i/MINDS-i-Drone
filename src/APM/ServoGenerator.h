@@ -7,7 +7,7 @@ namespace ServoGenerator{
     void set(uint8_t channel, uint16_t us);
     void disable(uint8_t channel);
     bool enable(uint8_t channel, int pin);
-    void setup(uint16_t refreshIntervalMicroseconds);
+    void begin(uint16_t refreshIntervalMicroseconds);
 
     class Servo{
         int8_t channel;

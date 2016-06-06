@@ -86,9 +86,9 @@ namespace ServoGenerator{
         return pass;
     }
 
-    void setup(uint16_t refreshIntervalMicroseconds){
+    void begin(uint16_t refreshIntervalMicroseconds){
         ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
-            // CTC, clear when TCNT == ICR, prescalar = 8
+            // CTC (WGM 12), clear when TCNT == ICR, prescalar = 8
             TCCRA = 0;
             TCCRB = _BV(WGM13) | _BV(WGM12) | _BV(CS11);
 
@@ -143,29 +143,37 @@ namespace ServoGenerator{
 
 ISR(TIMER_ISR(TIMER_NUM, COMPA)){
     do {
-        // stops when it finds an output with OCRA=0xffff at
-        // the end of actions[]
         output[next->channel].setLow();
         next++;
-        OCRA = next->time;
-    } while (OCRA <= TCNT);
+        uint16_t t = next->time;
+        OCRA = t;
+
+        if(t > TCNT) break;
+        else TIFR &= ~_BV(OCF1A);
+    } while(true);
 }
 
 ISR(TIMER_ISR(TIMER_NUM, CAPT)){
-    //update highTime values from outputs
+    //update each channels highTime; 0xffff if the channel is off
     for(uint8_t i=0; i<MAX_OUTPUTS; i++){
         actions[i].time = output[actions[i].channel].highTime;
     }
-    //sort actions by time
+    //run insertion sort on actions[]; optimised with a cycle count benchmark
     for(uint8_t i=1; i<MAX_OUTPUTS; i++){
+        //load the time and channel of action[i] only when needed
         uint16_t time = actions[i].time;
+        //quickly check for sorted input
+        if(time >= actions[i-1].time) continue;
+        //swap up the data to make room for actions[i]
+        uint8_t channel = actions[i].channel;
         uint8_t j = i;
         while(j>0 && time < actions[j-1].time){
-            Action a = actions[j-1];
-            actions[j-1] = actions[j];
-            actions[j] = a;
+            actions[j] = actions[j-1];
             j--;
         }
+        //put the data from actions[i] back into actions[j]
+        actions[j].time = time;
+        actions[j].channel = channel;
     }
     //set all signals high
     //this preserves order because TCNT is monotonically increasing
