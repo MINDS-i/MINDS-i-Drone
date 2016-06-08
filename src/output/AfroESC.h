@@ -17,7 +17,6 @@ public:
 	AfroESC(uint8_t in): pin(in) {}
 	~AfroESC(){ stop(); }
 	void  startArming()	{
-		ServoGenerator::setup(6000);
 		servo.attach(pin);
 	}
 	boolean continueArming(uint32_t dt){
@@ -28,7 +27,6 @@ public:
 		return true;
 	}
 	void startCalibrate(){
-		ServoGenerator::setup(6000);
 		servo.attach(pin);
 	}
 	boolean continueCalibrate(uint32_t dt){

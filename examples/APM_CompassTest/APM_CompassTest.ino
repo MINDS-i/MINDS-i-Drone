@@ -10,7 +10,6 @@ ServoGenerator::Servo table;
 
 void setup(){
     Serial.begin(57600);
-    ServoGenerator::setup(20000);
     cmp.tune(set.getMagTune());
     table.attach(A0);
     cmp.begin();

@@ -20,7 +20,6 @@ void isrCallback(){
 
 void setup() {
     Serial.begin(9600);
-    ServoGenerator::setup(20000);
     mpu.tuneAccl(settings.getAccelTune());
     sensors.start();
     sensors.calibrate();

@@ -22,7 +22,6 @@ ServoGenerator::Servo drive, steer, backsteer;
 
 void setup(){
     Serial.begin(9600);
-    ServoGenerator::setup(20000);
 
     drive.attach(ServoPin[0]);
     steer.attach(ServoPin[1]);

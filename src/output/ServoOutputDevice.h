@@ -16,13 +16,13 @@ public:
 	void  	startCalibrate(){ servo.attach(pin); 			}
 	boolean continueCalibrate(uint32_t dt)	{ return true;	}
 	void  set(float in)	{
-		servo.writeMicroseconds(in*1000.+1000);
+		servo.writeMicroseconds(in*900 + 1500);
 	}
 	void  stop() {
 		servo.detach();
 	}
 	float get() {
-		return 0;//((float)servo.readMicroseconds()-1000.)/1000.;
+		return 0;
 	}
 };
 #endif

@@ -108,7 +108,6 @@ inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
 
 void setup() {
 	setupSettings();
-    ServoGenerator::setup(20000);
 
 	gps.begin();
 	mpu.begin();

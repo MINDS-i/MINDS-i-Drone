@@ -17,7 +17,6 @@ public:
 	HK_ESCOutputDevice(uint8_t in): pin(in) {}
 	~HK_ESCOutputDevice(){ stop(); }
 	void  startArming()	{
-		ServoGenerator::setup(6000);
 		servo.attach(pin);
 	}
 	boolean continueArming(uint32_t dt){
@@ -29,7 +28,6 @@ public:
 		return true;
 	}
 	void startCalibrate(){
-		ServoGenerator::setup(6000);
 		servo.attach(pin);
 	}
 	boolean continueCalibrate(uint32_t dt){
@@ -53,8 +51,8 @@ public:
 		}
 	}
 	void  stop()		{ servo.detach(); }
-	float get()			{ return 0;}//((float)servo.readMicroseconds()-MIN)/RANGE; }
-	uint16_t getRaw()   { return 0;}//servo.readMicroseconds(); }
+	float get()			{ return 0;}
+	uint16_t getRaw()   { return 0;}
 };
 const float HK_ESCOutputDevice::RANGE  = 1000;
 const float HK_ESCOutputDevice::thrustCurve[4] = { 0.776, -1.160, 1.382, 0.0 };
