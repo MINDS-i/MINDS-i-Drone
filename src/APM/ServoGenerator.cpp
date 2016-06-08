@@ -1,11 +1,11 @@
 #include "ServoGenerator.h"
 
-#define TIMER_NUM 1
-
 #define EXPCAT(A,B,C) EXPANDEDCONCATENATE(A,B,C)
 #define EXPANDEDCONCATENATE(A,B,C) A ## B ## C
 #define TIMER_ISR(N,V) TIMER_ISR_EXP(N,V)
 #define TIMER_ISR_EXP(N,V) TIMER ## N ## _ ## V ## _vect
+
+using namespace ServoGenerator;
 
 namespace {
     volatile uint8_t& TCCRA = EXPCAT(TCCR, TIMER_NUM,A);
@@ -42,7 +42,6 @@ namespace {
         void setLow() const volatile { *pinReg &= ~pinMask; }
     };
 
-    constexpr uint8_t MAX_OUTPUTS = 8;
     volatile Output output[MAX_OUTPUTS];
     volatile uint8_t activeOutputs = 0;
 
@@ -62,12 +61,20 @@ namespace {
         }
     }
 
+    // function pointer and state guard for frame update callbacks
+    volatile UpdateFunc frameCallback;
+    volatile bool IN_FRAME_CALLBACK;
+
     constexpr uint8_t PRESCALAR = 8;
     //works for prescalars less than or equal to 16
     constexpr uint8_t TICKS_PER_MS = (F_CPU / (PRESCALAR * 1e6L));
 
-    int16_t constexpr intervalFromMicros(uint32_t us){
+    uint16_t constexpr intervalFromMicros(uint16_t us){
         return us * TICKS_PER_MS;
+    }
+
+    uint16_t constexpr microsFromInterval(uint16_t ticks){
+        return ticks / TICKS_PER_MS;
     }
 }
 
@@ -118,6 +125,13 @@ namespace ServoGenerator{
         }
     }
 
+    void setUpdateCallback(UpdateFunc callback){
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
+            frameCallback = callback;
+        }
+    }
+
+
     Servo::Servo(): channel(-1) {}
     bool Servo::attach(uint8_t arduinopin){
         if(channel != -1) return false; //already attached
@@ -138,15 +152,6 @@ namespace ServoGenerator{
         if(channel != -1)
             disable(channel);
         channel = -1;
-    }
-    void Servo::write(uint8_t sig){
-        if(channel != -1)
-            // convert [0,180] to [600,2400]
-            set(channel, ((uint16_t)sig)*10 + 600);
-    }
-    void Servo::writeMicroseconds(uint16_t us){
-        if(channel != -1)
-            set(channel, us);
     }
     bool Servo::attached() {
         return channel != -1;
@@ -199,5 +204,13 @@ ISR(TIMER_ISR(TIMER_NUM, CAPT)){
 
     next = actions;
     OCRA = next->time;
+
+    if(frameCallback != NULL && IN_FRAME_CALLBACK == false){
+        IN_FRAME_CALLBACK = true;
+        NONATOMIC_BLOCK(NONATOMIC_FORCEOFF){
+            frameCallback(microsFromInterval(ICR));
+        }
+        IN_FRAME_CALLBACK = false;
+    }
 }
 
