@@ -8,15 +8,15 @@
 #define TIMER_ISR_EXP(N,V) TIMER ## N ## _ ## V ## _vect
 
 namespace {
-    constexpr volatile uint8_t& TCCRA = EXPCAT(TCCR, TIMER_NUM,A);
-    constexpr volatile uint8_t& TCCRB = EXPCAT(TCCR, TIMER_NUM,B);
-    constexpr volatile uint8_t& TCCRC = EXPCAT(TCCR, TIMER_NUM,C);
-    constexpr volatile uint8_t& TIFR  = EXPCAT(TIFR, TIMER_NUM, );
-    constexpr volatile uint8_t& TIMSK = EXPCAT(TIMSK,TIMER_NUM, );
-    constexpr volatile uint16_t& ICR  = EXPCAT(ICR,  TIMER_NUM, );
-    constexpr volatile uint16_t& TCNT = EXPCAT(TCNT, TIMER_NUM, );
-    constexpr volatile uint16_t& OCRA = EXPCAT(OCR,  TIMER_NUM,A);
-    constexpr volatile uint16_t& OCRB = EXPCAT(OCR,  TIMER_NUM,B);
+    volatile uint8_t& TCCRA = EXPCAT(TCCR, TIMER_NUM,A);
+    volatile uint8_t& TCCRB = EXPCAT(TCCR, TIMER_NUM,B);
+    volatile uint8_t& TCCRC = EXPCAT(TCCR, TIMER_NUM,C);
+    volatile uint8_t& TIFR  = EXPCAT(TIFR, TIMER_NUM, );
+    volatile uint8_t& TIMSK = EXPCAT(TIMSK,TIMER_NUM, );
+    volatile uint16_t& ICR  = EXPCAT(ICR,  TIMER_NUM, );
+    volatile uint16_t& TCNT = EXPCAT(TCNT, TIMER_NUM, );
+    volatile uint16_t& OCRA = EXPCAT(OCR,  TIMER_NUM,A);
+    volatile uint16_t& OCRB = EXPCAT(OCR,  TIMER_NUM,B);
 
     class Output{
     public:
@@ -24,12 +24,20 @@ namespace {
         uint16_t highTime;
         uint8_t pinMask;
         volatile uint8_t* pinReg;
-        bool enabled() const volatile { return pinMask != 0; }
-        void disable() volatile { pinMask = 0; pinReg = 0; highTime = 0xffff; }
-        void setPin(int p) volatile {
-            pinMask = digitalPinToBitMask(p);
-            pinReg = portOutputRegister(digitalPinToPort(p));
+        void disable() volatile {
+            ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
+                pinMask = 0;
+                pinReg = 0;
+                highTime = 0xffff;
+            }
         }
+        void setPin(int p) volatile {
+            ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
+                pinMask = digitalPinToBitMask(p);
+                pinReg = portOutputRegister(digitalPinToPort(p));
+            }
+        }
+        bool enabled() const volatile { return pinMask != 0; }
         void setHigh() const volatile { *pinReg |= pinMask; }
         void setLow() const volatile { *pinReg &= ~pinMask; }
     };
@@ -64,6 +72,8 @@ namespace {
 }
 
 namespace ServoGenerator{
+    bool begun;
+
     void set(uint8_t channel, uint16_t us){
         output[channel].highTime = intervalFromMicros(us);
     }
@@ -80,6 +90,7 @@ namespace ServoGenerator{
         if(!output[channel].enabled()){
             activeOutputs++;
             pass = true;
+            if(!begun) begin(DEFAULT_REFRESH_INTERVAL);
         }
         pinMode(pin, OUTPUT);
         output[channel].setPin(pin);
@@ -87,6 +98,7 @@ namespace ServoGenerator{
     }
 
     void begin(uint16_t refreshIntervalMicroseconds){
+        begun = true;
         ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
             // CTC (WGM 12), clear when TCNT == ICR, prescalar = 8
             TCCRA = 0;
@@ -149,7 +161,8 @@ ISR(TIMER_ISR(TIMER_NUM, COMPA)){
         OCRA = t;
 
         if(t > TCNT) break;
-        else TIFR &= ~_BV(OCF1A);
+        //clear any interrupt that may have been generated when OCRA was set
+        else TIFR = _BV(OCF1A);
     } while(true);
 }
 
@@ -168,7 +181,9 @@ ISR(TIMER_ISR(TIMER_NUM, CAPT)){
         uint8_t channel = actions[i].channel;
         uint8_t j = i;
         while(j>0 && time < actions[j-1].time){
-            actions[j] = actions[j-1];
+            // copying all the components individually is slightly faster
+            actions[j].time = actions[j-1].time;
+            actions[j].channel = actions[j-1].channel;
             j--;
         }
         //put the data from actions[i] back into actions[j]

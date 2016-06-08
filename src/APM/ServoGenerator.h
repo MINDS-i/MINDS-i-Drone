@@ -4,6 +4,8 @@
 #include <util/atomic.h>
 
 namespace ServoGenerator{
+    const uint16_t DEFAULT_REFRESH_INTERVAL = 20000; // 20ms => 50Hz
+
     void set(uint8_t channel, uint16_t us);
     void disable(uint8_t channel);
     bool enable(uint8_t channel, int pin);
