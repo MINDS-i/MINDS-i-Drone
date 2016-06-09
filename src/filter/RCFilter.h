@@ -55,8 +55,9 @@ RCFilter::updatePRY(){
 void
 RCFilter::updateStateModel(Vec3 correction){
 	//keep track of passing time
-	float dt = (micros()-stateTime);
-	stateTime = micros();
+    uint32_t cTime = micros();
+    float dt = (cTime-stateTime);
+    stateTime = cTime;
 	dt /= 1000.f;
 	attitude.integrate(rate*dt + correction);
 }
