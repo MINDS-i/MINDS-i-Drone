@@ -62,26 +62,45 @@ class ThrottleCurve{
      *     which corresponds to how "linear" the curve is
      */
 private:
-    float a,b,c,d;
 public:
+    float a,b,c,d;
+    /**
+     * Construct a ThrottleCurve given a linearity (0, 1) and hoverPoint (0, 1)
+     */
     ThrottleCurve(float linearity, float hoverPoint){
-        this->set(linearity, hoverPoint);
+        setLinearity(linearity);
+        setHoverPoint(hoverPoint);
     }
-    void set(float linearity, float hoverPoint){
-        a = 0.5-linearity;
-        b = 0.5-hoverPoint;
-        c = linearity;
-        d = hoverPoint;
-    }
+    /**
+     * How linear or curved the throttle curve is
+     * A Value of 0.5 is as linear as possible
+     * A Value near 0.0 is curved for finer control around the hover point
+     * A value near 1.0 is curved for finer control at the extremes
+     * Only defined for values between 0.0 and 1.0 exclusive
+     * @param linearity How "linear" the final curve should be
+     */
     void setLinearity(float linearity){
         a = 0.5-linearity;
         c = linearity;
     }
+    /**
+     * Set the value that the curve outputs when the input throttle value is
+     *     at 50%
+     * Only defined for values between 0.0 and 1.0 exclusive
+     * @param hoverPoint The output value that becomes half throttle
+     */
     void setHoverPoint(float hoverPoint){
         b = 0.5-hoverPoint;
         d = hoverPoint;
     }
-    float get(float value){
+    /**
+     * Get a curved throttle value
+     *     Minimum throttle when value = 0.0
+     *     Maximum throttle when value = 1.0
+     * @param  value Input to be curved
+     * @return       The curved value
+     */
+    float get(float value) const {
         const float x = value*2.0f - 1.0f;
         return d + x*(c + x*(b + x*a));
     }
