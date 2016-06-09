@@ -14,7 +14,7 @@ const float I = 4.0f;
 float integral;
 ServoGenerator::Servo output;
 
-void isrCallback(){
+void isrCallback(uint16_t time){
     sensors.update(orientation);
 }
 
@@ -24,7 +24,8 @@ void setup() {
     sensors.start();
     sensors.calibrate();
     output.attach(A0);
-    startInterrupt(isrCallback, INT_PERIOD);
+    ServoGenerator::setUpdateCallback(isrCallback);
+    ServoGenerator::begin(INT_PERIOD);
 }
 
 void loop(){

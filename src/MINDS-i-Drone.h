@@ -33,10 +33,8 @@ Copyright 2015 MINDS-i Inc.
     #define FAIL(a) return false;
 #endif
 
-#include "APM/MegaInterrupts.h"
 #include "APM/APMRadioInput.h"
-//#include "APM/OutputGenerator.h"
-//#include "APM/OutputGenerator.h"
+#include "APM/ServoGenerator.h"
 
 #include "comms/CommManager.h"
 #include "comms/NMEA.h"

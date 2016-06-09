@@ -14,7 +14,7 @@ PIDparameters tune(30.0f,400.0f,0.0f);
 PIDcontroller pid(&tune);
 ServoGenerator::Servo output;
 
-void isrCallback(){
+void isrCallback(uint16_t dt){
     sensors.update(orientation);
 }
 
@@ -24,8 +24,9 @@ void setup() {
     sensors.start();
     sensors.calibrate();
     output.attach(A0);
-    startInterrupt(isrCallback, INT_PERIOD);
     pid.set(0.0f);
+    ServoGenerator::setUpdateCallback(isrCallback);
+    ServoGenerator::begin(INT_PERIOD);
 }
 
 void loop(){

@@ -21,7 +21,7 @@ OutputManager output(outDev);
 PIDparameters pitchPID(0,0,0,-1,1), rollPID(0,0,0,-1,1);
 Horizon horizon(&pitchPID, &rollPID);
 
-void isrCallback(){
+void isrCallback(uint16_t dt){
     tic(0);
     sensors.update();
     orientation.update(sensors);
@@ -39,7 +39,8 @@ void updatePID(float d){
 }
 void changeInterruptPeriod(float newPeriod){
     if(newPeriod < MINIMUM_INT_PERIOD) newPeriod = MINIMUM_INT_PERIOD;
-    startInterrupt(isrCallback, newPeriod);
+    ServoGenerator::setUpdateCallback(isrCallback);
+    ServoGenerator::begin(newPeriod);
 }
 void setupSettings(){
     using namespace AirSettings;

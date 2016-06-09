@@ -39,7 +39,7 @@ void setupQuad();
 void loopQuad();
 ///////////
 
-void isrCallback() {
+void isrCallback(uint16_t dt) {
     tic(0);
     sensors.update();
     orientation.update(sensors);
@@ -48,7 +48,8 @@ void isrCallback() {
 }
 void changeInterruptPeriod(float newPeriod){
     if(newPeriod < MINIMUM_INT_PERIOD) newPeriod = MINIMUM_INT_PERIOD;
-    startInterrupt(isrCallback, newPeriod);
+    ServoGenerator::setUpdateCallback(isrCallback);
+    ServoGenerator::begin(newPeriod);
 }
 void setupSettings(){
      /*
