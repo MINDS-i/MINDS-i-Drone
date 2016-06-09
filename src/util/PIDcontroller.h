@@ -4,7 +4,7 @@
 #include "util/PIDparameters.h"
 
 namespace{
-	const float SECOND = 1000.0f * 1000.0f;
+	constexpr float SECOND = 1e6f;
 }
 
 class PIDcontroller{
@@ -36,14 +36,15 @@ public:
 		return update(current);
 	}
 	float update(float current){
+		uint32_t cTime = micros();
 		if(stopped) {
-			time = micros();
+			time = cTime;
 			previous = 0;
 			return 0;
 		}
 
-		const float dt = ((float)min( micros()-time, uint32_t(SECOND)))/SECOND;
-		time = micros();
+		const float dt = ((float)min(cTime-time, uint32_t(SECOND)))/SECOND;
+		time = cTime;
 
 		const float error  = setPoint-current;
 		const float newAcc = acc + param->I*error*dt;
