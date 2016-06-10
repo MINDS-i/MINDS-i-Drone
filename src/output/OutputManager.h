@@ -20,8 +20,8 @@ Motors should be in cross configuration, counting clockwise from the front left
   ---     ---
  | 0 |   | 1 |
   ---\ ^ / ---
-  	  XXX
-  	  XXX
+      XXX
+      XXX
   ---/   \---
  | 3 |   | 2 |
   ---     ---
