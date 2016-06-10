@@ -89,12 +89,17 @@ void setup(){
     delay(1000);
     sensors.calibrate();
     delay(250);
-    if(mpu.status() == Sensor::BAD){
+
+    auto mpuState = mpu.status();
+    if(!mpuState.good()){
         Serial.println("Bad MPU6000 status");
+        Serial.println(mpuState.message);
         while(true);
     }
-    if(cmp.status() == Sensor::BAD){
+    auto cmpState = cmp.status();
+    if(!cmpState.good()){
         Serial.println("Bad HMC5883L status");
+        Serial.println(cmpState.message);
         while(true);
     }
 

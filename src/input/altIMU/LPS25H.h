@@ -50,7 +50,8 @@ LPS25H::end(){
 }
 Sensor::Status
 LPS25H::status(){
-	return (this->read(STATUS_REG)!=0)? Sensor::OK : Sensor::BAD;
+	/*#LPSFAIL LPS25H Barometer returned a bad status */
+	return (this->read(STATUS_REG)!=0)? Sensor::OK : Sensor::BAD("LPSFAIL");
 }
 void
 LPS25H::calibrate(){
