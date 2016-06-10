@@ -12,15 +12,15 @@ uint32_t calStartTime;
 const uint8_t CHANNEL_MIN = 32;
 const uint8_t CHANNEL_MAX = 148;
 float yawTarget = 0.0;
-enum {
+enum State {
     DISARMED,
-    ARM,
-    CALIBRATE_MOTORS,
-    OFF,
-    ENABLE,
     CALIBRATE,
     FLYING
-} state = OFF;
+};
+const char* stateString[] = {
+    [DISARMED] = "DISARMED", [CALIBRATE] = "CALIBRATE", [FLYING] = "FLYING" };
+State state;
+
 enum RadioChannel{
     RADIO_PITCH    = 0,
     RADIO_ROLL     = 1,
@@ -33,6 +33,12 @@ template<boolfunc Func> uint32_t timeState();
 void setup() {
     setupQuad();
     horizon.standby();
+    setState(DISARMED);
+}
+
+void setState(State s){
+    state = s;
+    comms.sendString(stateString[s]);
 }
 
 void loop() {
@@ -42,44 +48,36 @@ void loop() {
 
     //flight mode state machine
     switch(state){
+        /*#DISARMED Quadcopter is in a safe state. hold Down and to the right on
+         * the Throttle stick for two seconds to begin the arming process
+        **/
         case DISARMED:
-            if(timeState<&radio_downRight>() > 5000) state = ARM;
-            if(timeState<&radio_downLeftUpRight>() > 5000) state = CALIBRATE_MOTORS;
-            break;
-        case ARM:
-            arm();
-            state = FLYING;
-            break;
-        case CALIBRATE_MOTORS:
-            calibrateESCs();
-            state = FLYING;
-            break;
-        case OFF:
-            output.disable();
-            if(timeState<&radio_downRight>() > 5000) state = ENABLE;
-            break;
-        case ENABLE:
-            if(calibrated) {
-                output.enable();
-                state = FLYING;
-            } else {
+            if(timeState<&radio_downRight>() > 2000) {
                 calStartTime = millis();
-                state = CALIBRATE;
+                setState(CALIBRATE);
             }
-            yawTarget = orientation.getYaw();
             break;
+        /*#CALIBRATE Calibrating the gyroscope
+         * This lasts for two seconds. Keep the quadcopter as still as possible.
+        **/
         case CALIBRATE:
             orientation.calibrate(true);
             if(calStartTime + 2000 < millis()) {
-                output.enable();
-                state = FLYING;
                 orientation.calibrate(false);
-                calibrated = true;
+                yawTarget = orientation.getYaw();
+                output.enable();
+                setState(FLYING);
             }
             break;
+        /*#FLYING Quadcopter is like
+         * Hold down and to the left on the throttle stick to disarm
+        **/
         case FLYING:
             fly();
-            if(timeState<&radio_downLeft>() > 750) state = OFF;
+            if(timeState<&radio_downLeft>() > 750) {
+                output.disable();
+                setState(DISARMED);
+            }
             break;
     }
 
