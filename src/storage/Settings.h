@@ -91,6 +91,14 @@ private:
 public:
 	Settings(Storage<EE_STORAGE_TYPE> *str) : storage(str) {
 	}
+	bool foundIMUTune(){
+		if (!formatChecked) checkStorageFormat();
+		return validCalib;
+	}
+	bool foundSettings(){
+		if (!formatChecked) checkStorageFormat();
+		return validFormat;
+	}
 	void checkStorageFormat(){
 		if(storage == NULL) return;
 		validCalib  = (storage->getRecord(CALIB_VER  ) == CALIBRATION_VERSON);
