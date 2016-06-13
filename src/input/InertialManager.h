@@ -48,7 +48,16 @@ public:
     void stop(){
         for(int i=0; i<numSensors; i++) sensor[i]->end();
     }
-
+    bool errorMessages( void (*errorMessageReceiver) (const char *) ){
+        bool pass = true;
+        for(int i=0; i<numSensors; i++){
+            auto status = sensor[i]->status();
+            if(status.good()) continue;
+            pass = false;
+            errorMessageReceiver(status.message);
+        }
+        return pass;
+    }
     Vec3 getGyro(){
         return gyro;
     }
