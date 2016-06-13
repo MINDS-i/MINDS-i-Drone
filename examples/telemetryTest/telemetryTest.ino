@@ -2,7 +2,8 @@
 #include "SPI.h"
 #include "MINDS-i-Drone.h"
 
-const int       UPDATE_INTERVAL = 100; //ms between transmits
+const int       UPDATE_INTERVAL = 100; //ms between telemetry transmits
+const int       MSG_INTERVAL = 30000; //ms between message transmits
 HardwareSerial *commSerial  = &Serial;
 Storage<float> *storage = eeStorage::getInstance();
 CommManager     manager(commSerial, storage);
@@ -26,6 +27,13 @@ void loop(){
     if(millis() > outputTrack){
         outputTrack += UPDATE_INTERVAL;
         reportTelemetry();
+    }
+
+    /*#MSG_TEST This is a test of a robot transmitted string */
+    static uint32_t msgTrack = millis();
+    if(millis() > msgTrack){
+        msgTrack += MSG_INTERVAL;
+        manager.sendString("MSG_TEST");
     }
 }
 void readAccelerometer(){

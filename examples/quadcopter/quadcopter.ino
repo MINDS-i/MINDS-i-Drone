@@ -48,16 +48,21 @@ void loop() {
 
     //flight mode state machine
     switch(state){
-        /*#DISARMED Quadcopter is in a safe state. hold Down and to the right on
+        /*#DISARMED Hold Down and to the right on
          * the Throttle stick for two seconds to begin the arming process
         **/
         case DISARMED:
             if(timeState<&radio_downRight>() > 2000) {
-                calStartTime = millis();
-                setState(CALIBRATE);
+                if(safe()){
+                    calStartTime = millis();
+                    setState(CALIBRATE);
+                } else {
+                    /*#NOFLY Flight aborted due to error status */
+                    comms.sendString("NOFLY");
+                }
             }
             break;
-        /*#CALIBRATE Calibrating the gyroscope
+        /*#CALIBRATE Calibrating the gyroscope.
          * This lasts for two seconds. Keep the quadcopter as still as possible.
         **/
         case CALIBRATE:
@@ -69,7 +74,7 @@ void loop() {
                 setState(FLYING);
             }
             break;
-        /*#FLYING Quadcopter is like
+        /*#FLYING
          * Hold down and to the left on the throttle stick to disarm
         **/
         case FLYING:
