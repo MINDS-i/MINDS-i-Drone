@@ -31,8 +31,10 @@ Horizon       horizon(&attPID, &attVel,
 HLA           altitude(1000, 0);
 HLA           velocity(1000, 0);
 float altitude_hold_V = 0;
+bool errorsDetected = false;
 
 ///////////
+bool safe();
 void arm();
 void calibrateESCs();
 void setupQuad();
@@ -58,6 +60,12 @@ void setupSettings(){
           0.8, 4.00 0.023 ; 6.5 0.0 0.0
           0.2  0.0  0.005;  8.0 0.5 0.5
      */
+    if(!settings.foundSettings()){
+        /*#DEFAULTS No previously configured flight parameters detected,
+         * resetting to defaults
+        **/
+        comms.sendString("DEFAULTS");
+    }
     //note: These settings need to match the dashboard's resource_air file
     using namespace AirSettings;
     settings.attach(INT_PERIOD, 6500  , &changeInterruptPeriod );
@@ -83,6 +91,9 @@ void setupSettings(){
     settings.attach(BARO_V    , 0.00f, callback<float, &altitude_hold_V>);
     settings.attach(BARO_V+1  , 1500.00f, callback<HLA, &velocity, &HLA::setHalfLife>);
 }
+bool safe(){
+    return errorsDetected;
+}
 void arm(){
     delay(500);
     output.arm();
@@ -93,10 +104,21 @@ void calibrateESCs(){
 }
 void setupQuad() {
     Serial.begin(Protocol::BAUD_RATE);
+    comms.requestResync();
 
+    arm();
+
+    if(!settings.foundIMUTune()){
+        /*#IMULOAD Couldn't load a valid Accelerometer and
+         * Magnetometer tune from EEPROM
+        **/
+        errorsDetected = true;
+        comms.sendString("IMULOAD");
+    }
     mpu.tuneAccl(settings.getAccelTune());
     cmp.tune(settings.getMagTune());
     setupSettings();
+    setupAPM2radio();
 
     sensors.start();
     baro.begin();
@@ -104,12 +126,11 @@ void setupQuad() {
     sensors.calibrate();
     baro.calibrate();
     baro.setTempDutyCycle(4);
+    if(sensors.errorMessages([](const char * msg){comms.sendString(msg);})) {
+        errorsDetected = true;
+    }
 
-    arm();
     output.setMode(&horizon);
-
-    setupAPM2radio();
-    comms.requestResync();
 }
 void loopQuad() {
     comms.update();
