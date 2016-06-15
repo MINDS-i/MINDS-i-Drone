@@ -5,7 +5,7 @@
 
 void setup(){
     calibrateESCs();
+    output.disable();
 }
 void loop(){
-    output.stop();
 }
