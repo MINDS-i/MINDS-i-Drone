@@ -4,7 +4,7 @@ const float MINIMUM_INT_PERIOD = 5000;
 Settings        settings(eeStorage::getInstance());
 HardwareSerial *commSerial  = &Serial;
 CommManager     comms(commSerial, eeStorage::getInstance());
-RCFilter        orientation(0.05, 0.0);
+RCFilter        orientation(0.0, 0.0);
 
 MPU6000   mpu;
 HMC5883L  cmp;
@@ -69,8 +69,8 @@ void setupSettings(){
     //note: These settings need to match the dashboard's resource_air file
     using namespace AirSettings;
     settings.attach(INT_PERIOD, 6500  , &changeInterruptPeriod );
-    settings.attach(INRT_U_FAC, 0.0038f, callback<RCFilter, &orientation, &RCFilter::setwGain>);
-    settings.attach(GYRO_CMP_F, 0.99999f, callback<RCFilter, &orientation, &RCFilter::setRateGain>);
+    settings.attach(INRT_U_FAC, 0.06f, callback<RCFilter, &orientation, &RCFilter::setAccelGain>);
+    settings.attach(GYRO_CMP_F, 0.03f, callback<RCFilter, &orientation, &RCFilter::setMagGain>);
     settings.attach(TILT_CMP_L, 1.00f , callback<Horizon, &horizon, &Horizon::setTiltCompLimit>);
     settings.attach(ATT_P_TERM, 0.250f, callback<PIDparameters, &attPID, &PIDparameters::setIdealP>);
     settings.attach(ATT_I_TERM, 0.000f, callback<PIDparameters, &attPID, &PIDparameters::setIdealI>);
