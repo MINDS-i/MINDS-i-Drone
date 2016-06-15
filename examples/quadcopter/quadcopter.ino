@@ -32,7 +32,6 @@ template<boolfunc Func> uint32_t timeState();
 
 void setup() {
     setupQuad();
-    horizon.standby();
     setState(DISARMED);
 }
 
@@ -70,7 +69,7 @@ void loop() {
             if(calStartTime + 2000 < millis()) {
                 orientation.calibrate(false);
                 yawTarget = orientation.getYaw();
-                output.enable();
+                output.standby();
                 setState(FLYING);
             }
             break;
@@ -96,8 +95,10 @@ void fly(){
     const bool  gearCmd  = (getAPM2Radio(4) > 90);
 
     if(getAPM2Radio(RADIO_THROTTLE) <= CHANNEL_MIN){
-        horizon.standby();
+        output.standby();
         return;
+    } else {
+        output.enable();
     }
 
     if(gearCmd == false){
@@ -209,11 +210,4 @@ bool radio_downLeft(){
     bool down  = getAPM2Radio(RADIO_THROTTLE) <= CHANNEL_MIN;
     bool left  = getAPM2Radio(RADIO_YAW)      >= CHANNEL_MAX;
     return down && left;
-}
-bool radio_downLeftUpRight(){
-    bool down  = getAPM2Radio(RADIO_THROTTLE) <= CHANNEL_MIN;
-    bool left  = getAPM2Radio(RADIO_YAW)      >= CHANNEL_MAX;
-    bool up    = getAPM2Radio(RADIO_PITCH)    >= CHANNEL_MAX;
-    bool right = getAPM2Radio(RADIO_ROLL)     <= CHANNEL_MIN;
-    return down && left && up && right;
 }
