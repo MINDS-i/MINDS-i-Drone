@@ -5,7 +5,8 @@
 // torques are pitch, roll, yaw, throttle
 class FlightStrategy{
 public:
-    virtual void update(OrientationEngine&, float (&torques)[4]);
+    // ms - time since last update in milliseconds
+    virtual void update(OrientationEngine&, float ms, float (&torques)[4]);
     virtual void reset();
 };
 #endif

@@ -1,13 +1,13 @@
-#include "util/PIDcontroller.h"
+#include "util/PIDexternaltime.h"
 #include "util/PIDparameters.h"
 #include "math/GreatCircle.h"
 #include "output/FlightStrategy.h"
 
 class Horizon : public FlightStrategy {
 private:
-    PIDcontroller  pitchPID, pError;
-    PIDcontroller   rollPID, rError;
-    PIDcontroller    yawPID, yError;
+    PIDexternaltime pitchPID, pError;
+    PIDexternaltime  rollPID, rError;
+    PIDexternaltime   yawPID, yError;
     float          throttle;
     float          pitch, roll, yaw;
     float          velFac, yawFac;
@@ -21,7 +21,7 @@ public:
                 pitchPID(pitchI), pError(pitchO),
                  rollPID( rollI), rError( rollO),
                   yawPID(  yawI), yError(  yawO) {}
-    void update(OrientationEngine& orientation, float (&torques)[4]){
+    void update(OrientationEngine& orientation, float ms, float (&torques)[4]){
         if(standbyOn){
             torques[0] = 0;
             torques[1] = 0;
@@ -31,17 +31,17 @@ public:
         }
 
         //calculate outer loop
-        const float p = pError.update(orientation.getPitch() - pitch          );
-        const float r = rError.update(orientation.getRoll()  - roll           );
-        const float y = yError.update(distanceRadian(yaw,orientation.getYaw()));
+        const float p = pError.update(orientation.getPitch() - pitch          , ms);
+        const float r = rError.update(orientation.getRoll()  - roll           , ms);
+        const float y = yError.update(distanceRadian(yaw,orientation.getYaw()), ms);
         //set inner loops with outer calculations
         pitchPID.set(p);
         rollPID.set(r);
         yawPID.set(y);
         //set torques from inner PID loop calculations
-        torques[0] = pitchPID.update(orientation.getPitchRate()*1024.f);//1024 from rad/millisecond
-        torques[1] = rollPID.update(orientation.getRollRate()*1024.f);  //to rad/second
-        torques[2] = yawPID.update(orientation.getYawRate()*1024.f);
+        torques[0] = pitchPID.update(orientation.getPitchRate()*1024.f,ms);//1024 from rad/millisecond
+        torques[1] = rollPID.update(orientation.getRollRate()*1024.f,ms);  //to rad/second
+        torques[2] = yawPID.update(orientation.getYawRate()*1024.f,ms);
         torques[3] = throttle;
 
         testPoint[0] = y;

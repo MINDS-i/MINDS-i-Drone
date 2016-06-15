@@ -91,6 +91,7 @@ Copyright 2015 MINDS-i Inc.
 #include "util/HLAverage.h"
 #include "util/LTATune.h"
 #include "util/PIDcontroller.h"
+#include "util/PIDexternaltime.h"
 #include "util/PIDparameters.h"
 #include "util/profile.h"
 

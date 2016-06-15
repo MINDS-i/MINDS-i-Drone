@@ -46,7 +46,7 @@ void isrCallback(uint16_t microseconds) {
     tic(0);
     sensors.update();
     orientation.update(sensors, ms);
-    output.update(orientation);
+    output.update(orientation, ms);
     toc(0);
 }
 void changeInterruptPeriod(float newPeriod){

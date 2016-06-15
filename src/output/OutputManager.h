@@ -51,7 +51,7 @@ public:
 	void stop();
 	void calibrate();
 	void arm();
-	void update(OrientationEngine &orientation);
+	void update(OrientationEngine &orientation, float ms);
 };
 void OutputManager::enable(){
 	if(enabled) return;
@@ -110,13 +110,13 @@ void OutputManager::calibrate(){
 	enabled = true;
 	armed   = true;
 }
-void OutputManager::update(OrientationEngine &orientation){
+void OutputManager::update(OrientationEngine &orientation, float ms){
 	//stop here if the outputs should all be off
 	if(!enabled) return;
 	if(flightMode == NULL) return;
 
 	float impulses[4];
-	flightMode->update(orientation,impulses);
+	flightMode->update(orientation,ms,impulses);
 
 	float outThrottle[4];
 	impulses[3] *= 4.0f; //throttle split 4 ways

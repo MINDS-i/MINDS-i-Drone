@@ -33,13 +33,6 @@ public:
      * ms - milliseconds since last update
      */
     float update(float current, float ms){
-        uint32_t cTime = micros();
-        if(stopped) {
-            time = cTime;
-            previous = 0;
-            return 0;
-        }
-
         const float dt = min(ms/1000.0, 1.0); //convert to seconds, cap at 1
 
         const float error  = setPoint-current;
