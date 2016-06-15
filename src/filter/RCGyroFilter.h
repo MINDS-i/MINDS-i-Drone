@@ -1,5 +1,5 @@
-#ifndef RCFilter_H
-#define RCFilter_H
+#ifndef RCGyroFilter_H
+#define RCGyroFilter_H
 
 #include "input/InertialManager.h"
 #include "filter/OrientationEngine.h"
@@ -12,8 +12,8 @@
     #include "util/profile.h"
 #endif
 
-//rate correction filter - heavily based on mahoney filter
-class RCFilter : public OrientationEngine {
+//rate correction filter with online gyro drift estimation
+class RCGyroFilter : public OrientationEngine {
 private:
     /** the last time the state was updated in microseconds */
     uint32_t stateTime;
@@ -23,10 +23,10 @@ private:
     Vec3 rateCal;
     /** quaternion that rotates global frame vectors into the sensor frame */
     Quaternion attitude;
-    /** Weight applied to the accelerometer correction values */
-    float accelGain;
-    /** Weight applied to the magnetometer correction values */
-    float magGain;
+    /** The gain applied to the accelerometer/magnetometer corrections */
+    float rcGain;
+    /** The gain value controlling how quickly the gyro drift estimate updates*/
+    float gdGain;
     /** a count the readings stored in rateCal for averaging when calibrating */
     float calTrack;
     /** Stores the most recent rotation rate reading */
@@ -35,11 +35,11 @@ private:
     float pitch, roll, yaw;
     void updatePRY();
 public:
-    RCFilter(float gain, float rGain)
+    RCGyroFilter(float rcgain, float rGain)
         :stateTime(0), calMode(false),
          rateCal(0,0,0),
          attitude(),
-         accelGain(gain), magGain(rGain),
+         rcGain(rcgain), gdGain(rGain),
          pitch(0), roll(0), yaw(0)
          {}
     void update(InertialManager& sensors);
@@ -52,37 +52,38 @@ public:
     float getRoll(){  return roll; }
     float getPitch(){ return pitch;}
     float getYaw(){   return yaw;  }
-    void setAccelGain(float g) { accelGain = g; }
-    void setMagGain(float r) { magGain = r; }
+    void setRateCorrectionGain(float g) { rcGain = g; }
+    void setGyroDriftGain(float r) { gdGain = r; }
 };
 void
-RCFilter::updatePRY(){
+RCGyroFilter::updatePRY(){
     pitch = attitude.getPitch();
     roll  = attitude.getRoll();
     yaw   = attitude.getYaw();
 }
 void
-RCFilter::calibrate(bool calibrate){
+RCGyroFilter::calibrate(bool calibrate){
     if(calMode == true && calibrate == false){
-        // Apply the average measured gyroscope value as a rate calibration
         if(calTrack != 0) {
             rateCal = rateCal/calTrack;
         }
     } else if (calMode == false && calibrate == true){
-        // reset the calibration track variables
         rateCal  = Vec3();
         calTrack = 0;
     }
     calMode = calibrate;
 }
 void
-RCFilter::update(InertialManager& sensors){
+RCGyroFilter::update(InertialManager& sensors){
     // This filter works by integrating the gyroscope while applying corrections
     // as rotation rate vectors derived from the absolute angular position
     // sensors. The rotation correction vectors are the cross products of
     // a sensor reading rotated into the global frame with the global reference
     // vector corresponding to that sensor. The rotation rate vector can then be
-    // preintegrated into attitude.
+    // rotated back to the sensor frame and integrated along with the gyroscope
+    // values. In the absence of any errors, the rotation correction vectors
+    // would be equal to the gyroscope integration term, so they cane be used
+    // to estimate the gyro drift while the filter is running.
 
     // This implementation elides the calculation of the accelerometer-cross-up
     // and magnetometer-cross-north vectors and their sum; instead a single
@@ -107,20 +108,6 @@ RCFilter::update(InertialManager& sensors){
     stateTime = cTime;
     dt /= 1000.f;
 
-    // get the gyroscope value
-    rate = *sensors.gyroRef();
-
-    // Apply gyro drift calibration terms
-    if(!calMode) {
-        rate += rateCal;
-    } else {
-        rateCal -= rate;
-        calTrack++;
-    }
-
-    // Integrate the gyroscope rate
-    attitude.integrate(rate*dt);
-
     // Retreive Accelerometer data, rotate into global frame
     Vec3 rawA = sensors.getAccl();
     rawA.rotateBy(~attitude);
@@ -131,9 +118,24 @@ RCFilter::update(InertialManager& sensors){
 
     // Calculate a correction vector that would reduce error between the mapped
     // accelerometer and magnetometer values and their respective global
-    // reference vectors, "up" and "north"; apply the delta as an integration
-    Vec3 delta(-accelGain*rawA[1], accelGain*rawA[0], -magGain*rawM[1]);
-    attitude.preintegrate(delta);
+    // reference vectors, "up" and "north"
+    // Then rotate to the sensor frame
+    Vec3 delta(-rawA[1], rawA[0], -rawM[1]);
+    delta.rotateBy(attitude);
+
+    // get the gyroscope value and apply gyro drift calibration terms
+    rate = *sensors.gyroRef();
+    rate *= dt;
+    if(!calMode) {
+        rate += rateCal;
+        rateCal += gdGain * (delta - rate);
+    } else {
+        rateCal -= rate;
+        calTrack++;
+    }
+
+    // Integrate the gyroscope and correction delta
+    attitude.integrate(rate*(1.0-rcGain) + delta*rcGain);
 
     // Normalize, check for errors, recalculate pitch/roll/yaw
     attitude.normalize();
