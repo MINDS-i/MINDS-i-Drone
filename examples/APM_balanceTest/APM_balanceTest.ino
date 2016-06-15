@@ -14,8 +14,10 @@ PIDparameters tune(30.0f,400.0f,0.0f);
 PIDcontroller pid(&tune);
 ServoGenerator::Servo output;
 
-void isrCallback(uint16_t dt){
-    sensors.update(orientation);
+void isrCallback(uint16_t microseconds){
+    float ms = ((float)microseconds)/1000.0;
+    sensors.update();
+    orientation.update(sensors, ms);
 }
 
 void setup() {

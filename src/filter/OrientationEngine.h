@@ -14,13 +14,16 @@ class InertialManager;
 	as instantanious rotational velocities about the internal frame
 	("gyroscope" values)
 -When calibrate(true) is called, the craft is going to be in a steady position
-	(usually also arming the ESC's) and the filter can use that information
-	to get a finer calibration on the sensors
+	and the filter can use that information to get a finer calibration
 */
 
 class OrientationEngine{
 public:
-	virtual void update(InertialManager& sensors)=0;
+	/** Update the orientation model using data from `sensors` given that
+	  * `ms` milliseconds have passed since the last update
+	  */
+	virtual void update(InertialManager& sensors, float ms)=0;
+	/** Enter calbrate mode where the quadcopter is known to be still */
 	virtual void calibrate(bool mode)=0;
 	virtual Quaternion getAttitude()=0;
 	virtual Vec3       getRate()=0;

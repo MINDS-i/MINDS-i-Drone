@@ -25,12 +25,12 @@ private:
 	float 	   pitch, roll, yaw;
 	volatile uint32_t stateTime;
 	float computeGain(float& estimate, float MSE);
-	void updateStateModel();
+	void updateStateModel(float ms);
 	void updatePRY();
 public:
 	DualErrorFilter(float systemMSE, float accelerometerMSE, float acclErrorFact)
 		:sysMSE(systemMSE), acclMSE(accelerometerMSE), acclEF(acclErrorFact) {}
-	void update(InertialManager& sensors);
+	void update(InertialManager& sensors, float ms);
 	void calibrate(bool mode);
 	Quaternion getAttitude(){ return attitude; }
 	Vec3  getRate(){ return rate; }
@@ -59,20 +59,14 @@ DualErrorFilter::computeGain(float& estimate, float MSE){
 	return gain;
 }
 void
-DualErrorFilter::updateStateModel(){
-	//keep track of passing time
-	float dt = (micros()-stateTime);
-	stateTime = micros();
-	dt /= 1024.f;
-	if(dt >= 250) return;
-
+DualErrorFilter::updateStateModel(float dt){
 	//propogate process errors
 	estimateMSE += dt*dt*sysMSE;
 
 	attitude.integrate(rate*dt);
 }
 void
-DualErrorFilter::update(InertialManager& sensors){
+DualErrorFilter::update(InertialManager& sensors, float ms){
     rate = *sensors.gyroRef();
     Vec3 rawA = sensors.getAccl();
 
@@ -97,7 +91,7 @@ DualErrorFilter::update(InertialManager& sensors){
 	float acclGain = computeGain(estimateMSE, aMSE);
 
 	//run model and lerp
-	updateStateModel();
+	updateStateModel(ms);
 	if(attitude.error()) attitude = accl;
 	else 				 attitude.nlerpWith(accl, acclGain);
 	updatePRY();

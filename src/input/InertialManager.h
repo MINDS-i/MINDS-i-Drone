@@ -23,7 +23,7 @@ class InertialManager{
     friend class LSM303D;
 private:
 	InertialVec** sensor;
-    Translator*   translator;
+    Translator* translator;
 	uint8_t numSensors;
     Vec3 accl; //G's
     Vec3 gyro; //Radians per millisecond
@@ -31,7 +31,6 @@ private:
 public:
 	InertialManager(InertialVec** s, Translator* ts, uint8_t num)
 		: sensor(s), translator(ts), numSensors(num) {}
-
     void update(){
         for(int i=0; i<numSensors; i++) sensor[i]->update(*this, translator[i]);
     }
@@ -40,10 +39,6 @@ public:
     }
     void calibrate(){
         for(int i=0; i<numSensors; i++) sensor[i]->calibrate();
-    }
-    void update(OrientationEngine &orientation){
-        update();
-        orientation.update(*this);
     }
     void stop(){
         for(int i=0; i<numSensors; i++) sensor[i]->end();

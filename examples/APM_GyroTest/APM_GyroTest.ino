@@ -14,8 +14,10 @@ const float I = 4.0f;
 float integral;
 ServoGenerator::Servo output;
 
-void isrCallback(uint16_t time){
-    sensors.update(orientation);
+void isrCallback(uint16_t microseconds){
+    float ms = ((float)microseconds)/1000.0;
+    sensors.update();
+    orientation.update(sensors, ms);
 }
 
 void setup() {

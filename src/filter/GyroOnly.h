@@ -17,10 +17,9 @@ private:
 	Quaternion 		  attitude;
 	Vec3 			  rate;
 	volatile uint32_t stateTime;
-	void updateStateModel();
 public:
 	GyroOnly(){}
-	void update(InertialManager& sensors);
+	void update(InertialManager& sensors, float ms);
 	void calibrate(bool mode);
 	Quaternion getAttitude(){ return attitude; }
 	Vec3  getRate(){ return rate; }
@@ -29,21 +28,12 @@ public:
 	float getYawRate(){   return rate[2]; }
 };
 void
-GyroOnly::updateStateModel(){
-	//keep track of passing time
-	float dt = (micros()-stateTime);
-	stateTime = micros();
-	dt /= 1000.;
-
-	attitude.integrate(rate*dt);
-}
-void
 GyroOnly::calibrate(bool mode){
 }
 void
-GyroOnly::update(InertialManager& sensors){
+GyroOnly::update(InertialManager& sensors, float dt){
     rate = *sensors.gyroRef();
-	updateStateModel();
+	attitude.integrate(rate*dt);
 	if(attitude.error()) attitude = Quaternion();
 	attitude.normalize();
 }

@@ -42,7 +42,7 @@ public:
          rcGain(rcgain), gdGain(rGain),
          pitch(0), roll(0), yaw(0)
          {}
-    void update(InertialManager& sensors);
+    void update(InertialManager& sensors, float ms);
     void calibrate(bool mode);
     Quaternion getAttitude(){ return attitude; }
     Vec3  getRate(){ return rate; }
@@ -74,7 +74,7 @@ RCGyroFilter::calibrate(bool calibrate){
     calMode = calibrate;
 }
 void
-RCGyroFilter::update(InertialManager& sensors){
+RCGyroFilter::update(InertialManager& sensors, float dt){
     // This filter works by integrating the gyroscope while applying corrections
     // as rotation rate vectors derived from the absolute angular position
     // sensors. The rotation correction vectors are the cross products of
@@ -101,12 +101,6 @@ RCGyroFilter::update(InertialManager& sensors){
     // any higher order calculations being required.
 
     // Calculations are done using a North-East-Down coordinate system
-
-    // Calculate time step
-    uint32_t cTime = micros();
-    float dt = (cTime-stateTime);
-    stateTime = cTime;
-    dt /= 1000.f;
 
     // Retreive Accelerometer data, rotate into global frame
     Vec3 rawA = sensors.getAccl();

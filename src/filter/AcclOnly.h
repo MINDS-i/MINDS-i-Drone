@@ -16,7 +16,7 @@ private:
 	Vec3 			  rate;
 public:
 	AcclOnly(){}
-	void update(InertialManager& sensors);
+	void update(InertialManager& sensors, float ms);
 	void calibrate(bool mode);
 	Quaternion getAttitude(){ return attitude; }
 	Vec3  getRate(){ return rate;}
@@ -28,7 +28,7 @@ void
 AcclOnly::calibrate(bool mode){
 }
 void
-AcclOnly::update(InertialManager& sensors){
+AcclOnly::update(InertialManager& sensors, float ms){
 	Vec3 rawA = sensors.getAccl();
 	attitude = Quaternion(Vec3(0,0,-1),rawA);
 }

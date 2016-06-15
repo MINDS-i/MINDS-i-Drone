@@ -41,10 +41,11 @@ void setupQuad();
 void loopQuad();
 ///////////
 
-void isrCallback(uint16_t dt) {
+void isrCallback(uint16_t microseconds) {
+    float ms = ((float)microseconds)/1000.0;
     tic(0);
     sensors.update();
-    orientation.update(sensors);
+    orientation.update(sensors, ms);
     output.update(orientation);
     toc(0);
 }
@@ -69,8 +70,8 @@ void setupSettings(){
     //note: These settings need to match the dashboard's resource_air file
     using namespace AirSettings;
     settings.attach(INT_PERIOD, 6500  , &changeInterruptPeriod );
-    settings.attach(INRT_U_FAC, 0.06f, callback<RCFilter, &orientation, &RCFilter::setAccelGain>);
-    settings.attach(GYRO_CMP_F, 0.03f, callback<RCFilter, &orientation, &RCFilter::setMagGain>);
+    settings.attach(INRT_U_FAC, 0.003f, callback<RCFilter, &orientation, &RCFilter::setAccelGain>);
+    settings.attach(GYRO_CMP_F, 0.0015f, callback<RCFilter, &orientation, &RCFilter::setMagGain>);
     settings.attach(TILT_CMP_L, 1.00f , callback<Horizon, &horizon, &Horizon::setTiltCompLimit>);
     settings.attach(ATT_P_TERM, 0.250f, callback<PIDparameters, &attPID, &PIDparameters::setIdealP>);
     settings.attach(ATT_I_TERM, 0.000f, callback<PIDparameters, &attPID, &PIDparameters::setIdealI>);
