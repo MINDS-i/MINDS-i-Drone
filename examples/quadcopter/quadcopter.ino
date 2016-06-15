@@ -88,13 +88,13 @@ void loop() {
 }
 
 void fly(){
-    const float pitchCmd = ((float)getAPM2Radio(RADIO_PITCH)-90) /-70.0;
-    const float rollCmd  = ((float)getAPM2Radio(RADIO_ROLL)-90)  /-70.0;
-    const float yawCmd   = ((float)getAPM2Radio(RADIO_YAW)-90)   / 90.0;
-    const float throttle = ((float)getAPM2Radio(RADIO_THROTTLE)-25)/130.0;
-    const bool  gearCmd  = (getAPM2Radio(4) > 90);
+    const float pitchCmd = ((float)APMRadio::get(RADIO_PITCH)-90) /-70.0;
+    const float rollCmd  = ((float)APMRadio::get(RADIO_ROLL)-90)  /-70.0;
+    const float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   / 90.0;
+    const float throttle = ((float)APMRadio::get(RADIO_THROTTLE)-25)/130.0;
+    const bool  gearCmd  = (APMRadio::get(4) > 90);
 
-    if(getAPM2Radio(RADIO_THROTTLE) <= CHANNEL_MIN){
+    if(APMRadio::get(RADIO_THROTTLE) <= CHANNEL_MIN){
         output.standby();
         return;
     } else {
@@ -172,7 +172,7 @@ void sendTelemetry(){
 
         using namespace Protocol;
         comms.sendTelem(LATITUDE   , state);
-        comms.sendTelem(LONGITUDE  , ((float)getAPM2Radio(RADIO_THROTTLE)-25)/130.0 );
+        comms.sendTelem(LONGITUDE  , ((float)APMRadio::get(RADIO_THROTTLE)-25)/130.0 );
         comms.sendTelem(HEADING    , toDeg(orientation.getYaw()));
         comms.sendTelem(PITCH      , toDeg(orientation.getPitch()));
         comms.sendTelem(ROLL       , toDeg(orientation.getRoll()));
@@ -202,12 +202,12 @@ uint32_t timeState() throw() {
 }
 
 bool radio_downRight(){
-    bool down  = getAPM2Radio(RADIO_THROTTLE) <= CHANNEL_MIN;
-    bool right = getAPM2Radio(RADIO_YAW)      <= CHANNEL_MIN;
+    bool down  = APMRadio::get(RADIO_THROTTLE) <= CHANNEL_MIN;
+    bool right = APMRadio::get(RADIO_YAW)      <= CHANNEL_MIN;
     return down && right;
 }
 bool radio_downLeft(){
-    bool down  = getAPM2Radio(RADIO_THROTTLE) <= CHANNEL_MIN;
-    bool left  = getAPM2Radio(RADIO_YAW)      >= CHANNEL_MAX;
+    bool down  = APMRadio::get(RADIO_THROTTLE) <= CHANNEL_MIN;
+    bool left  = APMRadio::get(RADIO_YAW)      >= CHANNEL_MAX;
     return down && left;
 }

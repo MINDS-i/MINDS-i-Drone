@@ -119,7 +119,7 @@ void setupQuad() {
     mpu.tuneAccl(settings.getAccelTune());
     cmp.tune(settings.getMagTune());
     setupSettings();
-    setupAPM2radio();
+    APMRadio::setup();
 
     sensors.start();
     baro.begin();

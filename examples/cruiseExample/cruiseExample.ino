@@ -31,7 +31,7 @@ void setup(){
     backsteer.write(90);
     delay(2000);
 
-    setupAPM2radio();
+    APMRadio::setup();
     encoder::begin(EncoderPin[0], EncoderPin[1]);
 }
 
@@ -40,8 +40,8 @@ void loop(){
     float   mph = ((getRadio(RadioPin[1])-90) / 90.f)*maxMPH;
     uint8_t str =   getRadio(RadioPin[2]);
     */
-    float   mph = ((getAPM2Radio(RadioPin[1])-90) / 90.f)*maxMPH;
-    uint8_t str =   getAPM2Radio(RadioPin[2]);
+    float   mph = ((APMRadio::get(RadioPin[1])-90) / 90.f)*maxMPH;
+    uint8_t str =   APMRadio::get(RadioPin[2]);
 
     if(abs(mph)<0.5f){
         cruise.stop();

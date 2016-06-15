@@ -119,7 +119,7 @@ void setup() {
 	delay(2000);
 	calibrateGyro(); //this also takes one second
 
-	setupAPM2radio();
+	APMRadio::setup();
 	#if useEncoder
 		encoder::begin(EncoderPin[0], EncoderPin[1]);
 	#endif
@@ -141,10 +141,10 @@ void loop(){
 }
 
 void navigate(){
-	float   mph = ((getAPM2Radio(RadioPin[1])-90) / 90.f)*maxFwd;
-	uint8_t steer = getAPM2Radio(RadioPin[2]);
+	float   mph = ((APMRadio::get(RadioPin[1])-90) / 90.f)*maxFwd;
+	uint8_t steer = APMRadio::get(RadioPin[2]);
 	if (abs(steer-steerCenter) > 5 || fabs(mph)>0.8f ) {
-			//(getAPM2Radio(RadioPin[0]) > 120) {
+			//(APMRadio::get(RadioPin[0]) > 120) {
 		output(mph, steer);
 	} else if (oTime != 0) {
 		//Back Up
