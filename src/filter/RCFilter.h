@@ -15,8 +15,6 @@
 //rate correction filter - heavily based on mahoney filter
 class RCFilter : public OrientationEngine {
 private:
-    /** the last time the state was updated in microseconds */
-    uint32_t stateTime;
     /** If the filter is being run in calibrate mode */
     bool calMode;
     /** The inverse (negative) of the current gyro drift estimate */
@@ -36,7 +34,7 @@ private:
     void updatePRY();
 public:
     RCFilter(float gain, float rGain)
-        :stateTime(0), calMode(false),
+        :calMode(false),
          rateCal(0,0,0),
          attitude(),
          accelGain(gain), magGain(rGain),

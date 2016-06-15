@@ -15,15 +15,14 @@
 class DualErrorFilter : public OrientationEngine {
 private:
 	Quaternion attitude;
-	float 	   estimateMSE;
-	bool	   calMode;
-	float	   calTrack;
-	float 	   sysMSE;
-	float 	   acclMSE;
-	float 	   acclEF;
-	Vec3 	   rate, rateCal;
-	float 	   pitch, roll, yaw;
-	volatile uint32_t stateTime;
+	float estimateMSE;
+	bool calMode;
+	float calTrack;
+	float sysMSE;
+	float acclMSE;
+	float acclEF;
+	Vec3 rate, rateCal;
+	float pitch, roll, yaw;
 	float computeGain(float& estimate, float MSE);
 	void updateStateModel(float ms);
 	void updatePRY();

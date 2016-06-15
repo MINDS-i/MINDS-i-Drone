@@ -16,7 +16,6 @@ class GyroOnly : public OrientationEngine {
 private:
 	Quaternion 		  attitude;
 	Vec3 			  rate;
-	volatile uint32_t stateTime;
 public:
 	GyroOnly(){}
 	void update(InertialManager& sensors, float ms);
