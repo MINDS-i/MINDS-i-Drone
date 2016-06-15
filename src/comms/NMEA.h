@@ -17,46 +17,58 @@ typedef bool (*SectionHandler)(NMEA&);
 class NMEA{
 public:
 	explicit NMEA(Stream& stream): inStream(stream) { stream.setTimeout(0); }
+	/** Read more data from the input stream and parse whats available */
 	void update();
+	/** Start reading from a different input stream */
 	void newStream(Stream& stream){
 		inStream = stream;
 		stream.setTimeout(0);
 	}
+	/** true if data has been updated since the last time anything was read */
 	bool newData(){
 		return isNew;
 	}
+	/** Latitude in decimal degrees, north is positive */
 	float getLatitude(){
 		isNew = false;
 		return latitude;
 	}
+	/** Longitude in decimal degrees, east is positive */
 	float getLongitude(){
 		isNew = false;
 		return longitude;
 	}
+	/** Time of GPS fix in HHMMSS format */
 	float getTimeOfFix(){
 		isNew = false;
 		return timeOfFix;
 	}
+	/** Date of fix in DDMMYY format */
 	float getDateOfFix(){
 		isNew = false;
 		return dateOfFix;
 	}
+	/** True if the location data may be missing or incorrect */
 	bool getWarning(){
 		isNew = false;
 		return warning;
 	}
+	/** Get ground speed in miles per hours */
 	float getGroundSpeed(){
 		isNew = false;
 		return groundSpeed;
 	}
+	/** Get course in degrees true (relative true north, clockwise positive) */
 	float getCourse(){
 		isNew = false;
 		return course;
 	}
+	/** Angle between magnetic north and true north */
 	float getMagVar(){
 		isNew = false;
 		return magVar;
 	}
+	/** Latitude/Longitude location as a Waypoint, CCW positive */
 	Waypoint getLocation(){
 		isNew = false;
 		return Waypoint(latitude,longitude);
