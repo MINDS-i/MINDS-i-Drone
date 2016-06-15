@@ -58,13 +58,6 @@ float
 Quaternion::length() const {
 	return sqrt(w*w + x*x + y*y + z*z);
 }
-float
-Quaternion::distance(const Quaternion& l) const {
-	float d = dot(l);
-	float arg = 2.f*d*d-1.f;
-	if(fabs(arg)>=0.999999f) return 0;
-	return acos(2.f*d*d-1.f);
-}
 Vec3
 Quaternion::axis() const {
 	return Vec3(x,y,z);
@@ -154,14 +147,17 @@ Quaternion::integrate(const Vec3& rotVel){
 void
 Quaternion::preintegrate(const Vec3& rotVel){
 	//this = <0 x y z>.rotateBy(this) /2
-	const float W = w/2;
-	const float X = x/2;
-	const float Y = y/2;
-	const float Z = z/2;
-	w = W - rotVel.x*X - rotVel.y*Y - rotVel.z*Z;
-	x = X + rotVel.x*W + rotVel.y*Z - rotVel.z*Y;
-	y = Y - rotVel.x*Z + rotVel.y*W + rotVel.z*X;
-	z = Z + rotVel.x*Y - rotVel.y*X + rotVel.z*W;
+	const float W = w;
+	const float X = x;
+	const float Y = y;
+	const float Z = z;
+	const float rVX = rotVel.x/2;
+	const float rVY = rotVel.y/2;
+	const float rVZ = rotVel.z/2;
+	w = W - rVX*X - rVY*Y - rVZ*Z;
+	x = X + rVX*W + rVY*Z - rVZ*Y;
+	y = Y - rVX*Z + rVY*W + rVZ*X;
+	z = Z + rVX*Y - rVY*X + rVZ*W;
 }
 void
 Quaternion::normalize(){
