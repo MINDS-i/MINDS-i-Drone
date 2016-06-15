@@ -11,18 +11,15 @@ private:
 public:
 	ServoOutput(int in): pin(in) {}
 	~ServoOutput(){}
-	void  	startArming()	{ servo.attach(pin); 			}
-	boolean continueArming(uint32_t dt)		{ return true;	}
-	void  	startCalibrate(){ servo.attach(pin); 			}
-	boolean continueCalibrate(uint32_t dt)	{ return true;	}
-	void  set(float in)	{
+	void startArming() { servo.attach(pin); }
+	boolean continueArming(uint32_t dt) { return true; }
+	void startCalibrate() { servo.attach(pin); }
+	boolean continueCalibrate(uint32_t dt) { return true; }
+	void set(float in) {
 		servo.writeMicroseconds(in*900 + 1500);
 	}
-	void  stop() {
+	void stop() {
 		servo.detach();
-	}
-	float get() {
-		return 0;
 	}
 };
 #endif

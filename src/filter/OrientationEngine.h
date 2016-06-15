@@ -15,6 +15,7 @@ class InertialManager;
 	("gyroscope" values)
 -When calibrate(true) is called, the craft is going to be in a steady position
 	and the filter can use that information to get a finer calibration
+-Calculations are done in the North-East-Down coordinate system
 */
 
 class OrientationEngine{
@@ -23,10 +24,20 @@ public:
 	  * `ms` milliseconds have passed since the last update
 	  */
 	virtual void update(InertialManager& sensors, float ms)=0;
-	/** Enter calbrate mode where the quadcopter is known to be still */
+	/**
+	 * set calibrate mode on/off
+	 * Calibrate mode off => normal flight
+	 * Calibrate mode on => The craft is gaurenteed to be still, so the engine
+	 *    can learn more about the inertial sensors errors
+	 */
 	virtual void calibrate(bool mode)=0;
+    /**
+     * Get Attitude quaternion that rotates global frame vectors into
+     * the sensor frame
+     */
 	virtual Quaternion getAttitude()=0;
-	virtual Vec3       getRate()=0;
+	/** get the calibrated roll rates <x,y,z> vector */
+	virtual Vec3 getRate()=0;
 	virtual float getRollRate(){  return getRate()[1]; }
 	virtual float getPitchRate(){ return getRate()[0]; }
 	virtual float getYawRate(){   return getRate()[2]; }
