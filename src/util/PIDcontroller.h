@@ -32,9 +32,6 @@ public:
 		clearAccumulator();
 		stopped = true;
 	}
-	float calc(float current){//deprecated
-		return update(current);
-	}
 	float update(float current){
 		uint32_t cTime = micros();
 		if(stopped) {

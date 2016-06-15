@@ -342,7 +342,7 @@ void output(float mph, uint8_t steer){
 	} else {
 		cruise.set(MPHtoRPM(mph));
 	}
-	float outputval = cruise.calc(encoder::getRPM());
+	float outputval = cruise.update(encoder::getRPM());
 	servo[0].write(90+outputval);
 #else
 	servo[0].write(90+mph*(90.0f/maxFwd));

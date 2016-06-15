@@ -37,7 +37,7 @@ void loop(){
     Serial.print(pitch);
     Serial.print("\t");
 
-    float angle = pid.calc(-pitch);
+    float angle = pid.update(-pitch);
     angle = constrain(angle, -90, 90);
     output.write(angle+90);
 }

@@ -49,7 +49,7 @@ void loop(){
         cruise.set(MPHtoRPM(mph));
     }
 
-    float output = cruise.calc(encoder::getRPM());
+    float output = cruise.update(encoder::getRPM());
     drive.write(90+output);
     steer.write(str);
     backsteer.write(180-str);
