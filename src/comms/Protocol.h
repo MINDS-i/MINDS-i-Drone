@@ -48,7 +48,9 @@ namespace Protocol{
                         PITCH       = 3,
                         ROLL        = 4,
                         GROUNDSPEED = 5,
-                        VOLTAGE     = 6 };
+                        VOLTAGE     = 6,
+                        AMPERAGE    = 7,
+                        ALTITUDE    = 8 };
 
     enum commandType{ ESTOP           = 0,
                       TARGET          = 1,
