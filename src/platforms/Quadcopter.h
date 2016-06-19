@@ -32,6 +32,7 @@ HLA           altitude(1000, 0);
 HLA           velocity(1000, 0);
 float altitude_hold_V = 0;
 bool errorsDetected = false;
+void setupSettings();
 
 ///////////
 bool safe();
@@ -53,44 +54,6 @@ void changeInterruptPeriod(float newPeriod){
     if(newPeriod < MINIMUM_INT_PERIOD) newPeriod = MINIMUM_INT_PERIOD;
     ServoGenerator::setUpdateCallback(isrCallback);
     ServoGenerator::begin(newPeriod);
-}
-void setupSettings(){
-     /*
-     TTC 0.85
-     PID: 0.6, 0.06 0.0225; 6.5 0.0 0.0
-          0.8, 4.00 0.023 ; 6.5 0.0 0.0
-          0.2  0.0  0.005;  8.0 0.5 0.5
-     */
-    if(!settings.foundSettings()){
-        /*#DEFAULTS No previously configured flight parameters detected,
-         * resetting to defaults
-        **/
-        comms.sendString("DEFAULTS");
-    }
-    //note: These settings need to match the dashboard's resource_air file
-    using namespace AirSettings;
-    settings.attach(INT_PERIOD, 6500  , &changeInterruptPeriod );
-    settings.attach(INRT_U_FAC, 0.003f, callback<RCFilter, &orientation, &RCFilter::setAccelGain>);
-    settings.attach(GYRO_CMP_F, 0.0015f, callback<RCFilter, &orientation, &RCFilter::setMagGain>);
-    settings.attach(TILT_CMP_L, 1.00f , callback<Horizon, &horizon, &Horizon::setTiltCompLimit>);
-    settings.attach(ATT_P_TERM, 0.250f, callback<PIDparameters, &attPID, &PIDparameters::setIdealP>);
-    settings.attach(ATT_I_TERM, 0.000f, callback<PIDparameters, &attPID, &PIDparameters::setIdealI>);
-    settings.attach(ATT_D_TERM, 0.003f, callback<PIDparameters, &attPID, &PIDparameters::setIdealD>);
-    settings.attach(ATT_VP_TERM,5.00f , callback<PIDparameters, &attVel, &PIDparameters::setIdealP>);
-    settings.attach(ATT_VI_TERM,0.80f , callback<PIDparameters, &attVel, &PIDparameters::setIdealI>);
-    settings.attach(ATT_VD_TERM,0.17f , callback<PIDparameters, &attVel, &PIDparameters::setIdealD>);
-    settings.attach(YAW_P_TERM, -1.0f , callback<PIDparameters, &yawPID, &PIDparameters::setIdealP>);
-    settings.attach(YAW_I_TERM, 0.00f , callback<PIDparameters, &yawPID, &PIDparameters::setIdealI>);
-    settings.attach(YAW_D_TERM, 0.00f , callback<PIDparameters, &yawPID, &PIDparameters::setIdealD>);
-    settings.attach(YAW_V_TERM, 8.00f , callback<PIDparameters, &yawVel, &PIDparameters::setIdealP>);
-    settings.attach(HOVER_THL , 0.40f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setHoverPoint>);
-    settings.attach(THL_LINITY, 0.37f , callback<ThrottleCurve, &throttleCurve, &ThrottleCurve::setLinearity>);
-    settings.attach(BARO_HL   , 350.f , callback<HLA, &altitude, &HLA::setHalfLife>);
-    settings.attach(BARO_P    , 0.00f, callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealP>);
-    settings.attach(BARO_I    , 0.00f, callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealI>);
-    settings.attach(BARO_D    , 0.00f, callback<PIDparameters, &altHoldParams, &PIDparameters::setIdealD>);
-    settings.attach(BARO_V    , 0.00f, callback<float, &altitude_hold_V>);
-    settings.attach(BARO_V+1  , 1500.00f, callback<HLA, &velocity, &HLA::setHalfLife>);
 }
 bool safe(){
     return errorsDetected;
@@ -138,4 +101,121 @@ void loopQuad() {
     gps.update();
     baro.update();
     altitude.update(baro.getAltitude());
+}
+void setupSettings(){
+    if(!settings.foundSettings()){
+        /*#DEFAULTS No previously configured flight parameters detected,
+         * resetting to defaults
+        **/
+        comms.sendString("DEFAULTS");
+    }
+
+    // these setting messages are specially formatted so a tool in the dashboard
+    // can parse them and display the full text. For now, indexes must be unique
+    // and both indexes and def (default) values will need to be present in
+    // the code and the comment
+
+    /*AIRSETTING index="0" name="Output Period" min="5000" max="10000" def="6666"
+     *Period in milliseconds between reading the sensors, calculating orientation,
+     *and sending a signal to the ESC's<br>
+     *This value should be between 5000 (200Hz) and 10000(100Hz) <br>
+     *Higher speeds will decrease the processing time left for other tasks,
+     *but could lead to a more stable flight
+     */
+    settings.attach(0, 6666, &changeInterruptPeriod);
+
+    /*AIRSETTING index="1" name="Accel Gain" min="0.0" max="1.0" def="0.003"
+     *Factor used during sensor update step. Should be between 0.0 and 1.0
+     *A value of 0.0 flies completely based on the best estimate and gyroscope
+     *As the value approaches 1.0, the quad increasingly uses the accel measurement
+     *to inform pitch/roll.
+     */
+    settings.attach(1, 0.003f, [](float g){ orientation.setAccelGain(g); });
+
+    /*AIRSETTING index="2" name="Mag Gain" min="0.0" max="1.0" def="0.00015"
+     *Factor used during sensor update step. Should be between 0.0 and 1.0
+     *The closer to 1 it is, the larger impact the magnetometer has on the aircraft's
+     *yaw estimate
+     */
+    settings.attach(2, 0.0015f, [](float g){ orientation.setMagGain(g); });
+
+    /*AIRSETTING index="3" name="Tilt Compensation" min="0.0" max="0.0" def="0.0"
+     */
+    settings.attach(3, 0.00f , [](float g){ horizon.setTiltCompLimit(g); });
+
+    /*AIRSETTING index="4" name="Att P Term" min="0" max="+inf" def="0.250"
+     *Attitude Stabilization P term<br>
+     *Control proportional to current error.<br>
+     *Generally the main driver of PID control.<br>
+     *Higher P makes reaction quicker, but increases overshoot and degrades stability.
+     */
+    settings.attach(4, 0.250f, [](float g){ attPID.setIdealP(g); });
+
+    /*AIRSETTING index="5" name="Att I Term" min="0" max="+inf" def="0.000"
+     *Attitude Stabilization I term<br>
+     *Used to eliminate steady state error, too much I can increase overshoot and degrade stability.
+     */
+    settings.attach(5, 0.000f, [](float g){ attPID.setIdealI(g); });
+
+    /*AIRSETTING index="6" name="Att D Term" min="0" max="+inf" def="0.003"
+     *Attitude Stabilization D term<br>
+     *D Will dampen the output by predicting the future quadcopter position with linear extrapolation.<br>
+     *It will decrease overshoot and decrease settling time, but can cause new oscillations if set too high.
+     */
+    settings.attach(6, 0.003f, [](float g){ attPID.setIdealD(g); });
+
+    /*AIRSETTING index="7" name="Att VP Term" min="0" max="+inf" def="5.00"
+     *P term on attitude Velocity control loop <br>
+     *Higher values will make stabilization more aggressive.
+     */
+    settings.attach(7, 5.00f, [](float g){ attVel.setIdealP(g); });
+
+    /*AIRSETTING index="8" name="Att VI Term" min="0" max="+inf" def="0.8"
+     *I term on attitude Velocity control loop <br>
+     *Higher values increase response to drifting and unevent weight <br>\
+     *Too high can cause instability and oscillations
+     */
+    settings.attach(8, 0.80f, [](float g){ attVel.setIdealI(g); });
+
+    /*AIRSETTING index="9" name="Att VD Term" min="0" max="+inf" def="0.17"
+     *D term on attitude Velocity control loop <br>
+     *Can be used to dampen oscillations and increase P's ceiling
+     */
+    settings.attach(9, 0.17f, [](float g){ attVel.setIdealD(g); });
+
+    /*AIRSETTING index="10" name="Yaw P Term" min="-inf" max="+inf" def="-1.0"
+     *Yaw Stabilization P term<br>
+     */
+    settings.attach(10, -1.0f , [](float g){ yawPID.setIdealP(g); });
+
+    /*AIRSETTING index="11" name="Yaw I Term" min="0" max="+inf" def="0.0"
+     *Yaw Stabilization I term<br>
+     */
+    settings.attach(11, 0.00f , [](float g){ yawPID.setIdealI(g); });
+
+    /*AIRSETTING index="12" name="Yaw D Term" min="0" max="+inf" def="0.0"
+     *Yaw Stabilization D term<br>
+     */
+    settings.attach(12, 0.00f, [](float g){ yawPID.setIdealD(g); });
+
+    /*AIRSETTING index="13" name="Yaw V Term" min="0" max="+inf" def="8.00"
+     *Yaw stabilization V term<br>
+     */
+    settings.attach(13, 8.00f, [](float g){ yawVel.setIdealP(g); });
+
+    /*AIRSETTING index="14" name="Hover Throttle" min="0" max="1.0" def="0.40"
+     *Raw output throttle necessary to hover (used for throttle stick centering)<br>
+     *Used in the RC radio throttle stick curve equation. When the throttle stick in at 50%,
+     *This is what the quad's final output throttle will be at.
+     */
+    settings.attach(14, 0.40f, [](float g){ throttleCurve.setHoverPoint(g); });
+
+    /*AIRSETTING index="15" name="Throttle Linearity" min="0" max="1.0" def="0.37"
+     *Affects radio throttle curve linearity<br>
+     *A Value of 0.5 is as linear as possible around the hover throttle<br>
+     *A Value of 0.0 is heavily curved for fine control around the hover point<br>
+     *A value of 1.0 is heavily curved for more sensitivity<br>
+     *A value slightly under 0.5 tends to work best (0.37 is default)
+     */
+    settings.attach(15, 0.37f, [](float g){ throttleCurve.setLinearity(g); });
 }

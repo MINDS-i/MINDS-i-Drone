@@ -5,55 +5,6 @@
 #include "storage/Storage.h"
 #include "util/LTATune.h"
 
-namespace AirSettings{
-    //note: These settings need to match the dashboard's resource_air file
-	enum Air{
-		INT_PERIOD =  0,
-		INRT_U_FAC =  1,
-		GYRO_CMP_F =  2,
-		TILT_CMP_L =  3,
-		ATT_P_TERM =  4,
-		ATT_I_TERM =  5,
-		ATT_D_TERM =  6,
-		ATT_VP_TERM=  7,
-		ATT_VI_TERM=  8,
-		ATT_VD_TERM=  9,
-		YAW_P_TERM = 10,
-		YAW_I_TERM = 11,
-		YAW_D_TERM = 12,
-		YAW_V_TERM = 13,
-		HOVER_THL  = 14,
-		THL_LINITY = 15,
-		BARO_HL    = 16,
-		BARO_P     = 17,
-		BARO_I     = 18,
-		BARO_D     = 19,
-		BARO_V     = 20,
-		FREE_START = 21
-	};
-}
-namespace groundSettings{
-	//note: These settings need to match the dashboard's resource_ground file
-	enum Ground{
-		LINE_GRAV	=  0,
-		STEER_THROW	=  1,
-		STEER_STYLE	=  2,
-		STEER_FAC	=  3,
-		MIN_FWD_SPD	=  4,
-		MAX_FWD_SPD	=  5,
-		REV_STR_THR	=  6,
-		MAX_REV_SPD	=  7,
-		PING_WEIGHT	=  8,
-		COAST_TIME	=  9,
-		MIN_REV_T	= 10,
-		CRUISE_P	= 11,
-		CRUISE_I	= 12,
-		CRUISE_D	= 13,
-		TIRE_DIAM	= 14,
-		STR_CENTER	= 15,
-		FREE_START  = 16
-	};
-}
 namespace commonSettings{
 	static const uint16_t VERSION =	 __TIME__[6]
 									+__TIME__[7]*10
