@@ -22,7 +22,7 @@ public:
         //calculate outer loop
         float p = pError.update(orientation.getPitch() - pitch, ms);
         float r = rError.update(orientation.getRoll() - roll, ms);
-        float y = yError.update(distanceRadian(yaw,orientation.getYaw()), ms);
+        float y = yError.update(distanceRadian(orientation.getYaw(),yaw), ms);
         //set inner loops with outer calculations
         pitchPID.set(p);
         rollPID.set(r);

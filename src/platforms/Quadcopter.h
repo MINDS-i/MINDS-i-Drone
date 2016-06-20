@@ -13,11 +13,9 @@ MS5611    baro;
 InertialVec* sens[2] = {&cmp, &mpu};
 Translator   conv[2] = {Translators::APM, Translators::APM};
 InertialManager sensors(sens, conv, 2);
-
 #define Output_t AfroESC
-Output_t esc[4] =
-    { Output_t(12), Output_t(11)
-     ,Output_t( 8), Output_t( 7) };
+Output_t esc[4] = { Output_t(12 /*CCW APM 1*/), Output_t(11 /*CCW APM 2*/),
+                    Output_t( 8 /*CW  APM 3*/), Output_t( 7 /*CW  APM 4*/) };
 OutputDevice* outDev[4] = {&esc[0], &esc[1], &esc[2], &esc[3]};
 OutputManager output(outDev);
 
@@ -183,15 +181,15 @@ void setupSettings(){
      */
     settings.attach(9, 0.17f, [](float g){ attVel.setIdealD(g); });
 
-    /*AIRSETTING index="10" name="Yaw P Term" min="-inf" max="+inf" def="-1.0"
+    /*AIRSETTING index="10" name="Yaw P Term" min="-inf" max="+inf" def="1.0"
      *Yaw Stabilization P term<br>
      */
-    settings.attach(10, -1.0f , [](float g){ yawPID.setIdealP(g); });
+    settings.attach(10, 1.0f, [](float g){ yawPID.setIdealP(g); });
 
     /*AIRSETTING index="11" name="Yaw I Term" min="0" max="+inf" def="0.0"
      *Yaw Stabilization I term<br>
      */
-    settings.attach(11, 0.00f , [](float g){ yawPID.setIdealI(g); });
+    settings.attach(11, 0.00f, [](float g){ yawPID.setIdealI(g); });
 
     /*AIRSETTING index="12" name="Yaw D Term" min="0" max="+inf" def="0.0"
      *Yaw Stabilization D term<br>
@@ -210,12 +208,12 @@ void setupSettings(){
      */
     settings.attach(14, 0.40f, [](float g){ throttleCurve.setHoverPoint(g); });
 
-    /*AIRSETTING index="15" name="Throttle Linearity" min="0" max="1.0" def="0.37"
+    /*AIRSETTING index="15" name="Throttle Linearity" min="0" max="1.0" def="0.40"
      *Affects radio throttle curve linearity<br>
      *A Value of 0.5 is as linear as possible around the hover throttle<br>
      *A Value of 0.0 is heavily curved for fine control around the hover point<br>
      *A value of 1.0 is heavily curved for more sensitivity<br>
-     *A value slightly under 0.5 tends to work best (0.37 is default)
+     *A value slightly under 0.5 tends to work best
      */
-    settings.attach(15, 0.37f, [](float g){ throttleCurve.setLinearity(g); });
+    settings.attach(15, 0.40f, [](float g){ throttleCurve.setLinearity(g); });
 }
