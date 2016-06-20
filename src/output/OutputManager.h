@@ -14,21 +14,22 @@ OutputManager -Manages four OutputDevices
 			  -disable sends the neutral signal to motors, stops outputs
 			  -stop sends the stop signal to the output devices
 
-Motors should be in cross configuration, counting clockwise from the front left
+Motors should be in a cross configuration, ordered as depicted
 
   ^	Forward ^
   ---     ---
- | 0 |   | 1 |
+ | 2 |   | 0 |
   ---\ ^ / ---
       XXX
       XXX
   ---/   \---
- | 3 |   | 2 |
+ | 1 |   | 3 |
   ---     ---
   0 - counter clockwise
-  1 - clockwise
-  2 - counter clockwise
+  1 - counter clockwise
+  2 - clockwise
   3 - clockwise
+
 */
 class OutputManager{
 private:
