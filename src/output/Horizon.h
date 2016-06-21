@@ -11,7 +11,6 @@ private:
     float pitch, roll, yaw, throttle;
     float tiltCompLimit;
 public:
-    float testPoint[2];
     Horizon(PIDparameters* pitchI, PIDparameters* pitchO,
             PIDparameters*  rollI, PIDparameters*  rollO,
             PIDparameters*   yawI, PIDparameters*   yawO ) :
