@@ -54,7 +54,7 @@ void changeInterruptPeriod(float newPeriod){
     ServoGenerator::begin(newPeriod);
 }
 bool safe(){
-    return errorsDetected;
+    return !errorsDetected;
 }
 void arm(){
     delay(500);
@@ -88,9 +88,10 @@ void setupQuad() {
     sensors.calibrate();
     baro.calibrate();
     baro.setTempDutyCycle(4);
-    if(sensors.errorMessages([](const char * msg){comms.sendString(msg);})) {
-        errorsDetected = true;
-    }
+    boolean sensorErrors = sensors.errorMessages([](const char * errmsg){
+            comms.sendString(errmsg);}
+        );
+    errorsDetected |= sensorErrors;
 
     output.setMode(&horizon);
 }

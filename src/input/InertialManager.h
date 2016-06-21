@@ -43,15 +43,21 @@ public:
     void stop(){
         for(int i=0; i<numSensors; i++) sensor[i]->end();
     }
+    /**
+     * read error messages from the attached sensors
+     * Returns true if errors are detected
+     * Error messages that are received are passed to `errorMessageReceiver`
+     * for the caller to deal with
+     */
     bool errorMessages( void (*errorMessageReceiver) (const char *) ){
-        bool pass = true;
+        bool errors = false;
         for(int i=0; i<numSensors; i++){
             auto status = sensor[i]->status();
             if(status.good()) continue;
-            pass = false;
+            errors = true;
             errorMessageReceiver(status.message);
         }
-        return pass;
+        return errors;
     }
     Vec3 getGyro(){
         return gyro;
