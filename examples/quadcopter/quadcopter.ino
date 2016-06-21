@@ -22,11 +22,8 @@ const char* stateString[] = {
 State state;
 
 enum RadioChannel{
-    RADIO_PITCH    = 0,
-    RADIO_ROLL     = 1,
-    RADIO_YAW      = 3,
-    RADIO_THROTTLE = 2
-};
+    RADIO_PITCH    = 0, RADIO_ROLL     = 1, RADIO_THROTTLE = 2,
+    RADIO_YAW      = 3, RADIO_GEAR     = 4, RADIO_AUX      = 5 };
 typedef bool (*boolfunc)();
 template<boolfunc Func> uint32_t timeState();
 
