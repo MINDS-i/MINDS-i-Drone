@@ -176,9 +176,10 @@ void sendTelemetry(){
         comms.sendTelem(HEADING    , toDeg(orientation.getYaw()));
         comms.sendTelem(PITCH      , toDeg(orientation.getPitch()));
         comms.sendTelem(ROLL       , toDeg(orientation.getRoll()));
-        comms.sendTelem(GROUNDSPEED, horizon.testPoint[0]);//profile[0]);
+        comms.sendTelem(GROUNDSPEED, profileTime(0));
         comms.sendTelem(VOLTAGE    , voltage);
-        comms.sendTelem(VOLTAGE+1  , altitude.get());
+        comms.sendTelem(AMPERAGE   , safe());
+        comms.sendTelem(ALTITUDE   , altitude.get());
 
         Serial.println();
         Serial.flush();
