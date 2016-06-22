@@ -7,17 +7,17 @@ manually or from within the arduino library manager.
 Setting up your Quadcopter
 --------------------------
 1. Install your motors in the following configuration:
-```
-  ^ Forward ^
-  ---     ---
- | 3 |   | 1 |
-  ---\ ^ /---
-      XXX
-      XXX
-  ---/   \---
- | 2 |   | 4 |
-  ---     ---
-```
+   ```
+     ^ Forward ^
+   .---.   .---.
+   | 3 |   | 1 |
+   .---\ ^ /---.
+         XXX
+         XXX
+   .---/   \---.
+   | 2 |   | 4 |
+   .---.   .---.
+  ```
 
    | Output Channel | Position      | Direction         |
    |:--------------:|:-------------:|:-----------------:|
