@@ -12,20 +12,51 @@ uint32_t calStartTime;
 const uint8_t CHANNEL_MIN = 32;
 const uint8_t CHANNEL_MAX = 148;
 float yawTarget = 0.0;
-enum State {
-    DISARMED,
-    CALIBRATE,
-    FLYING
-};
+
+enum State { DISARMED, CALIBRATE, FLYING } state;
 const char* stateString[] = {
     [DISARMED] = "DISARMED", [CALIBRATE] = "CALIBRATE", [FLYING] = "FLYING" };
-State state;
+enum RadioChannel{ RADIO_PITCH = 0, RADIO_ROLL = 1, RADIO_THROTTLE = 2,
+                   RADIO_YAW   = 3, RADIO_GEAR = 4, RADIO_AUX      = 5 };
 
-enum RadioChannel{
-    RADIO_PITCH    = 0, RADIO_ROLL     = 1, RADIO_THROTTLE = 2,
-    RADIO_YAW      = 3, RADIO_GEAR     = 4, RADIO_AUX      = 5 };
-typedef bool (*boolfunc)();
-template<boolfunc Func> uint32_t timeState();
+class StateTimer{
+private:
+    bool (*stateF)(void);
+    uint32_t enterTime;
+    uint32_t exitTime;
+    void update(){
+        bool state = stateF();
+        if(enterTime == 0 && state){ //switched on
+            enterTime = millis();
+            exitTime = 0;
+        } else if (exitTime == 0 && !state) {
+            enterTime = 0;
+            exitTime = millis();
+        }
+    }
+public:
+    StateTimer(bool (*stateF)(void)): stateF(stateF) {}
+    bool trueFor(uint32_t interval) {
+        update();
+        return (enterTime != 0) && ((millis() - enterTime) > interval);
+    }
+    bool falseFor(uint32_t interval) {
+        update();
+        return (exitTime != 0) && ((millis() - exitTime) > interval);
+    }
+};
+
+StateTimer radioDownRight([](){
+    bool down  = APMRadio::get(RADIO_THROTTLE) <= CHANNEL_MIN;
+    bool right = APMRadio::get(RADIO_YAW)      <= CHANNEL_MIN;
+    return down && right;
+});
+
+StateTimer radioDownLeft([](){
+    bool down  = APMRadio::get(RADIO_THROTTLE) <= CHANNEL_MIN;
+    bool left  = APMRadio::get(RADIO_YAW)      >= CHANNEL_MAX;
+    return down && left;
+});
 
 void setup() {
     setupQuad();
@@ -48,7 +79,7 @@ void loop() {
          * the Throttle stick for two seconds to begin the arming process
         **/
         case DISARMED:
-            if(timeState<&radio_downRight>() > 2000) {
+            if(radioDownRight.trueFor(2000)) {
                 if(safe()){
                     calStartTime = millis();
                     setState(CALIBRATE);
@@ -75,7 +106,7 @@ void loop() {
         **/
         case FLYING:
             fly();
-            if(timeState<&radio_downLeft>() > 750) {
+            if(radioDownLeft.trueFor(750)) {
                 output.disable();
                 setState(DISARMED);
             }
@@ -181,31 +212,4 @@ void sendTelemetry(){
         Serial.println();
         Serial.flush();
     }
-}
-
-template<boolfunc Func>
-uint32_t timeState() throw() {
-    static uint32_t stateEnterTime = 0;
-    if(!Func()) {
-        //condition fails
-        stateEnterTime = 0;
-    } else if (stateEnterTime == 0) {
-        //time not set
-        stateEnterTime = millis();
-    } else {
-        //time is set and condition still true
-        return (millis() - stateEnterTime);
-    }
-    return 0;
-}
-
-bool radio_downRight(){
-    bool down  = APMRadio::get(RADIO_THROTTLE) <= CHANNEL_MIN;
-    bool right = APMRadio::get(RADIO_YAW)      <= CHANNEL_MIN;
-    return down && right;
-}
-bool radio_downLeft(){
-    bool down  = APMRadio::get(RADIO_THROTTLE) <= CHANNEL_MIN;
-    bool left  = APMRadio::get(RADIO_YAW)      >= CHANNEL_MAX;
-    return down && left;
 }
