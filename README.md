@@ -2,22 +2,22 @@
 Advanced library for the [MINDS-i][3] Drone platform
 
 To use the library, install it in your arduino *sketchbook/libraries* folder
-manually or from within the arduino library manager
+manually or from within the arduino library manager.
 
 Setting up your Quadcopter
 --------------------------
 1. Install your motors in the following configuration:
-   <pre>
- ^ Forward ^
- ---     ---
-| 3 |   | 1 |
- ---\ ^ /---
-     XXX
-     XXX
- ---/   \---
-| 2 |   | 4 |
- ---     ---
-</pre>
+```
+  ^ Forward ^
+  ---     ---
+ | 3 |   | 1 |
+  ---\ ^ /---
+      XXX
+      XXX
+  ---/   \---
+ | 2 |   | 4 |
+  ---     ---
+```
 
    | Output Channel | Position      | Direction         |
    |:--------------:|:-------------:|:-----------------:|
@@ -46,12 +46,12 @@ Setting up your Quadcopter
    will be set to defaults the first time the quadcopter is run after
    **quadcopter.ino** is uploaded. They are persistent inbetween flights.
 
-+ Never plug the quadcopter into the computer while propellers are installed
++ Never plug the quadcopter into the computer while propellers are installed.
 
 Operating your Quadcopter
 -------------------------
 1. Turn on your radio transmitter.
-2. Install a fully charged battery and set the quadcopter down
+2. Install a fully charged battery and set the quadcopter down.
 3. Optionally, launch the [MINDS-i Dashboard][1] and connect it using a telemetry radio.
    The dashboard can be used to view, graph, and log live telemetry as well as
    configure the drone's onboard settings and display error messages.
