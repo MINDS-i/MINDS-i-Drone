@@ -26,9 +26,6 @@ ThrottleCurve throttleCurve(0.37, 0.4);
 Horizon       horizon(&attPID, &attVel,
                       &attPID, &attVel,
                       &yawPID, &yawVel );
-HLA           altitude(1000, 0);
-HLA           velocity(1000, 0);
-float altitude_hold_V = 0;
 bool errorsDetected = false;
 void setupSettings();
 
@@ -99,7 +96,6 @@ void loopQuad() {
     comms.update();
     gps.update();
     baro.update();
-    altitude.update(baro.getAltitude());
 }
 void setupSettings(){
     if(!settings.foundSettings()){
