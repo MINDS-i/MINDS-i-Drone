@@ -3,11 +3,7 @@
 #include "MINDS-i-Drone.h"
 #include "platforms/Quadcopter.h"
 
-const float GsToFeet = -32.17;
 boolean calibrated = false;
-boolean altHold    = false;
-float altitudeSetpoint = 0;
-PIDcontroller altPID(&altHoldParams);
 uint32_t calStartTime;
 const uint8_t CHANNEL_MIN = 32;
 const uint8_t CHANNEL_MAX = 148;
@@ -98,63 +94,12 @@ void fly(){
         output.enable();
     }
 
-    if(gearCmd == false){
-        //switch to manual mode
-        altHold = false;
-    } else if (altHold == false && gearCmd == true){
-        altitudeSetpoint = altitude.get();
-        altPID.train(throttleCurve.get(throttle));
-        velocity.set(0);
-        altPID.set(0);
-        altHold = true;
-    }
-
     if(fabs(yawCmd) > 0.1){
         yawTarget += yawCmd/8;
         yawTarget = truncateRadian(yawTarget);
     }
 
-    float throttleOut;
-    if(!altHold){ //manual throttle
-        throttleOut = throttleCurve.get(throttle);
-    } else { //autonomous throttle
-
-
-
-
-
-        //adjust setpoint
-        float th = (throttle-0.5);
-        if(fabs(th) > 0.1) altitudeSetpoint += th/4.0;
-        //calculate delta time
-        float dt = float(velocity.microsSinceUpdate())/1E6f;
-        //calculate vertical acceleration
-        Vec3 accl = sensors.getAccl();
-        accl.rotateBy(~orientation.getAttitude());
-        float va = (accl[2] + 1.0)*GsToFeet;
-        //calculate barometer altitude changes
-        static float lastAltitude = baro.getAltitude();
-        float thisAltitude = baro.getAltitude();
-        float deltaAltitude = thisAltitude - lastAltitude;
-        lastAltitude = thisAltitude;
-        //calculate new velocity
-        velocity.set(velocity.get() + va*dt);
-        velocity.update(deltaAltitude / dt);
-        //calculate output
-        float altitudeError  = altitudeSetpoint - altitude.get();
-        float targetVelocity = altitude_hold_V * altitudeError;
-        throttleOut = altPID.update(velocity.get() - targetVelocity);
-        //send debug info
-        comms.sendTelem(VOLTAGE+3, altitude.get());
-        comms.sendTelem(VOLTAGE+4, velocity.get());
-        comms.sendTelem(VOLTAGE+5, altitudeError);
-        comms.sendTelem(VOLTAGE+6, targetVelocity);
-
-
-
-
-
-    }
+    float throttleOut = throttleCurve.get(throttle);
 
     comms.sendTelem(VOLTAGE+2  , throttleOut);
     horizon.set(pitchCmd, rollCmd, yawTarget, throttleOut);
@@ -176,7 +121,7 @@ void sendTelemetry(){
         comms.sendTelem(GROUNDSPEED, profileTime(0));
         comms.sendTelem(VOLTAGE    , voltage);
         comms.sendTelem(AMPERAGE   , safe());
-        comms.sendTelem(ALTITUDE   , altitude.get());
+        //comms.sendTelem(ALTITUDE   , altitude.get());
 
         Serial.println();
         Serial.flush();
