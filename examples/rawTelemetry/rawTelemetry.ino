@@ -1,7 +1,6 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "Servo.h"
-#include "DroneLibs.h"
+#include "MINDS-i-Drone.h"
 
 const int UPDATE_INTERVAL = 1000; //ms between transmits
 HardwareSerial *commSerial  = &Serial;

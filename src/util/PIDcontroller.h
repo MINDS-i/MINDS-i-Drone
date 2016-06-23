@@ -2,70 +2,31 @@
 #define PIDCONTROLLER_H
 #include "Arduino.h"
 #include "util/PIDparameters.h"
+#include "util/PIDexternaltime.h"
 
-namespace{
-	const float SECOND = 1000.0f * 1000.0f;
-}
-
+/**
+ * A wrapper class for PIDexternaltime that automatically calculates the time
+ * step using `micros()`
+ */
 class PIDcontroller{
 private:
-	PIDparameters*	param;
-	float 			setPoint;
-	float			previous;
-	float           acc;
-	boolean			stopped;
-	uint32_t		time;
+	PIDexternaltime pid;
+	uint32_t		lastUpdateMicros;
 public:
-	PIDcontroller(PIDparameters* pid): param(pid), setPoint(0),
-									   previous(0), acc(0),
-									   stopped(true), time(0) {}
-	void tune(PIDparameters* pid){ param = pid; }
-	void clearAccumulator(){ train(0); }
-	void train(float out){
-		acc = constrain(out, param->lowerBound, param->upperBound);
-	}
-	void set(float input){
-		setPoint = input;
-		stopped = false;
-	}
-	void stop() {
-		clearAccumulator();
-		stopped = true;
-	}
-	float calc(float current){//deprecated
-		return update(current);
-	}
+	PIDcontroller(PIDparameters* pid): pid(pid) {}
+	void tune(PIDparameters* params){ pid.tune(params); }
+	void clearAccumulator(){ pid.clearAccumulator(); }
+	void train(float out){ pid.train(out); }
+	void set(float input){ pid.set(input); }
+	void stop() { pid.stop(); }
 	float update(float current){
-		if(stopped) {
-			time = micros();
-			previous = 0;
-			return 0;
-		}
+		uint32_t time = micros();
 
-		const float dt = ((float)min( micros()-time, uint32_t(SECOND)))/SECOND;
-		time = micros();
+		// calculate microsecond delta and convert milliseconds
+		const float ms = ((float)time-lastUpdateMicros)/1000.0;
 
-		const float error  = setPoint-current;
-		const float newAcc = acc + param->I*error*dt;
-
-		const float output = param->P * error
-					       + newAcc
-					       + param->D * (previous-current)/dt;
-
-		previous = current;
-
-		if (output > param->upperBound) {
-			acc = min(acc, newAcc); //only let acc decrease
-			return param->upperBound;
-		} else if (output < param->lowerBound) {
-			acc = max(acc, newAcc); //only let acc increase
-			return param->lowerBound;
-		}
-		//to prevent integral windup, we only change the integral if the output
-		//is not fully saturated
-		acc = newAcc;
-
-		return output;
+		lastUpdateMicros = time;
+		return pid.update(current, ms);
 	}
 };
 

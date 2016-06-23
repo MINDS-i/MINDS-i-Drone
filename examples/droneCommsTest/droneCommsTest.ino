@@ -1,7 +1,6 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "Servo.h"
-#include "DroneLibs.h"
+#include "MINDS-i-Drone.h"
 
 HardwareSerial *commSerial	= &Serial;
 Storage<float> *storage	= eeStorage::getInstance();

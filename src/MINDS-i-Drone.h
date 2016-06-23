@@ -1,10 +1,9 @@
-#ifndef DRONELIBS_H
-#define DRONELIBS_H
+#ifndef MINDSIDRONELIBS_H
+#define MINDSIDRONELIBS_H
 
 #include "Arduino.h"
 #include "SPI.h"
 #include "Wire.h"
-#include "Servo.h"
 
 /*
 Copyright 2015 MINDS-i Inc.
@@ -34,20 +33,19 @@ Copyright 2015 MINDS-i Inc.
     #define FAIL(a) return false;
 #endif
 
-#include "APM/MegaInterrupts.h"
 #include "APM/APMRadioInput.h"
+#include "APM/ServoGenerator.h"
 
 #include "comms/CommManager.h"
 #include "comms/NMEA.h"
 #include "comms/Protocol.h"
 
-#include "filter/OrientationEngine.h"
 #include "filter/AcclOnly.h"
 #include "filter/DualErrorFilter.h"
 #include "filter/GyroOnly.h"
-#include "filter/WahbaFilter.h"
-#include "filter/SQEFilter.h"
+#include "filter/OrientationEngine.h"
 #include "filter/RCFilter.h"
+#include "filter/RCGyroFilter.h"
 
 #include "input/altIMU/L3GD20H.h"
 #include "input/altIMU/LPS25H.h"
@@ -71,6 +69,7 @@ Copyright 2015 MINDS-i Inc.
 #include "math/Algebra.h"
 
 #include "output/HK_ESCOutputDevice.h"
+#include "output/AfroESC.h"
 #include "output/OutputDevice.h"
 #include "output/OutputManager.h"
 #include "output/ServoOutputDevice.h"
@@ -92,7 +91,10 @@ Copyright 2015 MINDS-i Inc.
 #include "util/HLAverage.h"
 #include "util/LTATune.h"
 #include "util/PIDcontroller.h"
+#include "util/PIDexternaltime.h"
 #include "util/PIDparameters.h"
 #include "util/profile.h"
+#include "util/Interval.h"
+#include "util/StateTimer.h"
 
 #endif

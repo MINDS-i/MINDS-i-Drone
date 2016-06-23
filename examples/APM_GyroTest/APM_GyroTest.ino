@@ -1,7 +1,6 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "Servo.h"
-#include "DroneLibs.h"
+#include "MINDS-i-Drone.h"
 const float INT_PERIOD = 5000;
 
 Settings        settings(eeStorage::getInstance());
@@ -13,10 +12,12 @@ GyroOnly        orientation;
 
 const float I = 4.0f;
 float integral;
-Servo output;
+ServoGenerator::Servo output;
 
-void isrCallback(){
-    sensors.update(orientation);
+void isrCallback(uint16_t microseconds){
+    float ms = ((float)microseconds)/1000.0;
+    sensors.update();
+    orientation.update(sensors, ms);
 }
 
 void setup() {
@@ -25,7 +26,8 @@ void setup() {
     sensors.start();
     sensors.calibrate();
     output.attach(A0);
-    startInterrupt(isrCallback, INT_PERIOD);
+    ServoGenerator::setUpdateCallback(isrCallback);
+    ServoGenerator::begin(INT_PERIOD);
 }
 
 void loop(){

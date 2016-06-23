@@ -11,15 +11,19 @@ private:
 	float value;
 	uint32_t time;
 public:
+	/**
+	 * Construct a HalfLifeAverage setting half life to `half` milliseconds
+	 */
 	HLA(float half, float init): halfLife(half*1000.l), value(init) {
 		time=micros();
 	}
 	float update(float newValue){
 		if(isnan(newValue)) return value;
-		float dt = float(micros()-time);
+		uint32_t cTime = micros();
+		float dt = float(cTime-time);
 		float factor = pow(2.l, -dt/halfLife);
 		value = (1.l-factor)*newValue + factor*value;
-		time = micros();
+		time = cTime;
 		return value;
 	}
 	float get(){

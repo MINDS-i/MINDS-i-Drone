@@ -14,30 +14,26 @@ OutputManager -Manages four OutputDevices
 			  -disable sends the neutral signal to motors, stops outputs
 			  -stop sends the stop signal to the output devices
 
-Motors should be in cross configuration, counting clockwise from the front left
+Motors should be in a cross configuration, ordered as depicted
 
   ^	Forward ^
   ---     ---
- | 0 |   | 1 |
+ | 2 |   | 0 |
   ---\ ^ / ---
-  	  XXX
-  	  XXX
+      XXX
+      XXX
   ---/   \---
- | 3 |   | 2 |
+ | 1 |   | 3 |
   ---     ---
   0 - counter clockwise
-  1 - clockwise
-  2 - counter clockwise
+  1 - counter clockwise
+  2 - clockwise
   3 - clockwise
 
-  enable / disable - software level stopping and starting of motors
-  				   - can be called repeatedly or back and forth safely
-  arm/calibrate/stop - should be called a single time per power on
-  				     - stop is not intended to be undone
 */
 class OutputManager{
 private:
-	volatile boolean enabled, armed;
+	volatile boolean enabled, armed, standingby;
 	OutputDevice* 	 (&output)[4];
 	FlightStrategy*  flightMode;
 public:
@@ -45,27 +41,38 @@ public:
 		: output(mots), flightMode(mode) {}
 	OutputManager(OutputDevice* (&mots)[4])
 		: output(mots) {}
+	/** Set the flightStrategy used to balance the aircraft */
 	void setMode(FlightStrategy* mode){ flightMode = mode; }
-	void enable(); //use with caution; arming takes time
+	/**
+	 * Calculate outputs based on enable-state and flightStrategy, then
+	 * send them to the OutputDevices
+	 */
+	void update(OrientationEngine &orientation, float ms);
+	/** Disable and spin down the motors, reset the flightStrategy */
 	void disable();
-	void stop();
-	void calibrate();
+	/** Keep the motors at idle, ready to fly but not applying torque */
+	void standby();
+	/** Enable flight, applying torques given by the flightStrategy */
+	void enable();
+	/** Have connected OutputDevices arm themselves; blocking */
 	void arm();
-	void update(OrientationEngine &orientation);
+	/** Have connected OutputDevices calibrate themselves; blocking */
+	void calibrate();
 };
 void OutputManager::enable(){
-	if(enabled) return;
-	if(!armed) arm();
-	for(int i=0; i<4; i++) output[i]->set(0.0);
-	if(flightMode != NULL) flightMode->reset();
+	if(!armed) return;
+	if(!enabled){
+		flightMode->reset();
+	}
+	standingby = false;
 	enabled = true;
 }
-void OutputManager::disable(){
-	for(int i=0; i<4; i++) output[i]->set(-1.0);
-	enabled = false;
+void OutputManager::standby(){
+	if(!enabled) enable();
+	standingby = true;
 }
-void OutputManager::stop(){
-	for(int i=0; i<4; i++) output[i]->stop();
+void OutputManager::disable(){
+	standingby = false;
 	enabled = false;
 }
 void OutputManager::arm(){
@@ -107,19 +114,23 @@ void OutputManager::calibrate(){
 		output[i]->set(-1.0);
 	}
 
-	enabled = true;
-	armed   = true;
+	armed = true;
 }
-void OutputManager::update(OrientationEngine &orientation){
-	//stop here if the outputs should all be off
-	if(!enabled) return;
-	if(flightMode == NULL) return;
+void OutputManager::update(OrientationEngine &orientation, float ms){
+	if(!enabled || flightMode == NULL) {
+		for(int i=0; i<4; i++){ output[i]->set(-1.0); }
+		return;
+	}
+	if(standingby) {
+		for(int i=0; i<4; i++){ output[i]->set(0.0); }
+		return;
+	}
 
 	float impulses[4];
-	flightMode->update(orientation,impulses);
+	flightMode->update(orientation,ms,impulses);
+	impulses[3] *= 4.0f; // throttle split 4 ways in `solveOutputs`
 
 	float outThrottle[4];
-	impulses[3] *= 4.0f; //throttle split 4 ways
 	solveOutputs(impulses, outThrottle);
 
 	//set motor outputs

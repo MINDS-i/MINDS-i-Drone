@@ -12,17 +12,26 @@
 class Sensor{
 protected:
 public:
-	enum Status {
-		OK, BAD
+	class Status{
+	public:
+		const char * const message;
+		bool good() { return message == OK.message; }
+	private:
+		Status(const char * message): message(message) {}
+		friend class Sensor;
 	};
+	static const Status OK;
+	static Status BAD(const char* reason){ return Status(reason); }
+
 	virtual ~Sensor() {};
 	virtual void   begin() = 0;
 	virtual void   calibrate() = 0;
 	virtual Status status() = 0;
 	virtual void   end() = 0;
 };
+const Sensor::Status Sensor::OK("OK");
 /*
-Inertial Vector sensors are sensors that  read a 3-vector relating
+Inertial Vector sensors are sensors that read a 3-vector relating
 	to the sensor's orientation. They provide an extra method for the
 	inertial manager to call on them, in which they will use the translator
 	to transform from the sensor frame to NED and reference passed in to

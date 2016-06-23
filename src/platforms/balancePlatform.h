@@ -32,7 +32,7 @@ void stabalize(){
 }
 
 void measurePID();
-void isrCallback(){
+void isrCallback(uint16_t dt){
     tic(0);
     sensors.update();
     orientation.update(sensors);
@@ -88,6 +88,9 @@ void setupPlatform() {
 
     setupAPM2radio();
     comms.requestResync();
+
+    ServoGenerator::setUpdateCallback(isrCallback);
+    ServoGenerator::begin(INT_PERIOD);
 }
 void loopPlatform() {
     comms.update();

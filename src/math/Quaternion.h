@@ -17,7 +17,6 @@ public:
 	Quaternion	inverse() const;
 	float		dot(const Quaternion& l) const;
 	float		length() const;
-	float		distance(const Quaternion& l) const;
 	Vec3		axis() const;
 	Vec3		getDerivative(Quaternion l) const;
 	Vec3		getDerivative(Quaternion l, float dt) const;

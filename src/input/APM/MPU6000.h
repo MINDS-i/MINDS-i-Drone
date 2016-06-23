@@ -114,11 +114,13 @@ MPU6000::end(){
 }
 Sensor::Status
 MPU6000::status(){
-    //poll WHO_AM_I to see if its an MPU is present
+    /*#MPUFAIL No response or incorrect WHO_AM_I response from the MPU */
+
+    //poll WHO_AM_I for the correct value to see if its an MPU is present
     uint8_t buf[1];
     readFrom(REG_WHOAMI, 1, buf);
-    if(buf[0] == WHOIIS) return Sensor::OK;//value from specification
-    return Sensor::BAD;
+    if(buf[0] == WHOIIS) return Sensor::OK;
+    return Sensor::BAD("MPUFAIL");
 }
 void
 MPU6000::calibrate(){

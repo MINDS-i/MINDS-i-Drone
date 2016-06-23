@@ -54,7 +54,8 @@ HMC5883L::status(){
         uint8_t status = Wire.read();
         if((status&0x3) == 1) return Sensor::OK;
     }
-    return Sensor::BAD;
+    /*#HMCFAIL HMC5883L Compass sensor failed contact or reported bad status*/
+    return Sensor::BAD("HMCFAIL");
 }
 void
 HMC5883L::calibrate(){

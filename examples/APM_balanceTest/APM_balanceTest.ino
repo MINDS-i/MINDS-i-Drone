@@ -1,7 +1,6 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "Servo.h"
-#include "DroneLibs.h"
+#include "MINDS-i-Drone.h"
 const float INT_PERIOD = 5000;
 
 Settings        settings(eeStorage::getInstance());
@@ -13,10 +12,12 @@ DualErrorFilter orientation(1.0f, 1000.0f, 1000000.0f);
 
 PIDparameters tune(30.0f,400.0f,0.0f);
 PIDcontroller pid(&tune);
-Servo output;
+ServoGenerator::Servo output;
 
-void isrCallback(){
-    sensors.update(orientation);
+void isrCallback(uint16_t microseconds){
+    float ms = ((float)microseconds)/1000.0;
+    sensors.update();
+    orientation.update(sensors, ms);
 }
 
 void setup() {
@@ -25,8 +26,9 @@ void setup() {
     sensors.start();
     sensors.calibrate();
     output.attach(A0);
-    startInterrupt(isrCallback, INT_PERIOD);
     pid.set(0.0f);
+    ServoGenerator::setUpdateCallback(isrCallback);
+    ServoGenerator::begin(INT_PERIOD);
 }
 
 void loop(){
@@ -35,7 +37,7 @@ void loop(){
     Serial.print(pitch);
     Serial.print("\t");
 
-    float angle = pid.calc(-pitch);
+    float angle = pid.update(-pitch);
     angle = constrain(angle, -90, 90);
     output.write(angle+90);
 }

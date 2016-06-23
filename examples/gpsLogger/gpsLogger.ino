@@ -1,7 +1,6 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "Servo.h"
-#include "DroneLibs.h"
+#include "MINDS-i-Drone.h"
 
 List<Waypoint> *eeList;
 const uint32_t  UPDATE_INTERVAL = 4000;
@@ -25,7 +24,7 @@ void loop(){
 
     //update the gps and store good readings periodically
     gps.update();
-    if(gps.newData() && gps.status()==Sensor::OK){
+    if(gps.newData() && gps.status().good()){
         Waypoint newPoint = gps.getLocation();
         static uint32_t intervalTimer;
         if(millis()>intervalTimer){

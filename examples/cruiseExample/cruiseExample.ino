@@ -1,9 +1,8 @@
-#include "Servo.h"
 #include "SPI.h"
 #include "Wire.h"
 #include "MINDSi.h"
 #include "Encoder.h"
-#include "DroneLibs.h"
+#include "MINDS-i-Drone.h"
 
 const uint8_t EncoderPin[]= { 2,  3 }; //apm 6,7
 const uint8_t ServoPin[]  = {12, 11,  8};//drive, steer, backS; APM 1,2,3 resp.
@@ -19,7 +18,7 @@ inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
 
 PIDparameters param(0.05 ,0.1,0.0);
 PIDcontroller cruise(&param);
-Servo drive, steer, backsteer;
+ServoGenerator::Servo drive, steer, backsteer;
 
 void setup(){
     Serial.begin(9600);
@@ -32,7 +31,7 @@ void setup(){
     backsteer.write(90);
     delay(2000);
 
-    setupAPM2radio();
+    APMRadio::setup();
     encoder::begin(EncoderPin[0], EncoderPin[1]);
 }
 
@@ -41,8 +40,8 @@ void loop(){
     float   mph = ((getRadio(RadioPin[1])-90) / 90.f)*maxMPH;
     uint8_t str =   getRadio(RadioPin[2]);
     */
-    float   mph = ((getAPM2Radio(RadioPin[1])-90) / 90.f)*maxMPH;
-    uint8_t str =   getAPM2Radio(RadioPin[2]);
+    float   mph = ((APMRadio::get(RadioPin[1])-90) / 90.f)*maxMPH;
+    uint8_t str =   APMRadio::get(RadioPin[2]);
 
     if(abs(mph)<0.5f){
         cruise.stop();
@@ -50,7 +49,7 @@ void loop(){
         cruise.set(MPHtoRPM(mph));
     }
 
-    float output = cruise.calc(encoder::getRPM());
+    float output = cruise.update(encoder::getRPM());
     drive.write(90+output);
     steer.write(str);
     backsteer.write(180-str);

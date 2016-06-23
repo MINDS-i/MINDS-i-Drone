@@ -1,13 +1,12 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "Servo.h"
-#include "DroneLibs.h"
+#include "MINDS-i-Drone.h"
 
 HMC5883L cmp;
 Settings set(eeStorage::getInstance());
 HLA      angle( 75, 0); //half-life average; halflife = 75ms, init 0
 
-Servo table;
+ServoGenerator::Servo table;
 
 void setup(){
     Serial.begin(57600);

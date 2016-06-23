@@ -25,7 +25,7 @@ void NMEA::update(){
 			seqPos = 0;
 			clearBuffer();
 		} else if (seqPos != -1) {
-			if(n != ','){
+			if((n != ',') && (n != '*')){
 				bool success = pushToBuffer(n);
 				if(!success) seqPos = -1; //buffer full
 			} else {
@@ -110,5 +110,10 @@ const SectionHandler NMEA::sectionHandlers[] {
 	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.dateOfFix); },
 	//Magnetic Variation
 	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.magVar); },
+	//magnetic Variation direction
+	[](NMEA& nmea) -> bool {
+		if(nmea.sectionBuf[0] == 'E') nmea.magVar *= -1;
+		return true;
+	},
 };
 const int NMEA::NumSections =sizeof(sectionHandlers)/sizeof(sectionHandlers[0]);

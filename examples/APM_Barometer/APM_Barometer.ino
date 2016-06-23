@@ -1,7 +1,6 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "Servo.h"
-#include "DroneLibs.h"
+#include "MINDS-i-Drone.h"
 /*
 Altimeter, get a raw value and maybe a converted value to feet?
 (through the Arduino Serial Terminal)

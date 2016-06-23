@@ -1,9 +1,8 @@
-#include "Servo.h"
 #include "SPI.h"
 #include "Wire.h"
 #include "MINDSi.h"
 #include "Encoder.h"
-#include "DroneLibs.h"
+#include "MINDS-i-Drone.h"
 #include "util/callbackTemplate.h"
 
 //Constants that should never change during driving and never/rarely tuned
@@ -36,9 +35,9 @@ HLA				lowFilter (600000, 0);//10 minutes
 HLA				highFilter(    10, 0);//10 milliseconds
 HLA 			pitch( 100, 0);
 HLA 			roll ( 100, 0);
-Servo			servo[3]; //drive, steer, backSteer
 PIDparameters   cruisePID(0,0,0,-90,90);
 PIDcontroller   cruise(&cruisePID);
+ServoGenerator::Servo servo[3]; //drive, steer, backSteer
 		//scheduler, navigation, obstacle, stop times
 uint32_t uTime = 0, nTime = 0, oTime = 0, sTime = 0;
 uint32_t gpsHalfTime = 0, gpsTime = 0;
@@ -52,6 +51,10 @@ double   distance;
 boolean  stop = true;
 boolean  backDir;
 
+void checkPing();
+void readAccelerometer();
+void reportLocation();
+void extrapPosition();
 void (*schedule[])(void) = {	extrapPosition,
 								checkPing,
 								readAccelerometer,
@@ -73,35 +76,10 @@ int		coastTime, dangerTime; //danger should include coastTime
 float	tireDiameter;
 int		steerCenter;
 void dangerTimeCallback(float in){ dangerTime = coastTime+in; }
-void newPIDparam(float x){
-	using namespace groundSettings;
-	cruisePID = PIDparameters(settings.get(CRUISE_P),
-                              settings.get(CRUISE_I),
-                              settings.get(CRUISE_D), -90, 90 );
-}
-
-void setupSettings(){
-	using namespace groundSettings;
-	settings.attach( LINE_GRAV	, .50  , callback<float, &lineGravity>	);
-	settings.attach( STEER_THROW, 45   , callback<int  , &steerThrow>	);
-	settings.attach( STEER_STYLE, 1    , callback<int  , &steerStyle>	);
-	settings.attach( STEER_FAC	, 1.0  , callback<float, &steerFactor>	);
-	settings.attach( MIN_FWD_SPD, 1.5  , callback<float, &minFwd>		);
-	settings.attach( MAX_FWD_SPD, 6.0  , callback<float, &maxFwd>		);
-	settings.attach( REV_STR_THR, 20   , callback<int  , &revThrow>		);
-	settings.attach( MAX_REV_SPD, -1.5 , callback<float, &revSpeed>		);
-	settings.attach( PING_WEIGHT, 1400 , callback<float, &pingWeight>	);
-	settings.attach( COAST_TIME	, 1500 , callback<int  , &coastTime>	);
-	settings.attach( MIN_REV_T	, 800  , &dangerTimeCallback			);
-	settings.attach( CRUISE_P	, 0.05 , &newPIDparam					);
-	settings.attach( CRUISE_I	, 0.1  , &newPIDparam					);
-	settings.attach( CRUISE_D	, 0.0  , &newPIDparam					);
-	settings.attach( TIRE_DIAM	, 5.85 , callback<float , &tireDiameter>);
-	settings.attach( STR_CENTER	, 90   , callback<int   , &steerCenter> );
-}
-
 inline float MPHtoRPM(float mph){ return (mph*MPHvRPM)/tireDiameter; }
 inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
+
+void setupSettings();
 
 void setup() {
 	setupSettings();
@@ -116,7 +94,7 @@ void setup() {
 	delay(2000);
 	calibrateGyro(); //this also takes one second
 
-	setupAPM2radio();
+	APMRadio::setup();
 	#if useEncoder
 		encoder::begin(EncoderPin[0], EncoderPin[1]);
 	#endif
@@ -138,10 +116,10 @@ void loop(){
 }
 
 void navigate(){
-	float   mph = ((getAPM2Radio(RadioPin[1])-90) / 90.f)*maxFwd;
-	uint8_t steer = getAPM2Radio(RadioPin[2]);
+	float   mph = ((APMRadio::get(RadioPin[1])-90) / 90.f)*maxFwd;
+	uint8_t steer = APMRadio::get(RadioPin[2]);
 	if (abs(steer-steerCenter) > 5 || fabs(mph)>0.8f ) {
-			//(getAPM2Radio(RadioPin[0]) > 120) {
+			//(APMRadio::get(RadioPin[0]) > 120) {
 		output(mph, steer);
 	} else if (oTime != 0) {
 		//Back Up
@@ -339,7 +317,7 @@ void output(float mph, uint8_t steer){
 	} else {
 		cruise.set(MPHtoRPM(mph));
 	}
-	float outputval = cruise.calc(encoder::getRPM());
+	float outputval = cruise.update(encoder::getRPM());
 	servo[0].write(90+outputval);
 #else
 	servo[0].write(90+mph*(90.0f/maxFwd));
@@ -347,3 +325,100 @@ void output(float mph, uint8_t steer){
 	servo[1].write(steer);
 	servo[2].write(180-steer);
 }
+
+void newPIDparam(float x){
+	// indexes for cruise control PID settings defined below
+	cruisePID = PIDparameters(settings.get(11),
+                              settings.get(12),
+                              settings.get(13), -90, 90 );
+}
+
+
+void setupSettings(){
+	/*GROUNDSETTING index="0" name="line gravity " min="0" max="1" def="0.50"
+	 *Defines how strongly the rover should attempt to return to the original
+	 *course between waypoints, verses the direct path from its current location
+	 * to the target<br>
+	 */
+	settings.attach(0, .50, callback<float, &lineGravity>);
+
+	/*GROUNDSETTING index="1" name="steer throw" min="0" max="90" def="45"
+	 *The number of degrees that rover will turn its wheels when it needs to
+	 *to turn its most extreme amount
+	 */
+	settings.attach(1, 45, callback<int, &steerThrow>);
+
+	/*GROUNDSETTING index="2" name="steer style" min="0" max="2" def="1"
+	 *switches between arctangent of error steering (0) <br>
+	 *square of error steering (1) <br>
+	 *and proportional to error steering (2)
+	 */
+	settings.attach(2, 1, callback<int, &steerStyle>);
+
+	/*GROUNDSETTING index="3" name="steer scalar" min="0" max="+inf" def="1"
+	 *Multiplier that determines how aggressively to steer
+	 */
+	settings.attach(3, 1.0, callback<float, &steerFactor>);
+
+	/*GROUNDSETTING index="4" name="min fwd speed" min="0" max="+inf" def="1.5"
+	 *minimum forward driving speed in MPH
+	 */
+	settings.attach(4, 1.5, callback<float, &minFwd>);
+
+	/*GROUNDSETTING index="5" name="max fwd speed" min="0" max="+inf" def="6.0"
+	 *maximum forward driving speed in MPH
+	 */
+	settings.attach(5, 6.0, callback<float, &maxFwd>);
+
+	/*GROUNDSETTING index="6" name="rev str throw" min="0" max="90" def="20"
+	 *How far to turn the wheels when backing away from an obstacle
+	 */
+	settings.attach(6, 20, callback<int, &revThrow>);
+
+	/*GROUNDSETTING index="7" name="reverse speed" min="-inf" max="0" def="-1.5"
+	 *speed in MPH to drive in reverse
+	 */
+	settings.attach(7, -1.5, callback<float, &revSpeed>);
+
+	/*GROUNDSETTING index="8" name="ping factor" min="1" max="+inf" def="1400"
+	 *Factor to determine how strongly obstacles effect the rover's course <br>
+	 *Larger numbers correspond to larger effects from obstacles
+	 */
+	settings.attach(8, 1400, callback<float, &pingWeight>);
+
+	/*GROUNDSETTING index="9" name="coast time" min="0" max="+inf" def="1500"
+	 *Time in milliseconds to coast before reversing when an obstacle is encountered
+	 */
+	settings.attach(9, 1500, callback<int, &coastTime>);
+
+	/*GROUNDSETTING index="10" name="min rev time" min="0" max="+inf" def="800"
+	 *minimum time in milliseconds to reverse away from an obstacle
+	 */
+	settings.attach(10, 800, &dangerTimeCallback);
+
+	/*GROUNDSETTING index="11" name="Cruise P" min="0" max="+inf" def="0.05"
+	 *P term in cruise control PID loop
+	 */
+	settings.attach(11, 0.05, &newPIDparam);
+
+	/*GROUNDSETTING index="12" name="Cruise I" min="0" max="+inf" def="0.1"
+	 *I term in cruise control PID loop
+	 */
+	settings.attach(12, 0.1, &newPIDparam);
+
+	/*GROUNDSETTING index="13" name="Cruise D" min="0" max="+inf" def="0.0"
+	 *D term in cruise control PID loop
+	 */
+	settings.attach(13, 0.0, &newPIDparam);
+
+	/*GROUNDSETTING index="14" name="Tire Diameter" min="0" max="+inf" def="5.85"
+	 *Tire Diameter in inches, used to calculate MPH
+	 */
+	settings.attach(14, 5.85, callback<float, &tireDiameter>);
+
+	/*GROUNDSETTING index="15" name="Steer Center" min="0" max="180" def="90"
+	 *Center point in degrees corresponding to driving straight
+	 */
+	settings.attach(15, 90, callback<int, &steerCenter>);
+}
+

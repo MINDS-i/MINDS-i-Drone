@@ -1,7 +1,6 @@
 #include "Wire.h"
 #include "SPI.h"
-#include "Servo.h"
-#include "DroneLibs.h"
+#include "MINDS-i-Drone.h"
 
 enum ProgramState {
     COLLECT_STATES,
@@ -68,7 +67,7 @@ public:
     }
     float getAverage(){
         float sum = 0.0f;
-        for(int i=0; i<AVSIZE; i++){
+        for(uint16_t i=0; i<AVSIZE; i++){
             sum += average[i];
         }
         float av = sum/((float)AVSIZE);
@@ -90,12 +89,17 @@ void setup(){
     delay(1000);
     sensors.calibrate();
     delay(250);
-    if(mpu.status() == Sensor::BAD){
+
+    auto mpuState = mpu.status();
+    if(!mpuState.good()){
         Serial.println("Bad MPU6000 status");
+        Serial.println(mpuState.message);
         while(true);
     }
-    if(cmp.status() == Sensor::BAD){
+    auto cmpState = cmp.status();
+    if(!cmpState.good()){
         Serial.println("Bad HMC5883L status");
+        Serial.println(cmpState.message);
         while(true);
     }
 
