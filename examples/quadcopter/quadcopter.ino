@@ -110,10 +110,8 @@ void fly(){
 }
 
 void sendTelemetry(){
-    static uint32_t sendTime = millis();
-    if(sendTime < millis()){
-        sendTime += 50;
-
+    static auto timer = Interval::every(50);
+    if(timer()){
         float voltage  = float(analogRead(67)/1024.l*5.l*10.1f);
 
         using namespace Protocol;
