@@ -94,5 +94,7 @@ Copyright 2015 MINDS-i Inc.
 #include "util/PIDexternaltime.h"
 #include "util/PIDparameters.h"
 #include "util/profile.h"
+#include "util/Interval.h"
+#include "util/StateTimer.h"
 
 #endif

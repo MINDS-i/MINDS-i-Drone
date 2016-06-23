@@ -14,35 +14,6 @@ const char* stateString[] = {
     [DISARMED] = "DISARMED", [CALIBRATE] = "CALIBRATE", [FLYING] = "FLYING" };
 enum RadioChannel{ RADIO_PITCH = 0, RADIO_ROLL = 1, RADIO_THROTTLE = 2,
                    RADIO_YAW   = 3, RADIO_GEAR = 4, RADIO_AUX      = 5 };
-/*
-time tools idea:
-static Interval sendTelem = Interval::every(milliseconds(50));
-if(sendTelem){
-}
-*/
-class StateTimer{
-private:
-    bool (*stateF)(void);
-    uint32_t enterTime;
-    bool lastState;
-public:
-    StateTimer(bool (*stateF)(void)): stateF(stateF) {}
-    void update() {
-        bool state = stateF();
-        if(state != lastState){
-            lastState = state;
-            enterTime = millis();
-        }
-    }
-    bool trueFor(uint32_t interval) {
-        update();
-        return (lastState) && ((millis() - enterTime) > interval);
-    }
-    bool falseFor(uint32_t interval) {
-        update();
-        return (!lastState) && ((millis() - enterTime) > interval);
-    }
-};
 
 StateTimer radioDownRight([](){
     bool down  = APMRadio::get(RADIO_THROTTLE) <= CHANNEL_MIN;
