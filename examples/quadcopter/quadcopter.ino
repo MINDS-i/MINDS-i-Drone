@@ -119,7 +119,7 @@ void fly(){
                                    throttleCurve.get(throttle);
 
     // set output targets
-    comms.sendTelem(VOLTAGE+2  , throttleOut);
+    comms.sendTelem(AMPERAGE, throttleOut);
     horizon.set(pitchCmd, rollCmd, yawTarget, throttleOut);
 }
 
@@ -170,10 +170,10 @@ float altHoldUpdate(float throttleCMD){
         velocityEst = velocity;
         oldIntegral = newIntegral;
 
-        comms.sendTelem(VOLTAGE+3, altitudeEst);
-        comms.sendTelem(VOLTAGE+4, velocityEst);
-        comms.sendTelem(VOLTAGE+5, oldIntegral);
-        comms.sendTelem(VOLTAGE+6, altitudeSetpoint);
+        comms.sendTelem(ALTITUDE, altitudeEst);
+        comms.sendTelem(ALTITUDE+1, velocityEst);
+        comms.sendTelem(ALTITUDE+2, oldIntegral);
+        comms.sendTelem(ALTITUDE+3, altitudeSetpoint);
     }
 
     return throttleOutput;
@@ -192,7 +192,7 @@ void sendTelemetry(){
         comms.sendTelem(ROLL       , toDeg(orientation.getRoll()));
         comms.sendTelem(GROUNDSPEED, profileTime(0));
         comms.sendTelem(VOLTAGE    , voltage);
-        comms.sendTelem(AMPERAGE   , safe());
+        //comms.sendTelem(AMPERAGE   , safe());
         //comms.sendTelem(ALTITUDE   , altitude.get());
 
         Serial.println();
