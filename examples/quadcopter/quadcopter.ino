@@ -147,11 +147,11 @@ float altHoldUpdate(float throttleCMD){
         //float dt = (micros() - nextUpdate + UPDATE_MICROS) / 1e6;
         const float dt = 0.01;
 
-        const float C0 =  0.046f;
-        const float C1 =  0.020f;
-        const float K0 =  0.090f;
-        const float K1 = -2.000f;
-        const float K2 =  0.004f;
+        float C0 = AHP.C0;
+        float C1 = AHP.C1;
+        float K0 = AHP.K0;
+        float K1 = AHP.K1;
+        float K2 = AHP.K2;
 
         //adjust setpoint
         float th = (throttleCMD-0.5);

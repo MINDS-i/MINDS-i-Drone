@@ -29,6 +29,8 @@ Horizon       horizon(&attPID, &attVel,
 bool errorsDetected = false;
 void setupSettings();
 
+struct AltitudeHoldParameters{ float C0, C1, K0, K1, K2; } AHP;
+
 ///////////
 bool safe();
 void arm();
@@ -213,4 +215,20 @@ void setupSettings(){
      *A value slightly under 0.5 tends to work best
      */
     settings.attach(15, 0.40f, [](float g){ throttleCurve.setLinearity(g); });
+
+    /*AIRSETTING index="16" name="C0" min="0.0" max="1.0" def="0.046"
+    */
+    settings.attach(16, 0.046f, [](float g){ AHP.C0 = g; });
+    /*AIRSETTING index="17" name="C1" min="0.0" max="1.0" def="0.020"
+    */
+    settings.attach(17, 0.020f, [](float g){ AHP.C1 = g; });
+    /*AIRSETTING index="18" name="K0" min="0.0" max="1.0" def="0.090"
+    */
+    settings.attach(18, 0.090f, [](float g){ AHP.K0 = g; });
+    /*AIRSETTING index="19" name="K1" min="0.0" max="1.0" def="-2.00"
+    */
+    settings.attach(19,-2.000f, [](float g){ AHP.K1 = g; });
+    /*AIRSETTING index="20" name="K2" min="0.0" max="1.0" def="0.004"
+    */
+    settings.attach(20, 0.004f, [](float g){ AHP.K2 = g; });
 }
