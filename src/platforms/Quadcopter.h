@@ -138,13 +138,13 @@ void setupSettings(){
      */
     settings.attach(3, 0.00f , [](float g){ horizon.setTiltCompLimit(g); });
 
-    /*AIRSETTING index="4" name="Att P Term" min="0" max="+inf" def="0.250"
+    /*AIRSETTING index="4" name="Att P Term" min="0" max="+inf" def="0.375"
      *Attitude Stabilization P term<br>
      *Control proportional to current error.<br>
      *Generally the main driver of PID control.<br>
      *Higher P makes reaction quicker, but increases overshoot and degrades stability.
      */
-    settings.attach(4, 0.250f, [](float g){ attPID.setIdealP(g); });
+    settings.attach(4, 0.375f, [](float g){ attPID.setIdealP(g); });
 
     /*AIRSETTING index="5" name="Att I Term" min="0" max="+inf" def="0.000"
      *Attitude Stabilization I term<br>
@@ -152,31 +152,31 @@ void setupSettings(){
      */
     settings.attach(5, 0.000f, [](float g){ attPID.setIdealI(g); });
 
-    /*AIRSETTING index="6" name="Att D Term" min="0" max="+inf" def="0.003"
+    /*AIRSETTING index="6" name="Att D Term" min="0" max="+inf" def="0.006"
      *Attitude Stabilization D term<br>
      *D Will dampen the output by predicting the future quadcopter position with linear extrapolation.<br>
      *It will decrease overshoot and decrease settling time, but can cause new oscillations if set too high.
      */
-    settings.attach(6, 0.003f, [](float g){ attPID.setIdealD(g); });
+    settings.attach(6, 0.006f, [](float g){ attPID.setIdealD(g); });
 
-    /*AIRSETTING index="7" name="Att VP Term" min="0" max="+inf" def="5.00"
+    /*AIRSETTING index="7" name="Att VP Term" min="0" max="+inf" def="4.50"
      *P term on attitude Velocity control loop <br>
      *Higher values will make stabilization more aggressive.
      */
-    settings.attach(7, 5.00f, [](float g){ attVel.setIdealP(g); });
+    settings.attach(7, 4.50f, [](float g){ attVel.setIdealP(g); });
 
-    /*AIRSETTING index="8" name="Att VI Term" min="0" max="+inf" def="0.8"
+    /*AIRSETTING index="8" name="Att VI Term" min="0" max="+inf" def="2.0"
      *I term on attitude Velocity control loop <br>
      *Higher values increase response to drifting and unevent weight <br>\
      *Too high can cause instability and oscillations
      */
-    settings.attach(8, 0.80f, [](float g){ attVel.setIdealI(g); });
+    settings.attach(8, 2.00f, [](float g){ attVel.setIdealI(g); });
 
-    /*AIRSETTING index="9" name="Att VD Term" min="0" max="+inf" def="0.17"
+    /*AIRSETTING index="9" name="Att VD Term" min="0" max="+inf" def="0.05"
      *D term on attitude Velocity control loop <br>
      *Can be used to dampen oscillations and increase P's ceiling
      */
-    settings.attach(9, 0.17f, [](float g){ attVel.setIdealD(g); });
+    settings.attach(9, 0.05f, [](float g){ attVel.setIdealD(g); });
 
     /*AIRSETTING index="10" name="Yaw P Term" min="-inf" max="+inf" def="1.0"
      *Yaw Stabilization P term<br>
