@@ -102,8 +102,10 @@ void fly(){
     // switch into and out of altitude hold mode
     if(gearCmd == false){
         //switch to manual mode
+        comms.sendString("Manual");
         altHold = false;
     } else if (altHold == false && gearCmd == true){
+        comms.sendString("Alt Hold");
         altHoldInit(throttleCurve.get(throttle));
         altHold = true;
     }
@@ -179,10 +181,22 @@ float altHoldUpdate(float throttleCMD){
     return throttleOutput;
 }
 
+float dVdA(float v, float a){
+    static float pv, pa;
+    static float ave;
+    float dv = v-pv;
+    float da = a-pa;
+    pv = v;
+    pa = a;
+    ave = 0.95 * ave + 0.05 * (dv/da);
+    return ave;
+}
+
 void sendTelemetry(){
     static auto timer = Interval::every(50);
     if(timer()){
-        float voltage  = float(analogRead(67)/1024.l*5.l*10.1f);
+        float voltage  = float((analogRead(67)/1024.l)*5.l*10.1f);
+        float amperage = float((analogRead(66)/1024.l)*5.l*17.0f);
 
         using namespace Protocol;
         comms.sendTelem(LATITUDE   , state);
@@ -191,7 +205,7 @@ void sendTelemetry(){
         comms.sendTelem(PITCH      , toDeg(orientation.getPitch()));
         comms.sendTelem(ROLL       , toDeg(orientation.getRoll()));
         comms.sendTelem(GROUNDSPEED, profileTime(0));
-        comms.sendTelem(VOLTAGE    , voltage);
+        comms.sendTelem(VOLTAGE    , dVdA(voltage,amperage));
         //comms.sendTelem(AMPERAGE   , safe());
         //comms.sendTelem(ALTITUDE   , altitude.get());
 
