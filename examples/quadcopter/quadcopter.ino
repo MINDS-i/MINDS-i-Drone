@@ -4,6 +4,8 @@
 #include "platforms/Quadcopter.h"
 
 boolean calibrated = false;
+boolean altHold = false;
+float outputThrottle;
 uint32_t calStartTime;
 const uint8_t CHANNEL_MIN = 32;
 const uint8_t CHANNEL_MAX = 148;
@@ -27,6 +29,11 @@ StateTimer radioDownLeft([](){
     return down && left;
 });
 
+//
+uint32_t loopstart;
+uint32_t loopcount;
+//
+
 void setup() {
     setupQuad();
     setState(DISARMED);
@@ -35,9 +42,12 @@ void setup() {
 void setState(State s){
     state = s;
     comms.sendString(stateString[s]);
+    loopstart = micros();
+    loopcount = 0;
 }
 
 void loop() {
+    loopcount++;
     //always running updates
     loopQuad();
     sendTelemetry();
@@ -66,6 +76,7 @@ void loop() {
             if(calStartTime + 2000 < millis()) {
                 orientation.calibrate(false);
                 yawTarget = orientation.getYaw();
+                altitudeCalcInit();
                 output.standby();
                 setState(FLYING);
             }
@@ -84,12 +95,11 @@ void loop() {
 }
 
 void fly(){
-    static bool altHold = false;
     const float pitchCmd = ((float)APMRadio::get(RADIO_PITCH)-90) /-70.0;
     const float rollCmd  = ((float)APMRadio::get(RADIO_ROLL)-90)  /-70.0;
     const float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   / 90.0;
     const float throttle = ((float)APMRadio::get(RADIO_THROTTLE)-25)/130.0;
-    const bool  gearCmd  = (APMRadio::get(4) > 90);
+    const bool  gearCmd  = (APMRadio::get(RADIO_GEAR) > 90);
 
     // check for low throttle standby mode
     if(APMRadio::get(RADIO_THROTTLE) <= CHANNEL_MIN){
@@ -102,7 +112,6 @@ void fly(){
     // switch into and out of altitude hold mode
     if(gearCmd == false){
         //switch to manual mode
-        comms.sendString("Manual");
         altHold = false;
     } else if (altHold == false && gearCmd == true){
         comms.sendString("Alt Hold");
@@ -116,12 +125,13 @@ void fly(){
         yawTarget = truncateRadian(yawTarget);
     }
 
+    altitudeCalculation();
     // calculate target throttle
     float throttleOut = (altHold)? altHoldUpdate(throttle) :
                                    throttleCurve.get(throttle);
 
     // set output targets
-    comms.sendTelem(AMPERAGE, throttleOut);
+    outputThrottle = throttleOut;
     horizon.set(pitchCmd, rollCmd, yawTarget, throttleOut);
 }
 
@@ -135,12 +145,34 @@ float altitudeSetpoint;
 //
 
 void altHoldInit(float curThrottle){
-    altitudeEst = baro.getAltitude();
     altitudeSetpoint = altitudeEst;
     hover = curThrottle;
     oldIntegral = 0.0;
     velocityEst = 0.0;
     throttleOutput = 0.0;
+}
+
+void altitudeCalcInit(){
+    altitudeEst = baro.getAltitude();
+}
+
+void altitudeCalculation(){
+    static auto timer = Interval::every(10);
+    if(timer()){
+        //float dt = (micros() - nextUpdate + UPDATE_MICROS) / 1e6;
+        const float dt = 0.01;
+
+        float C0 = AHP.C0;
+        float C1 = AHP.C1;
+
+        float barometer = baro.getAltitude();
+        float altitude = barometer*C0 + altitudeEst*(1.0-C0);
+        float newvelocity = (altitude-altitudeEst) / dt;
+        float velocity = newvelocity*C1 + velocityEst*(1.0-C1);
+
+        altitudeEst = altitude;
+        velocityEst = velocity;
+    }
 }
 
 float altHoldUpdate(float throttleCMD){
@@ -149,8 +181,6 @@ float altHoldUpdate(float throttleCMD){
         //float dt = (micros() - nextUpdate + UPDATE_MICROS) / 1e6;
         const float dt = 0.01;
 
-        float C0 = AHP.C0;
-        float C1 = AHP.C1;
         float K0 = AHP.K0;
         float K1 = AHP.K1;
         float K2 = AHP.K2;
@@ -158,24 +188,12 @@ float altHoldUpdate(float throttleCMD){
         //adjust setpoint
         float th = (throttleCMD-0.5);
         if(fabs(th) > 0.1) altitudeSetpoint += th/4.0;
-        float barometer = baro.getAltitude();
 
-        float altitude = barometer*C0 + altitudeEst*(1.0-C0);
-        float newvelocity = (altitude-altitudeEst) / dt;
-        float velocity = newvelocity*C1 + velocityEst*(1.0-C1);
-
-        float error = altitudeSetpoint-altitude;
+        float error = altitudeSetpoint-altitudeEst;
         float newIntegral = oldIntegral + error * dt;
-        throttleOutput = (K0/10.0)*(error + K1*velocity + K2*newIntegral) + hover;
+        throttleOutput = (K0/10.0)*(error + K1*velocityEst + K2*newIntegral) + hover;
 
-        altitudeEst = altitude;
-        velocityEst = velocity;
         oldIntegral = newIntegral;
-
-        comms.sendTelem(ALTITUDE, altitudeEst);
-        comms.sendTelem(ALTITUDE+1, velocityEst);
-        comms.sendTelem(ALTITUDE+2, oldIntegral);
-        comms.sendTelem(ALTITUDE+3, altitudeSetpoint);
     }
 
     return throttleOutput;
@@ -193,21 +211,24 @@ float dVdA(float v, float a){
 }
 
 void sendTelemetry(){
-    static auto timer = Interval::every(50);
+    static auto timer = Interval::every(100);
     if(timer()){
         float voltage  = float((analogRead(67)/1024.l)*5.l*10.1f);
         float amperage = float((analogRead(66)/1024.l)*5.l*17.0f);
 
         using namespace Protocol;
-        comms.sendTelem(LATITUDE   , state);
-        comms.sendTelem(LONGITUDE  , ((float)APMRadio::get(RADIO_THROTTLE)-25)/130.0 );
+        comms.sendTelem(LATITUDE   , (micros()-loopstart)/loopcount);
+        comms.sendTelem(LONGITUDE  , altHold );
         comms.sendTelem(HEADING    , toDeg(orientation.getYaw()));
         comms.sendTelem(PITCH      , toDeg(orientation.getPitch()));
         comms.sendTelem(ROLL       , toDeg(orientation.getRoll()));
-        comms.sendTelem(GROUNDSPEED, profileTime(0));
-        comms.sendTelem(VOLTAGE    , dVdA(voltage,amperage));
-        //comms.sendTelem(AMPERAGE   , safe());
-        //comms.sendTelem(ALTITUDE   , altitude.get());
+        comms.sendTelem(GROUNDSPEED, outputThrottle);
+        comms.sendTelem(VOLTAGE    , voltage);
+        comms.sendTelem(AMPERAGE   , amperage);
+        comms.sendTelem(ALTITUDE, altitudeEst);
+        comms.sendTelem(ALTITUDE+1, velocityEst);
+        comms.sendTelem(ALTITUDE+2, oldIntegral);
+        comms.sendTelem(ALTITUDE+3, altitudeSetpoint);
 
         Serial.println();
         Serial.flush();
