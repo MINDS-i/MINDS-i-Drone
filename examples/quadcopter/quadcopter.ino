@@ -121,7 +121,7 @@ void fly(){
 
     // update yaw target
     if(fabs(yawCmd) > 0.1){
-        yawTarget += yawCmd/8;
+        yawTarget += yawCmd/160.0;
         yawTarget = truncateRadian(yawTarget);
     }
 
@@ -211,7 +211,7 @@ float dVdA(float v, float a){
 }
 
 void sendTelemetry(){
-    static auto timer = Interval::every(100);
+    static auto timer = Interval::every(250);
     if(timer()){
         float voltage  = float((analogRead(67)/1024.l)*5.l*10.1f);
         float amperage = float((analogRead(66)/1024.l)*5.l*17.0f);
