@@ -100,6 +100,7 @@ void fly(){
     const float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   / 90.0;
     const float throttle = ((float)APMRadio::get(RADIO_THROTTLE)-25)/130.0;
     const bool  gearCmd  = (APMRadio::get(RADIO_GEAR) > 90);
+    altitudeCalculation();
 
     // check for low throttle standby mode
     if(APMRadio::get(RADIO_THROTTLE) <= CHANNEL_MIN){
@@ -121,11 +122,12 @@ void fly(){
 
     // update yaw target
     if(fabs(yawCmd) > 0.1){
-        yawTarget += yawCmd/160.0;
+        static uint32_t integrationTimer = micros();
+        float dt = (micros() - integrationTimer)/1e6;
+        yawTarget += yawCmd*dt;
         yawTarget = truncateRadian(yawTarget);
     }
 
-    altitudeCalculation();
     // calculate target throttle
     float throttleOut = (altHold)? altHoldUpdate(throttle) :
                                    throttleCurve.get(throttle);
@@ -197,17 +199,6 @@ float altHoldUpdate(float throttleCMD){
     }
 
     return throttleOutput;
-}
-
-float dVdA(float v, float a){
-    static float pv, pa;
-    static float ave;
-    float dv = v-pv;
-    float da = a-pa;
-    pv = v;
-    pa = a;
-    ave = 0.95 * ave + 0.05 * (dv/da);
-    return ave;
 }
 
 void sendTelemetry(){
