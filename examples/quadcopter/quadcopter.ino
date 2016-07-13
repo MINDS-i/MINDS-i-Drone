@@ -9,6 +9,11 @@ enum RadioChannel{ RADIO_PITCH = 0, RADIO_ROLL = 1, RADIO_THROTTLE = 2,
 const uint8_t CHANNEL_TRIGGER_MIN = 32;
 const uint8_t CHANNEL_TRIGGER_MAX = 148;
 
+// Time constants in milliseconds
+const uint32_t ARMING_TIME = 2000;
+const uint32_t CALIBRATING_TIME = 2000;
+const uint32_t DISARMING_TIME = 750;
+
 // State timer used to detect ARMING
 StateTimer radioDownRight([](){
     bool down  = APMRadio::get(RADIO_THROTTLE) <= CHANNEL_TRIGGER_MIN;
@@ -31,7 +36,7 @@ const char* stateString[] = {
 // Flight State variables
 boolean altHold = false;
 float yawTarget = 0.0;
-uint32_t calStartTime;
+auto calibrateEndTimer = Interval::elapsed(0);
 
 // Temporary test variables
 uint32_t loopstart;
@@ -55,16 +60,15 @@ void loop() {
     //always running updates
     loopQuad();
     sendTelemetry();
-
     //flight mode state machine
     switch(state){
         /*#DISARMED Hold Down and to the right on
          * the Throttle stick for two seconds to begin the arming process
         **/
         case DISARMED:
-            if(radioDownRight.trueFor(2000)) {
+            if(radioDownRight.trueFor(ARMING_TIME)) {
                 if(safe()){
-                    calStartTime = millis();
+                    calibrateEndTimer = Interval::elapsed(CALIBRATING_TIME);
                     setState(CALIBRATE);
                 } else {
                     /*#NOFLY Flight aborted due to error status */
@@ -77,7 +81,7 @@ void loop() {
         **/
         case CALIBRATE:
             orientation.calibrate(true);
-            if(calStartTime + 2000 < millis()) {
+            if(calibrateEndTimer()) {
                 orientation.calibrate(false);
                 yawTarget = orientation.getYaw();
                 altitudeCalcInit();
@@ -90,7 +94,7 @@ void loop() {
         **/
         case FLYING:
             fly();
-            if(radioDownLeft.trueFor(750)) {
+            if(radioDownLeft.trueFor(DISARMING_TIME)) {
                 output.disable();
                 setState(DISARMED);
             }
