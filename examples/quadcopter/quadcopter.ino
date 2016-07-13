@@ -3,49 +3,51 @@
 #include "MINDS-i-Drone.h"
 #include "platforms/Quadcopter.h"
 
-boolean calibrated = false;
-boolean altHold = false;
-float outputThrottle;
-uint32_t calStartTime;
-const uint8_t CHANNEL_MIN = 32;
-const uint8_t CHANNEL_MAX = 148;
-float yawTarget = 0.0;
-
-enum State { DISARMED, CALIBRATE, FLYING } state;
-const char* stateString[] = {
-    [DISARMED] = "DISARMED", [CALIBRATE] = "CALIBRATE", [FLYING] = "FLYING" };
+// Radio Channel Mapping
 enum RadioChannel{ RADIO_PITCH = 0, RADIO_ROLL = 1, RADIO_THROTTLE = 2,
                    RADIO_YAW   = 3, RADIO_GEAR = 4, RADIO_AUX      = 5 };
+const uint8_t CHANNEL_TRIGGER_MIN = 32;
+const uint8_t CHANNEL_TRIGGER_MAX = 148;
 
+// State timer used to detect ARMING
 StateTimer radioDownRight([](){
-    bool down  = APMRadio::get(RADIO_THROTTLE) <= CHANNEL_MIN;
-    bool right = APMRadio::get(RADIO_YAW)      <= CHANNEL_MIN;
+    bool down  = APMRadio::get(RADIO_THROTTLE) <= CHANNEL_TRIGGER_MIN;
+    bool right = APMRadio::get(RADIO_YAW)      <= CHANNEL_TRIGGER_MIN;
     return down && right;
 });
 
+// State timer used to detect DISARMING
 StateTimer radioDownLeft([](){
-    bool down  = APMRadio::get(RADIO_THROTTLE) <= CHANNEL_MIN;
-    bool left  = APMRadio::get(RADIO_YAW)      >= CHANNEL_MAX;
+    bool down  = APMRadio::get(RADIO_THROTTLE) <= CHANNEL_TRIGGER_MIN;
+    bool left  = APMRadio::get(RADIO_YAW)      >= CHANNEL_TRIGGER_MAX;
     return down && left;
 });
 
+// State machine Variables
+enum State { DISARMED, CALIBRATE, FLYING } state;
+const char* stateString[] = {
+    [DISARMED] = "DISARMED", [CALIBRATE] = "CALIBRATE", [FLYING] = "FLYING" };
 
+// Flight State variables
+boolean altHold = false;
+float yawTarget = 0.0;
+uint32_t calStartTime;
 
-//
+// Temporary test variables
 uint32_t loopstart;
 uint32_t loopcount;
-//
-
-void setup() {
-    setupQuad();
-    setState(DISARMED);
-}
+float outputThrottle;
 
 void setState(State s){
     state = s;
     comms.sendString(stateString[s]);
     loopstart = micros();
     loopcount = 0;
+}
+
+void setup() {
+    setupQuad();
+    setState(DISARMED);
 }
 
 void loop() {
@@ -97,15 +99,15 @@ void loop() {
 }
 
 void fly(){
-    const float pitchCmd = ((float)APMRadio::get(RADIO_PITCH)-90) /-70.0;
-    const float rollCmd  = ((float)APMRadio::get(RADIO_ROLL)-90)  /-70.0;
-    const float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   / 90.0;
-    const float throttle = ((float)APMRadio::get(RADIO_THROTTLE)-25)/130.0;
-    const bool  gearCmd  = (APMRadio::get(RADIO_GEAR) > 90);
+    float pitchCmd = ((float)APMRadio::get(RADIO_PITCH)-90) /-70.0;
+    float rollCmd  = ((float)APMRadio::get(RADIO_ROLL)-90)  /-70.0;
+    float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   / 90.0;
+    float throttle = ((float)APMRadio::get(RADIO_THROTTLE)-25)/130.0;
+    bool  gearCmd  = (APMRadio::get(RADIO_GEAR) > 90);
     altitudeCalculation();
 
     // check for low throttle standby mode
-    if(APMRadio::get(RADIO_THROTTLE) <= CHANNEL_MIN){
+    if(APMRadio::get(RADIO_THROTTLE) <= CHANNEL_TRIGGER_MIN){
         output.standby();
         return;
     } else {
