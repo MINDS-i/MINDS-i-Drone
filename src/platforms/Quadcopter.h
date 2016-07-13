@@ -13,7 +13,7 @@ MS5611    baro;
 Altitude  altitude;
 InertialVec* sens[2] = {&cmp, &mpu};
 Translator   conv[2] = {Translators::APM, Translators::APM};
-InertialManager sensors(sens, conv, 2);
+InertialManager imu(sens, conv, 2);
 #define Output_t AfroESC
 Output_t esc[4] = {Output_t(12/*CCW TR APM 1*/), Output_t(11/*CCW BL APM 2*/),
                    Output_t( 8/*CW  TL APM 3*/), Output_t( 7/*CW  BR APM 4*/) };
@@ -44,8 +44,8 @@ void loopQuad();
 void isrCallback(uint16_t microseconds) {
     float ms = ((float)microseconds)/1000.0;
     tic(0);
-    sensors.update();
-    orientation.update(sensors, ms);
+    imu.update();
+    orientation.update(imu, ms);
     output.update(orientation, ms);
     toc(0);
 }
@@ -87,15 +87,19 @@ void setupQuad() {
     setupSettings();
     APMRadio::setup();
 
-    sensors.start();
-    sensors.calibrate();
+    imu.begin();
     gps.begin();
     baro.begin();
+    imu.calibrate();
     baro.calibrate();
     baro.setTempDutyCycle(2);
-    altitude.setup(baro.getAltitude());
 
-    boolean sensorErrors = sensors.errorMessages([](const char * errmsg){
+    // Estimate of startup altitude
+    // The barometer readings aren't available yet
+    // The altitude filter will rapidly converge on the correct altitude
+    altitude.setup(1000.0);
+
+    boolean sensorErrors = imu.errorMessages([](const char * errmsg){
             comms.sendString(errmsg);}
         );
     errorsDetected |= sensorErrors;
@@ -122,7 +126,7 @@ void setupSettings(){
     // the code and the comment
 
     /*AIRSETTING index="0" name="Output Period" min="5000" max="10000" def="6666"
-     *Period in milliseconds between reading the sensors, calculating orientation,
+     *Period in milliseconds between reading the imu, calculating orientation,
      *and sending a signal to the ESC's<br>
      *This value should be between 5000 (200Hz) and 10000(100Hz) <br>
      *Higher speeds will decrease the processing time left for other tasks,

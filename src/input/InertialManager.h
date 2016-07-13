@@ -34,13 +34,13 @@ public:
     void update(){
         for(int i=0; i<numSensors; i++) sensor[i]->update(*this, translator[i]);
     }
-    void start(){
+    void begin(){
         for(int i=0; i<numSensors; i++) sensor[i]->begin();
     }
     void calibrate(){
         for(int i=0; i<numSensors; i++) sensor[i]->calibrate();
     }
-    void stop(){
+    void end(){
         for(int i=0; i<numSensors; i++) sensor[i]->end();
     }
     /**
