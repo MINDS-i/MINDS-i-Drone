@@ -27,7 +27,7 @@ public:
      * Initialize altitude hold mode
      * @param hoverThrottle The throttle value to start at in a hover
      */
-    void holdStart(float hoverThrottle){
+    void setup(float hoverThrottle){
         hover = hoverThrottle;
         integral = 0.0;
         throttleOutput = 0.0;
@@ -38,7 +38,7 @@ public:
      * @param measurements The altitude object tracking the quads current pos
      * @return Throttle value to apply to the craft [0,1]
      */
-    float holdUpdate(float targetAltitude, Altitude measurements){
+    float update(float targetAltitude, Altitude measurements){
         static auto timer = Interval::every(UPDATE_INTERVAL);
         if(timer()) {
             float error = targetAltitude-measurements.getAltitude();

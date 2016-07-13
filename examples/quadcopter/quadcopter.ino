@@ -36,18 +36,15 @@ const char* stateString[] = {
 // Flight State variables
 boolean altHold = false;
 float yawTarget = 0.0;
+float altitudeSetpoint;
 auto calibrateEndTimer = Interval::elapsed(0);
 
 // Temporary test variables
-uint32_t loopstart;
-uint32_t loopcount;
 float outputThrottle;
 
 void setState(State s){
     state = s;
     comms.sendString(stateString[s]);
-    loopstart = micros();
-    loopcount = 0;
 }
 
 void setup() {
@@ -56,7 +53,6 @@ void setup() {
 }
 
 void loop() {
-    loopcount++;
     //always running updates
     loopQuad();
     sendTelemetry();
@@ -107,8 +103,7 @@ void fly(){
     float rollCmd  = ((float)APMRadio::get(RADIO_ROLL)-90)  /-70.0;
     float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   / 90.0;
     float throttle = ((float)APMRadio::get(RADIO_THROTTLE)-25)/130.0;
-    bool  gearCmd  = (APMRadio::get(RADIO_GEAR) > 90);
-    altitudeCalculation();
+    bool  altMode  = (APMRadio::get(RADIO_GEAR) > 90);
 
     // check for low throttle standby mode
     if(APMRadio::get(RADIO_THROTTLE) <= CHANNEL_TRIGGER_MIN){
@@ -119,16 +114,17 @@ void fly(){
     }
 
     // switch into and out of altitude hold mode
-    if(gearCmd == false){
+    if(altMode == false){
         //switch to manual mode
         altHold = false;
-    } else if (altHold == false && gearCmd == true){
+    } else if (altHold == false && altMode == true){
         comms.sendString("Alt Hold");
-        altHoldInit(throttleCurve.get(throttle));
+        altitudeHold.setup();
+        altitudeTarget = altitude.getAltitude();
         altHold = true;
     }
 
-    // update yaw target
+    // update targets
     static uint32_t integrationTimer = micros();
     uint32_t now = micros();
     float dt = (now - integrationTimer)/1e6;
@@ -137,78 +133,18 @@ void fly(){
         yawTarget += yawCmd*dt*M_PI*YawTargetSlewRate;
         yawTarget = truncateRadian(yawTarget);
     }
+    if(fabs(throttle) > 0.1){
+        altitudeSetpoint += throttle*dt*AltitudeTargetSlewRate;
+    }
 
-    // calculate target throttle
-    float throttleOut = (altHold)? altHoldUpdate(throttle) :
-                                   throttleCurve.get(throttle);
+    // calculate throttle
+    float throttleOut = (altHold) ?
+        altitudeHold.update(altitudeTarget, altitude) :
+        throttleCurve.get(throttle);
 
-    // set output targets
+    // set outputs
     outputThrottle = throttleOut;
     horizon.set(pitchCmd, rollCmd, yawTarget, throttleOut);
-}
-
-// Variables used in altitude hold
-float altitudeEst;
-float velocityEst;
-float oldIntegral;
-float hover;
-float throttleOutput;
-float altitudeSetpoint;
-//
-
-void altHoldInit(float curThrottle){
-    altitudeSetpoint = altitudeEst;
-    hover = curThrottle;
-    oldIntegral = 0.0;
-    velocityEst = 0.0;
-    throttleOutput = 0.0;
-}
-
-void altitudeCalcInit(){
-    altitudeEst = baro.getAltitude();
-}
-
-void altitudeCalculation(){
-    static auto timer = Interval::every(10);
-    if(timer()){
-        //float dt = (micros() - nextUpdate + UPDATE_MICROS) / 1e6;
-        const float dt = 0.01;
-
-        float C0 = AHP.C0;
-        float C1 = AHP.C1;
-
-        float barometer = baro.getAltitude();
-        float altitude = barometer*C0 + altitudeEst*(1.0-C0);
-        float newvelocity = (altitude-altitudeEst) / dt;
-        float velocity = newvelocity*C1 + velocityEst*(1.0-C1);
-
-        altitudeEst = altitude;
-        velocityEst = velocity;
-    }
-}
-
-float altHoldUpdate(float throttleCMD){
-    static auto timer = Interval::every(10);
-    if(timer()){
-        //float dt = (micros() - nextUpdate + UPDATE_MICROS) / 1e6;
-        const float dt = 0.01;
-
-        float K0 = AHP.K0;
-        float K1 = AHP.K1;
-        float K2 = AHP.K2;
-
-        //adjust setpoint
-        float th = (throttleCMD-0.5);
-        if(fabs(th) > 0.1) altitudeSetpoint += th/4.0;
-
-        float error = altitudeSetpoint-altitudeEst;
-        float newIntegral = oldIntegral + error * dt;
-        throttleOutput = (K0/10.0)*(error + K1*velocityEst + K2*newIntegral) + hover;
-
-        oldIntegral = newIntegral;
-    }
-
-    return throttleOutput;
 }
 
 void sendTelemetry(){
@@ -218,18 +154,17 @@ void sendTelemetry(){
         float amperage = float((analogRead(66)/1024.l)*5.l*17.0f);
 
         using namespace Protocol;
-        comms.sendTelem(LATITUDE   , (micros()-loopstart)/loopcount);
-        comms.sendTelem(LONGITUDE  , altHold );
+        comms.sendTelem(LATITUDE   , gps.getLatitude());
+        comms.sendTelem(LONGITUDE  , gps.getLongitude());
         comms.sendTelem(HEADING    , toDeg(orientation.getYaw()));
         comms.sendTelem(PITCH      , toDeg(orientation.getPitch()));
         comms.sendTelem(ROLL       , toDeg(orientation.getRoll()));
         comms.sendTelem(GROUNDSPEED, outputThrottle);
         comms.sendTelem(VOLTAGE    , voltage);
         comms.sendTelem(AMPERAGE   , amperage);
-        comms.sendTelem(ALTITUDE, altitudeEst);
-        comms.sendTelem(ALTITUDE+1, velocityEst);
-        comms.sendTelem(ALTITUDE+2, oldIntegral);
-        comms.sendTelem(ALTITUDE+3, altitudeSetpoint);
+        comms.sendTelem(ALTITUDE   , altitude.getAltitude());
+        comms.sendTelem(ALTITUDE+1 , altitude.getVelocity());
+        comms.sendTelem(ALTITUDE+2 , altitudeSetpoint);
 
         Serial.println();
         Serial.flush();
