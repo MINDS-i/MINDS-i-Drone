@@ -1,5 +1,6 @@
 #include "input/InertialManager.h"
 #include "input/Sensor.h"
+#include "util/LTATune.h"
 
 //HMC5883L Compass
 class HMC5883L : public InertialVec {
