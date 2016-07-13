@@ -29,6 +29,8 @@ StateTimer radioDownLeft([](){
     return down && left;
 });
 
+
+
 //
 uint32_t loopstart;
 uint32_t loopcount;
@@ -121,10 +123,12 @@ void fly(){
     }
 
     // update yaw target
+    static uint32_t integrationTimer = micros();
+    uint32_t now = micros();
+    float dt = (now - integrationTimer)/1e6;
+    integrationTimer = now;
     if(fabs(yawCmd) > 0.1){
-        static uint32_t integrationTimer = micros();
-        float dt = (micros() - integrationTimer)/1e6;
-        yawTarget += yawCmd*dt;
+        yawTarget += yawCmd*dt*M_PI*YawTargetSlewRate;
         yawTarget = truncateRadian(yawTarget);
     }
 

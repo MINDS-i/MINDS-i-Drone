@@ -14,8 +14,8 @@ InertialVec* sens[2] = {&cmp, &mpu};
 Translator   conv[2] = {Translators::APM, Translators::APM};
 InertialManager sensors(sens, conv, 2);
 #define Output_t AfroESC
-Output_t esc[4] = { Output_t(12 /*CCW APM 1*/), Output_t(11 /*CCW APM 2*/),
-                    Output_t( 8 /*CW  APM 3*/), Output_t( 7 /*CW  APM 4*/) };
+Output_t esc[4] = {Output_t(12/*CCW TR APM 1*/), Output_t(11/*CCW BL APM 2*/),
+                   Output_t( 8/*CW  TL APM 3*/), Output_t( 7/*CW  BR APM 4*/) };
 OutputDevice* outDev[4] = {&esc[0], &esc[1], &esc[2], &esc[3]};
 OutputManager output(outDev);
 
@@ -30,6 +30,7 @@ bool errorsDetected = false;
 void setupSettings();
 
 struct AltitudeHoldParameters{ float C0, C1, K0, K1, K2; } AHP;
+float YawTargetSlewRate = 1.0f;
 
 ///////////
 bool safe();
@@ -86,7 +87,7 @@ void setupQuad() {
     gps.begin();
     sensors.calibrate();
     baro.calibrate();
-    baro.setTempDutyCycle(4);
+    baro.setTempDutyCycle(2);
     boolean sensorErrors = sensors.errorMessages([](const char * errmsg){
             comms.sendString(errmsg);}
         );
@@ -231,4 +232,6 @@ void setupSettings(){
     /*AIRSETTING index="20" name="K2" min="0.0" max="1.0" def="0.004"
     */
     settings.attach(20, 0.004f, [](float g){ AHP.K2 = g; });
+
+    settings.attach(21, 1.0f, [](float g){ YawTargetSlewRate = g; });
 }
