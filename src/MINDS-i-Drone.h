@@ -33,6 +33,7 @@ Copyright 2015 MINDS-i Inc.
     #define FAIL(a) return false;
 #endif
 
+
 #include "APM/APMRadioInput.h"
 #include "APM/ServoGenerator.h"
 
@@ -40,7 +41,11 @@ Copyright 2015 MINDS-i Inc.
 #include "comms/NMEA.h"
 #include "comms/Protocol.h"
 
+#include "controllers/AltitudeHold.h"
+#include "controllers/Horizon.h"
+
 #include "filter/AcclOnly.h"
+#include "filter/Altitude.h"
 #include "filter/DualErrorFilter.h"
 #include "filter/GyroOnly.h"
 #include "filter/OrientationEngine.h"
@@ -51,30 +56,29 @@ Copyright 2015 MINDS-i Inc.
 #include "input/altIMU/LPS25H.h"
 #include "input/altIMU/LSM303D.h"
 #include "input/altIMU/STMtwi.h"
-#include "input/APM/LEA6H.h"
-#include "input/APM/MS5611.h"
-#include "input/APM/MPU6000.h"
 #include "input/APM/HMC5883L.h"
+#include "input/APM/LEA6H.h"
+#include "input/APM/MPU6000.h"
+#include "input/APM/MS5611.h"
+#include "input/AxisTranslator.h"
 #include "input/InertialManager.h"
 #include "input/Sensor.h"
 #include "input/SPIcontroller.h"
 #include "input/UM7.h"
-#include "input/AxisTranslator.h"
 
+#include "math/Algebra.h"
 #include "math/GreatCircle.h"
 #include "math/Quaternion.h"
 #include "math/SpatialMath.h"
 #include "math/Vec3.h"
 #include "math/Waypoint.h"
-#include "math/Algebra.h"
 
-#include "output/HK_ESCOutputDevice.h"
 #include "output/AfroESC.h"
+#include "output/FlightStrategy.h"
+#include "output/HK_ESCOutputDevice.h"
 #include "output/OutputDevice.h"
 #include "output/OutputManager.h"
 #include "output/ServoOutputDevice.h"
-#include "output/FlightStrategy.h"
-#include "output/Horizon.h"
 
 #include "storage/EEPROMlist.h"
 #include "storage/EEPROMstorage.h"
@@ -89,12 +93,12 @@ Copyright 2015 MINDS-i Inc.
 #include "util/byteConv.h"
 #include "util/callbackTemplate.h"
 #include "util/HLAverage.h"
+#include "util/Interval.h"
 #include "util/LTATune.h"
 #include "util/PIDcontroller.h"
 #include "util/PIDexternaltime.h"
 #include "util/PIDparameters.h"
 #include "util/profile.h"
-#include "util/Interval.h"
 #include "util/StateTimer.h"
 
 #endif
