@@ -10,6 +10,7 @@ MPU6000   mpu;
 HMC5883L  cmp;
 LEA6H     gps;
 MS5611    baro;
+Altitude  altitude;
 InertialVec* sens[2] = {&cmp, &mpu};
 Translator   conv[2] = {Translators::APM, Translators::APM};
 InertialManager sensors(sens, conv, 2);
@@ -26,13 +27,13 @@ ThrottleCurve throttleCurve(0.37, 0.4);
 Horizon       horizon(&attPID, &attVel,
                       &attPID, &attVel,
                       &yawPID, &yawVel );
+AltitudeHold altitudeHold;
 bool errorsDetected = false;
-void setupSettings();
-
-struct AltitudeHoldParameters{ float C0, C1, K0, K1, K2; } AHP;
 float YawTargetSlewRate = 1.0f;
+float AltitudeTargetSlewRate = 1.0f;
 
 ///////////
+void setupSettings();
 bool safe();
 void arm();
 void calibrateESCs();
@@ -48,11 +49,13 @@ void isrCallback(uint16_t microseconds) {
     output.update(orientation, ms);
     toc(0);
 }
+
 void changeInterruptPeriod(float newPeriod){
     if(newPeriod < MINIMUM_INT_PERIOD) newPeriod = MINIMUM_INT_PERIOD;
     ServoGenerator::setUpdateCallback(isrCallback);
     ServoGenerator::begin(newPeriod);
 }
+
 bool safe(){
     return !errorsDetected;
 }
@@ -60,10 +63,12 @@ void arm(){
     delay(500);
     output.arm();
 }
+
 void calibrateESCs(){
     delay(500);
     output.calibrate();
 }
+
 void setupQuad() {
     Serial.begin(Protocol::BAUD_RATE);
     comms.requestResync();
@@ -83,11 +88,13 @@ void setupQuad() {
     APMRadio::setup();
 
     sensors.start();
-    baro.begin();
-    gps.begin();
     sensors.calibrate();
+    gps.begin();
+    baro.begin();
     baro.calibrate();
     baro.setTempDutyCycle(2);
+    altitude.setup(baro.getAltitude());
+
     boolean sensorErrors = sensors.errorMessages([](const char * errmsg){
             comms.sendString(errmsg);}
         );
@@ -99,6 +106,7 @@ void loopQuad() {
     comms.update();
     gps.update();
     baro.update();
+    altitude.update(baro.getAltitude());
 }
 void setupSettings(){
     if(!settings.foundSettings()){
@@ -217,21 +225,46 @@ void setupSettings(){
      */
     settings.attach(15, 0.40f, [](float g){ throttleCurve.setLinearity(g); });
 
-    /*AIRSETTING index="16" name="C0" min="0.0" max="1.0" def="0.046"
-    */
-    settings.attach(16, 0.046f, [](float g){ AHP.C0 = g; });
-    /*AIRSETTING index="17" name="C1" min="0.0" max="1.0" def="0.020"
-    */
-    settings.attach(17, 0.020f, [](float g){ AHP.C1 = g; });
-    /*AIRSETTING index="18" name="K0" min="0.0" max="1.0" def="0.090"
-    */
-    settings.attach(18, 0.090f, [](float g){ AHP.K0 = g; });
-    /*AIRSETTING index="19" name="K1" min="0.0" max="1.0" def="-2.00"
-    */
-    settings.attach(19,-2.000f, [](float g){ AHP.K1 = g; });
-    /*AIRSETTING index="20" name="K2" min="0.0" max="1.0" def="0.004"
-    */
-    settings.attach(20, 0.004f, [](float g){ AHP.K2 = g; });
+    /*AIRSETTING index="16" name="Yaw Slew Rate" min="0" max="10.0" def="1.0"
+     *The maximum rate at which the yaw stick can adjust the yaw setpoint
+     *in half turns per second
+     */
+    settings.attach(16, 1.0f, [](float g){ YawTargetSlewRate = g; });
 
-    settings.attach(21, 1.0f, [](float g){ YawTargetSlewRate = g; });
+    /*AIRSETTING index="17" name="Altitude Hold Slew Rate" min="0" max="10.0" def="1.0"
+     *The maximum rate at which the throttle stick can adjust the altitude
+     *hold setpoint in feet per second
+     */
+    settings.attach(17, 1.0f, [](float g){ AltitudeTargetSlewRate = g; });
+
+    /*AIRSETTING index="18" name="Barometer Gain" min="0.0" max="1.0" def="0.046"
+     * The altitude estimate's sensitivity to changes in barometer readings
+     * 1.0 implies the altitude estimate is the exact barometer value
+     * 0.0 implies the altitude estimate is not effected by the barometer at all
+     */
+    settings.attach(18, 0.046f, [](float g){ altitude.setBarometerGain(g); });
+
+    /*AIRSETTING index="19" name="Velocity Gain" min="0.0" max="1.0" def="0.020"
+     * The vertical velocity estimate's sensitivity
+     * 1.0 implies the vertical velocity estimate updates rapidly
+     * 0.0 implies the vertical velocity estimate never changes
+     */
+    settings.attach(19, 0.020f, [](float g){ altitude.setVelocityGain(g); });
+
+    /*AIRSETTING index="20" name="Altitude Response" min="0.0" max="1.0" def="0.090"
+     * How powerful the quadcopter's responses to unwanted changes in altitude are
+     */
+    settings.attach(20, 0.090f, [](float g){ altitudeHold.setResponseFactor(g); });
+
+    /*AIRSETTING index="21" name="Altitude Velocity Factor" min="0.0" max="1.0" def="-2.00"
+     * How much the quadcopter's vertical velocity impacts its altitude hold control
+     */
+    settings.attach(21,-2.000f, [](float g){ altitudeHold.setVelocityFactor(g); });
+
+    /*AIRSETTING index="22" name="Altitude Integral Factor" min="0.0" max="1.0" def="0.004"
+     * How much the quadcopter's integrated altitude error contributes to its
+     * overall altitude corrections
+     */
+    settings.attach(22, 0.004f, [](float g){ altitudeHold.setIntegralFactor(g); });
+
 }

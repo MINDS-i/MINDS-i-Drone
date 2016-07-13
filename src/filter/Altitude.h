@@ -1,7 +1,6 @@
 #ifndef ALTITUDE_H
 #define ALTITUDE_H
 
-#include "input/APM/MS5611.h"
 #include "util/Interval.h"
 
 class Altitude{
@@ -23,19 +22,18 @@ public:
     float getAltitude(){ return altitudeEst; }
     float getVelocity(){ return velocityEst; }
     /** Initialize altitude tracking */
-    void altitudeSetup(MS5611 baro){
-        altitudeEst = baro.getAltitude();
+    void setup(float inputAltitude){
+        altitudeEst = inputAltitude;
         velocityEst = 0.0;
     }
     /** Update altitude model */
-    void altitudeUpdate(MS5611 baro){
+    void update(float inputAltitude){
         static auto timer = Interval::every(UPDATE_INTERVAL);
         if(timer()){
             float C0 = barometerGain;
             float C1 = velocityGain;
 
-            float barometer = baro.getAltitude();
-            float altitude = barometer*C0 + altitudeEst*(1.0-C0);
+            float altitude = inputAltitude*C0 + altitudeEst*(1.0-C0);
 
             float newvelocity = (altitude-altitudeEst) / DT;
             velocityEst = newvelocity*C1 + velocityEst*(1.0-C1);

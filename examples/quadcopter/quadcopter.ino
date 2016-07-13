@@ -34,7 +34,7 @@ const char* stateString[] = {
     [DISARMED] = "DISARMED", [CALIBRATE] = "CALIBRATE", [FLYING] = "FLYING" };
 
 // Flight State variables
-boolean altHold = false;
+boolean altHoldEnabled = false;
 float yawTarget = 0.0;
 float altitudeSetpoint;
 auto calibrateEndTimer = Interval::elapsed(0);
@@ -80,7 +80,6 @@ void loop() {
             if(calibrateEndTimer()) {
                 orientation.calibrate(false);
                 yawTarget = orientation.getYaw();
-                altitudeCalcInit();
                 output.standby();
                 setState(FLYING);
             }
@@ -103,7 +102,7 @@ void fly(){
     float rollCmd  = ((float)APMRadio::get(RADIO_ROLL)-90)  /-70.0;
     float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   / 90.0;
     float throttle = ((float)APMRadio::get(RADIO_THROTTLE)-25)/130.0;
-    bool  altMode  = (APMRadio::get(RADIO_GEAR) > 90);
+    bool altSwitch = (APMRadio::get(RADIO_GEAR) > 90);
 
     // check for low throttle standby mode
     if(APMRadio::get(RADIO_THROTTLE) <= CHANNEL_TRIGGER_MIN){
@@ -114,32 +113,39 @@ void fly(){
     }
 
     // switch into and out of altitude hold mode
-    if(altMode == false){
+    if(altSwitch == false){
         //switch to manual mode
-        altHold = false;
-    } else if (altHold == false && altMode == true){
+        altHoldEnabled = false;
+    } else if (altHoldEnabled == false /* implied altSwitch == true*/){
         comms.sendString("Alt Hold");
-        altitudeHold.setup();
-        altitudeTarget = altitude.getAltitude();
-        altHold = true;
+        altitudeHold.setup(outputThrottle);
+        altitudeSetpoint = altitude.getAltitude();
+        altHoldEnabled = true;
     }
 
-    // update targets
-    static uint32_t integrationTimer = micros();
+    // Calculate time delta
+    static uint32_t lastRunTime = micros();
     uint32_t now = micros();
-    float dt = (now - integrationTimer)/1e6;
-    integrationTimer = now;
+    float dt = (now - lastRunTime)/1e6; // in seconds
+    lastRunTime = now;
+
+    // update yaw target
     if(fabs(yawCmd) > 0.1){
         yawTarget += yawCmd*dt*M_PI*YawTargetSlewRate;
         yawTarget = truncateRadian(yawTarget);
     }
-    if(fabs(throttle) > 0.1){
-        altitudeSetpoint += throttle*dt*AltitudeTargetSlewRate;
+
+    // update altitude target
+    if(altHoldEnabled){
+        float setpointCommand = throttle-0.5;
+        if(fabs(setpointCommand) > 0.1){
+            altitudeSetpoint += setpointCommand*dt*AltitudeTargetSlewRate;
+        }
     }
 
     // calculate throttle
-    float throttleOut = (altHold) ?
-        altitudeHold.update(altitudeTarget, altitude) :
+    float throttleOut = (altHoldEnabled) ?
+        altitudeHold.update(altitudeSetpoint, altitude) :
         throttleCurve.get(throttle);
 
     // set outputs

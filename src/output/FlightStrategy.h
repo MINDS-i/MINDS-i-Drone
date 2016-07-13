@@ -1,5 +1,8 @@
 #ifndef FLIGHT_STRATEGY_H
 #define FLIGHT_STRATEGY_H
+
+#include "filter/OrientationEngine.h"
+
 class FlightStrategy{
 public:
     /**
