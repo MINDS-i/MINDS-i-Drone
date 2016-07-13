@@ -28,10 +28,10 @@ protected:
     const static uint8_t ADC_READ_ADDR   = 0;
 
     // OSR (Over Sampling Ratio) constants and calculation milliseconds
-    // 0x00, 0x02, 0x04, 0x06, 0x08
-    //    1,    2,    3,    5,   10
-    const static uint8_t OSR_RATIO = 0x08;
-    const static uint8_t OSR_DELAY =   10;
+    // 0x00, 0x02, 0x04, 0x06, 0x08 OSR bits
+    // 0.54, 1.06, 2.08, 4.13, 8.22 milliseconds
+    const static uint8_t  OSR_RATIO = 0x08;
+    const static uint16_t OSR_DELAY = 10000; // in microseconds
 
     //calibration terms stored in ms5611 prom
     uint16_t SENS_T1;
@@ -114,7 +114,7 @@ MS5611::get16from(uint8_t prom_addr){
 void
 MS5611::begin(){
     sendCommand(RESET);
-    readyTime = millis();
+    readyTime = micros();
     tempCycle = TEMP_DUTY_CYCLE; //get temperature first
 }
 void
@@ -139,7 +139,7 @@ MS5611::setTempDutyCycle(uint16_t cycle){
 }
 void
 MS5611::update(){
-    if(millis() > readyTime){
+    if(micros() > readyTime){
         //get data
         uint32_t tmp = get24from(ADC_READ_ADDR);
         if(tempCycle == 0){
@@ -158,7 +158,7 @@ MS5611::update(){
             tempCycle++;
         }
 
-        readyTime = millis()+OSR_DELAY;
+        readyTime = micros()+OSR_DELAY;
     }
 }
 void
