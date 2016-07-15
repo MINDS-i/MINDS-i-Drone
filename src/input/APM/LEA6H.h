@@ -46,10 +46,6 @@ public:
 };
 Sensor::Status
 LEA6H::status(){
-  if(parser.getWarning()){
-    /*#GPSWARN LEA6H gps warning; GPS is running but does not have a lock */
-    return Sensor::BAD("GPSWARN");
-  }
   return Sensor::OK;
 }
 void
