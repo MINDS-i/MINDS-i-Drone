@@ -5,15 +5,13 @@
 #include "platforms/Ardupilot.h"
 using namespace Platform;
 
-const float INT_PERIOD = 5000;
-
 InertialVec*    sens[1] = {&mpu};
 Translator      conv[1] = {Translators::APM};
 InertialManager sensors(sens, conv, 1);
 
-DualErrorFilter orientation(1.0f, 1000.0f, 1000000.0f);
+RCFilter orientation(0.01,0.0);
 
-PIDparameters tune(30.0f,400.0f,0.0f);
+PIDparameters tune(50.0f,300.0f,0.0f);
 PIDcontroller pid(&tune);
 ServoGenerator::Servo output;
 
@@ -29,7 +27,6 @@ void setup() {
     output.attach(A0);
     pid.set(0.0f);
     ServoGenerator::setUpdateCallback(isrCallback);
-    ServoGenerator::begin(INT_PERIOD);
 }
 
 void loop(){

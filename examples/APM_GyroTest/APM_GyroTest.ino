@@ -5,8 +5,6 @@
 #include "platforms/Ardupilot.h"
 using namespace Platform;
 
-const float INT_PERIOD = 5000;
-
 InertialVec*    sens[1] = {&mpu};
 Translator      conv[1] = {Translators::APM};
 InertialManager sensors(sens, conv, 1);
@@ -29,7 +27,6 @@ void setup() {
     Serial.begin (9600);
     output.attach(A0);
     ServoGenerator::setUpdateCallback(isrCallback);
-    ServoGenerator::begin(INT_PERIOD);
 }
 
 void loop(){
