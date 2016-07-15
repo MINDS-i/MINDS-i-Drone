@@ -1,13 +1,16 @@
 #include "Wire.h"
 #include "SPI.h"
 #include "MINDS-i-Drone.h"
+
+#include "platforms/Ardupilot.h"
+using namespace Platform;
+
 const float INT_PERIOD = 5000;
 
-Settings        settings(eeStorage::getInstance());
-MPU6000         mpu;
 InertialVec*    sens[1] = {&mpu};
 Translator      conv[1] = {Translators::APM};
 InertialManager sensors(sens, conv, 1);
+
 DualErrorFilter orientation(1.0f, 1000.0f, 1000000.0f);
 
 PIDparameters tune(30.0f,400.0f,0.0f);
@@ -21,10 +24,8 @@ void isrCallback(uint16_t microseconds){
 }
 
 void setup() {
+    beginAPM();
     Serial.begin(9600);
-    mpu.tuneAccl(settings.getAccelTune());
-    sensors.start();
-    sensors.calibrate();
     output.attach(A0);
     pid.set(0.0f);
     ServoGenerator::setUpdateCallback(isrCallback);
@@ -32,6 +33,7 @@ void setup() {
 }
 
 void loop(){
+    updateAPM();
     Quaternion attitude = orientation.getAttitude();
     float pitch = attitude.getPitch();
     Serial.print(pitch);

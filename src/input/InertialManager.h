@@ -32,32 +32,9 @@ public:
 	InertialManager(InertialVec** s, Translator* ts, uint8_t num)
 		: sensor(s), translator(ts), numSensors(num) {}
     void update(){
-        for(int i=0; i<numSensors; i++) sensor[i]->update(*this, translator[i]);
-    }
-    void begin(){
-        for(int i=0; i<numSensors; i++) sensor[i]->begin();
-    }
-    void calibrate(){
-        for(int i=0; i<numSensors; i++) sensor[i]->calibrate();
-    }
-    void end(){
-        for(int i=0; i<numSensors; i++) sensor[i]->end();
-    }
-    /**
-     * read error messages from the attached sensors
-     * Returns true if errors are detected
-     * Error messages that are received are passed to `errorMessageReceiver`
-     * for the caller to deal with
-     */
-    bool errorMessages( void (*errorMessageReceiver) (const char *) ){
-        bool errors = false;
-        for(int i=0; i<numSensors; i++){
-            auto status = sensor[i]->status();
-            if(status.good()) continue;
-            errors = true;
-            errorMessageReceiver(status.message);
+        for(int i=0; i<numSensors; i++) {
+            sensor[i]->update(*this, translator[i]);
         }
-        return errors;
     }
     Vec3 getGyro(){
         return gyro;

@@ -2,44 +2,43 @@
 #include "SPI.h"
 #include "MINDS-i-Drone.h"
 
-HardwareSerial *commSerial	= &Serial;
-Storage<float> *storage	= eeStorage::getInstance();
-CommManager		manager(commSerial, storage);
-Settings		settings(storage);
-Waypoint		loc;
-uint32_t 		time;
-uint32_t		walkInterval;
+#include "platforms/Ardupilot.h"
+using namespace Platform;
+
+Waypoint loc;
+uint32_t time;
+uint32_t walkInterval;
 
 void setupSettings(){
-	using namespace AirSettings;
-	settings.attach(INT_PERIOD , 1000.f, callback<uint32_t, &walkInterval>);
+	settings.attach(0, 1000.f, callback<uint32_t, &walkInterval>);
 }
 void setup(){
-	setupSettings();
+	beginAPM();
 	Serial.begin(9600);
 	delay(500);
-	manager.requestResync();
+	setupSettings();
+	comms.requestResync();
 	time = millis();
 }
 
 void loop(){
-	manager.update();
+	updateAPM();
 	if(time <= millis()){
 		time += walkInterval;
 
-		loc = manager.getTargetWaypoint();
-		manager.sendTelem(Protocol::telemetryType(LATITUDE) , loc.degLatitude());
-		manager.sendTelem(Protocol::telemetryType(LONGITUDE), loc.degLongitude());
-		manager.sendTelem(2, manager.numWaypoints());
+		loc = comms.getTargetWaypoint();
+		comms.sendTelem(Protocol::telemetryType(LATITUDE) , loc.degLatitude());
+		comms.sendTelem(Protocol::telemetryType(LONGITUDE), loc.degLongitude());
+		comms.sendTelem(2, comms.numWaypoints());
 
-		manager.sendString("Hello from the arduino!");
+		comms.sendString("Hello from the arduino!");
 
 		//advance waypoint list
-		if(manager.getTargetIndex() < manager.numWaypoints()-1){
-			manager.advanceTargetIndex();
+		if(comms.getTargetIndex() < comms.numWaypoints()-1){
+			comms.advanceTargetIndex();
 		}
-		else if (manager.loopWaypoints()){
-			manager.setTargetIndex(0);
+		else if (comms.loopWaypoints()){
+			comms.setTargetIndex(0);
 		}
 	}
 }

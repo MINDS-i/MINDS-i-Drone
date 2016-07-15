@@ -2,25 +2,22 @@
 #include "SPI.h"
 #include "MINDS-i-Drone.h"
 
+#include "platforms/Ardupilot.h"
+using namespace Platform;
+
 const int       UPDATE_INTERVAL = 100; //ms between telemetry transmits
 const int       MSG_INTERVAL = 30000; //ms between message transmits
-HardwareSerial *commSerial  = &Serial;
-Storage<float> *storage = eeStorage::getInstance();
-CommManager     manager(commSerial, storage);
-LEA6H           gps;
-MPU6000         mpu;
 Waypoint        location(0,0);
 HLA             pitch(100, 0);
 HLA             roll (100, 0);
 
 void setup(){
-    commSerial->begin(Protocol::BAUD_RATE);
-    mpu.begin();
-    gps.begin();
-    manager.requestResync();
+    beginAPM();
+    comms.requestResync();
 }
+
 void loop(){
-	manager.update();
+    updateAPM();
     updateGPS();
     readAccelerometer();
     static uint32_t outputTrack = millis();
@@ -33,7 +30,7 @@ void loop(){
     static uint32_t msgTrack = millis();
     if(millis() > msgTrack){
         msgTrack += MSG_INTERVAL;
-        manager.sendString("MSG_TEST");
+        comms.sendString("MSG_TEST");
     }
 }
 void readAccelerometer(){
@@ -52,11 +49,11 @@ void updateGPS(){
 void reportTelemetry(){
     using namespace Protocol;
     float voltage = float(analogRead(67)/1024.l*5.l*10.1l);
-    manager.sendTelem(telemetryType(LATITUDE),    location.degLatitude());
-    manager.sendTelem(telemetryType(LONGITUDE),   location.degLongitude());
-    manager.sendTelem(telemetryType(HEADING),     gps.getCourse());
-    manager.sendTelem(telemetryType(PITCH),       pitch.get()*180/PI);
-    manager.sendTelem(telemetryType(ROLL),        roll.get()*180/PI);
-    manager.sendTelem(telemetryType(GROUNDSPEED), gps.getGroundSpeed());
-    manager.sendTelem(telemetryType(VOLTAGE),     voltage);
+    comms.sendTelem(telemetryType(LATITUDE),    location.degLatitude());
+    comms.sendTelem(telemetryType(LONGITUDE),   location.degLongitude());
+    comms.sendTelem(telemetryType(HEADING),     gps.getCourse());
+    comms.sendTelem(telemetryType(PITCH),       pitch.get()*180/PI);
+    comms.sendTelem(telemetryType(ROLL),        roll.get()*180/PI);
+    comms.sendTelem(telemetryType(GROUNDSPEED), gps.getGroundSpeed());
+    comms.sendTelem(telemetryType(VOLTAGE),     voltage);
 }

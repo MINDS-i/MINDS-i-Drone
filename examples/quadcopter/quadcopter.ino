@@ -2,6 +2,7 @@
 #include "SPI.h"
 #include "MINDS-i-Drone.h"
 #include "platforms/Quadcopter.h"
+using namespace Platform;
 
 // Radio Channel Mapping
 enum RadioChannel{ RADIO_PITCH = 0, RADIO_ROLL = 1, RADIO_THROTTLE = 2,
@@ -48,13 +49,13 @@ void setState(State s){
 }
 
 void setup() {
-    setupQuad();
+    beginMultirotor();
     setState(DISARMED);
 }
 
 void loop() {
     //always running updates
-    loopQuad();
+    updateMultirotor();
     sendTelemetry();
     //flight mode state machine
     switch(state){
@@ -170,7 +171,8 @@ void sendTelemetry(){
         comms.sendTelem(AMPERAGE   , amperage);
         comms.sendTelem(ALTITUDE   , altitude.getAltitude());
         comms.sendTelem(ALTITUDE+1 , altitude.getVelocity());
-        comms.sendTelem(ALTITUDE+2 , altitudeSetpoint);
+        //comms.sendTelem(ALTITUDE+2 , altitudeSetpoint);
+        comms.sendTelem(ALTITUDE+2 , baro.getAltitude());
 
         Serial.println();
         Serial.flush();

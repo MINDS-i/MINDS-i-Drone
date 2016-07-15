@@ -1,30 +1,27 @@
 #include "Wire.h"
 #include "SPI.h"
 #include "MINDS-i-Drone.h"
+
 #include "platforms/Quadcopter.h"
+using namespace Platform;
 
 void setup() {
-    setupQuad();
-    output.setMode(&horizon);
+    beginMultirotor();
 }
 
 void loop() {
     //always running updates
-    loopQuad();
+    updateMultirotor();
     sendTelemetry();
 }
 
 void sendTelemetry(){
-    static uint32_t sendTime = millis();
-    if(sendTime < millis()){
-        sendTime += 50;
-
+    static auto timer = Interval::every(250);
+    if(timer()){
         using namespace Protocol;
-        comms.sendTelem(HEADING    , toDeg(orientation.getYaw()  ));
-        comms.sendTelem(PITCH      , toDeg(orientation.getPitch()));
-        comms.sendTelem(ROLL       , toDeg(orientation.getRoll() ));
-        comms.sendTelem(GROUNDSPEED, profile[0]);
-
+        comms.sendTelem(HEADING, toDeg(orientation.getYaw()) );
+        comms.sendTelem(PITCH  , toDeg(orientation.getPitch()) );
+        comms.sendTelem(ROLL   , toDeg(orientation.getRoll()) );
         Serial.println();
         Serial.flush();
     }

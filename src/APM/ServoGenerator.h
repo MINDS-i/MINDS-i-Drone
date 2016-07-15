@@ -57,7 +57,7 @@ namespace ServoGenerator{
      *     interval but will skip a frame of signal outputs
      * @param refreshIntervalMicroseconds Microseconds between servo frames
      */
-    void begin(uint16_t refreshIntervalMicroseconds);
+    void begin(uint16_t refreshIntervalMicroseconds = DEFAULT_REFRESH_INTERVAL);
     /**
      * Attach a function can be installed to update the servo setpoints
      * It will be called at the start of each frame after the output channels
