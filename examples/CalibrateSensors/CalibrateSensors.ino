@@ -1,8 +1,6 @@
 #include "Wire.h"
 #include "SPI.h"
 #include "MINDS-i-Drone.h"
-#include "platforms/Ardupilot.h"
-using namespace Platform;
 
 enum ProgramState {
     COLLECT_STATES,
@@ -30,9 +28,12 @@ bool  axisLogged[6];
 float acclLog[6][3];
 float magnLog[6][3];
 
-InertialVec* sens[2] = {&mpu, &hmc};
+MPU6000  mpu;
+HMC5883L cmp;
+InertialVec* sens[2] = {&mpu, &cmp};
 Translator   conv[2] = {Translators::identity, Translators::identity};
 InertialManager sensors(sens, conv, 2);
+Settings set(eeStorage::getInstance());
 
 class datastream{
 private:
@@ -83,8 +84,12 @@ datastream accl[3];
 datastream magn[3];
 
 void setup(){
-    beginAPM();
     Serial.begin(9600);
+    mpu.begin();
+    cmp.begin();
+    delay(1000);
+    mpu.calibrate();
+    cmp.calibrate();
     delay(250);
 
     auto mpuState = mpu.status();
@@ -93,10 +98,10 @@ void setup(){
         Serial.println(mpuState.message);
         while(true);
     }
-    auto hmcState = hmc.status();
-    if(!hmcState.good()){
+    auto cmpState = cmp.status();
+    if(!cmpState.good()){
         Serial.println("Bad HMC5883L status");
-        Serial.println(hmcState.message);
+        Serial.println(cmpState.message);
         while(true);
     }
 
@@ -105,8 +110,6 @@ void setup(){
 }
 
 void loop(){
-    updateAPM();
-
     static uint32_t time = millis();
     if( millis() > time){
         time += UPDATE_DELAY;
@@ -200,6 +203,9 @@ void calculateResults(){
     LTATune newAccl = LTATune::FitEllipsoid(acclLog);
     LTATune newMagn = LTATune::FitEllipsoid(magnLog);
 
+//{"-X","+X","-Y","+Y","-Z","+Z"}
+
+
     Serial.println();
     for(int i=0; i<3; i++){
         float a = magnLog[i*2+0][i];
@@ -214,6 +220,20 @@ void calculateResults(){
             newMagn.scalar[i] *= -1;
         }
     }
+/*
+    Serial.println();
+    for(int j=0; j<6; j++){
+        float data[3];
+        for(int i=0; i<3; i++) data[i] = magnLog[j][i];
+        newMagn.calibrate(data);
+        float val = data[j/2] * ((j%2)? 1.0 : -1.0);
+        Serial.print(j/2);
+        Serial.print("\t");
+        Serial.print(val);
+        Serial.print("\t");
+        Serial.println();
+    }
+*/
 
     Serial.println("res = (raw+shift)*scalar");
     Serial.println("New accelerometer tune:");
@@ -222,18 +242,18 @@ void calculateResults(){
     printTune(newMagn);
     Serial.println("Would you like to save these values? (y/n)");
     if(getTrueFalseResponse()){
-        settings.writeTuningValues(newAccl, newMagn);
+        set.writeTuningValues(newAccl, newMagn);
     }
 }
 
 void applyTuneFromEEPROM(){
-    mpu.tuneAccl(settings.getAccelTune());
-    hmc.tune(settings.getMagTune());
+    mpu.tuneAccl(set.getAccelTune());
+    cmp.tune(set.getMagTune());
 }
 
 void resetTuneParameters(){
     mpu.tuneAccl(LTATune());
-    hmc.tune(LTATune());
+    cmp.tune(LTATune());
 }
 
 void streamData(){
