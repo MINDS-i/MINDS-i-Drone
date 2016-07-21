@@ -55,9 +55,11 @@ namespace Platform{
 
         // Startup the onboard sensors
         Sensor* sensors[] = {&mpu, &hmc, &baro, &gps};
+        for(int i=0; i<4; i++) sensors[i]->begin();
+        delay(50);
+        for(int i=0; i<4; i++) sensors[i]->calibrate();
+        delay(50);
         for(int i=0; i<4; i++) {
-            sensors[i]->begin();
-            sensors[i]->calibrate();
             auto status = sensors[i]->status();
             if(!status.good()){
                 errorsDetected = true;

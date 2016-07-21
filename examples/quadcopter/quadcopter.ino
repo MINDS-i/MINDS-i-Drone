@@ -99,59 +99,62 @@ void loop() {
 }
 
 void fly(){
-    float pitchCmd = ((float)APMRadio::get(RADIO_PITCH)-90) /-70.0;
-    float rollCmd  = ((float)APMRadio::get(RADIO_ROLL)-90)  /-70.0;
-    float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   / 90.0;
-    float throttle = ((float)APMRadio::get(RADIO_THROTTLE)-25)/130.0;
-    bool altSwitch = (APMRadio::get(RADIO_GEAR) > 90);
+    static auto timer = Interval::every(10);
+    if(timer()){
+        float pitchCmd = ((float)APMRadio::get(RADIO_PITCH)-90) /-70.0;
+        float rollCmd  = ((float)APMRadio::get(RADIO_ROLL)-90)  /-70.0;
+        float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   / 90.0;
+        float throttle = ((float)APMRadio::get(RADIO_THROTTLE)-25)/130.0;
+        bool altSwitch = (APMRadio::get(RADIO_GEAR) > 90);
 
-    // check for low throttle standby mode
-    if(APMRadio::get(RADIO_THROTTLE) <= CHANNEL_TRIGGER_MIN){
-        output.standby();
-        return;
-    } else {
-        output.enable();
-    }
-
-    // switch into and out of altitude hold mode
-    if(altSwitch == false){
-        //switch to manual mode
-        altHoldEnabled = false;
-    } else if (altHoldEnabled == false /* implied altSwitch == true*/){
-        comms.sendString("Alt Hold");
-        altitudeHold.setup(outputThrottle);
-        altitudeSetpoint = altitude.getAltitude();
-        altHoldEnabled = true;
-    }
-
-    // Calculate time delta
-    static uint32_t lastRunTime = micros();
-    uint32_t now = micros();
-    float dt = (now - lastRunTime)/1e6; // in seconds
-    lastRunTime = now;
-
-    // update yaw target
-    if(fabs(yawCmd) > 0.1){
-        yawTarget += yawCmd*dt*M_PI*YawTargetSlewRate;
-        yawTarget = truncateRadian(yawTarget);
-    }
-
-    // update altitude target
-    if(altHoldEnabled){
-        float setpointCommand = throttle-0.5;
-        if(fabs(setpointCommand) > 0.1){
-            altitudeSetpoint += setpointCommand*dt*AltitudeTargetSlewRate;
+        // check for low throttle standby mode
+        if(APMRadio::get(RADIO_THROTTLE) <= CHANNEL_TRIGGER_MIN){
+            output.standby();
+            return;
+        } else {
+            output.enable();
         }
+
+        // switch into and out of altitude hold mode
+        if(altSwitch == false){
+            //switch to manual mode
+            altHoldEnabled = false;
+        } else if (altHoldEnabled == false /* implied altSwitch == true*/){
+            comms.sendString("Alt Hold");
+            altitudeHold.setup(outputThrottle);
+            altitudeSetpoint = altitude.getAltitude();
+            altHoldEnabled = true;
+        }
+
+        // Calculate time delta
+        static uint32_t lastRunTime = micros();
+        uint32_t now = micros();
+        float dt = (now - lastRunTime)/1e6; // in seconds
+        lastRunTime = now;
+
+        // update yaw target
+        if(fabs(yawCmd) > 0.1){
+            yawTarget += yawCmd*dt*M_PI*YawTargetSlewRate;
+            yawTarget = truncateRadian(yawTarget);
+        }
+
+        // update altitude target
+        if(altHoldEnabled){
+            float setpointCommand = throttle-0.5;
+            if(fabs(setpointCommand) > 0.1){
+                altitudeSetpoint += setpointCommand*dt*AltitudeTargetSlewRate;
+            }
+        }
+
+        // calculate throttle
+        float throttleOut = (altHoldEnabled) ?
+            altitudeHold.update(altitudeSetpoint, altitude) :
+            throttleCurve.get(throttle);
+
+        // set outputs
+        outputThrottle = throttleOut;
+        horizon.set(pitchCmd, rollCmd, yawTarget, throttleOut);
     }
-
-    // calculate throttle
-    float throttleOut = (altHoldEnabled) ?
-        altitudeHold.update(altitudeSetpoint, altitude) :
-        throttleCurve.get(throttle);
-
-    // set outputs
-    outputThrottle = throttleOut;
-    horizon.set(pitchCmd, rollCmd, yawTarget, throttleOut);
 }
 
 void sendTelemetry(){
@@ -171,8 +174,8 @@ void sendTelemetry(){
         comms.sendTelem(AMPERAGE   , amperage);
         comms.sendTelem(ALTITUDE   , altitude.getAltitude());
         comms.sendTelem(ALTITUDE+1 , altitude.getVelocity());
-        //comms.sendTelem(ALTITUDE+2 , altitudeSetpoint);
-        comms.sendTelem(ALTITUDE+2 , baro.getAltitude());
+        comms.sendTelem(ALTITUDE+2 , altitudeSetpoint);
+        comms.sendTelem(ALTITUDE+3 , baro.getAltitude());
 
         Serial.println();
         Serial.flush();

@@ -36,9 +36,10 @@ public:
             float altitude = inputAltitude*C0 + altitudeEst*(1.0-C0);
 
             float newvelocity = (altitude-altitudeEst) / DT;
-            velocityEst = newvelocity*C1 + velocityEst*(1.0-C1);
+            float velocity = newvelocity*C1 + velocityEst*(1.0-C1);
 
-            altitudeEst = altitude;
+            altitudeEst = (isnan(altitude))? 0.0 : altitude;
+            velocityEst = (isnan(velocity))? 0.0 : velocity;
         }
     }
 };

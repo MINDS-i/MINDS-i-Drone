@@ -7,6 +7,10 @@ Altimeter, get a raw value and maybe a converted value to feet?
 */
 
 MS5611 baro;
+SRAMstorage<float,2> storage;
+Settings settings(&storage);
+CommManager comms(&Serial, &storage);
+Altitude altitude;
 
 void setup(){
     Serial.begin(9600);
@@ -14,21 +18,26 @@ void setup(){
     baro.begin();
     delay(100);
     baro.calibrate();
+
+    altitude.setup(0.0);
+    settings.attach(0, 0.05, [](float g){ altitude.setBarometerGain(g); });
+    settings.attach(1, 0.02, [](float g){ altitude.setVelocityGain(g); });
 }
 void loop(){
+    comms.update();
     baro.update();
+    altitude.update(baro.getAltitude());
 
-    float temp = baro.getCelsius();
-    float bar  = baro.getMilliBar();
-    float alt  = baro.getAltitude();
+    static auto timer = Interval::every(10);
+    if(timer()){
+        float temp = baro.getCelsius();
+        float bar  = baro.getMilliBar();
+        float alt  = baro.getAltitude();
 
-    Serial.print("temp: ");
-    Serial.print(temp);
-    Serial.print("\t");
-    Serial.print("mbar: ");
-    Serial.print(bar);
-    Serial.print("\t");
-    Serial.print("alt: ");
-    Serial.print(alt);
-    Serial.println();
+        comms.sendTelem(GROUNDSPEED, altitude.getVelocity());
+        comms.sendTelem(VOLTAGE, temp);
+        comms.sendTelem(AMPERAGE, bar);
+        comms.sendTelem(ALTITUDE, alt);
+        comms.sendTelem(ALTITUDE+1, altitude.getAltitude());
+    }
 }

@@ -267,12 +267,12 @@ namespace Platform {
         /*AIRSETTING index="20" name="Altitude Response" min="0.0" max="1.0" def="0.090"
          * How powerful the quadcopter's responses to unwanted changes in altitude are
          */
-        settings.attach(20, 0.090f, [](float g){ altitudeHold.setResponseFactor(g); });
+        settings.attach(20, 0.050f, [](float g){ altitudeHold.setResponseFactor(g); });
 
         /*AIRSETTING index="21" name="Altitude Velocity Factor" min="0.0" max="1.0" def="-2.00"
          * How much the quadcopter's vertical velocity impacts its altitude hold control
          */
-        settings.attach(21,-2.000f, [](float g){ altitudeHold.setVelocityFactor(g); });
+        settings.attach(21, 0.000f, [](float g){ altitudeHold.setVelocityFactor(g); });
 
         /*AIRSETTING index="22" name="Altitude Integral Factor" min="0.0" max="1.0" def="0.004"
          * How much the quadcopter's integrated altitude error contributes to its
