@@ -96,9 +96,11 @@ MPU6000::tuneAccl(LTATune t){
 }
 void
 MPU6000::begin(){
-    //rewrite all of this
+    // Turn off barometer SPI line
+    // Without this, running the MPU without instancing a MS5611 will fail
+    // Only applies to APM2.* hardware though
     pinMode(40, OUTPUT);
-    digitalWrite(40, HIGH); //Turn off barometer SPI line
+    digitalWrite(40, HIGH);
 
     writeTo(REG_PWR_MGMT_1  , BIT_H_RESET); //chip reset
     delay(100);
