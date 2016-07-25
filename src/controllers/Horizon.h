@@ -53,7 +53,7 @@ public:
         this->pitch    = pitch;
         this->roll     = roll;
         this->yaw      = yaw;
-        this->throttle = throttle;
+        this->throttle = min(throttle, 1.0);
     }
     float getTiltCompLimit(){
         return tiltCompLimit;
