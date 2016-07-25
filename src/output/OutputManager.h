@@ -128,7 +128,6 @@ void OutputManager::update(OrientationEngine &orientation, float ms){
 
 	float impulses[4];
 	flightMode->update(orientation,ms,impulses);
-	impulses[3] *= 4.0f; // throttle split 4 ways in `solveOutputs`
 
 	float outThrottle[4];
 	solveOutputs(impulses, outThrottle);
