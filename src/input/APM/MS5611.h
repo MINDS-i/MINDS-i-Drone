@@ -46,7 +46,6 @@ protected:
     uint16_t  tempCycle;
     uint32_t  readyTime;
     int32_t   dT, P;
-    bool      newData;
     uint16_t  TEMP_DUTY_CYCLE;
 
     void     sendCommand(uint8_t command);
@@ -57,10 +56,10 @@ protected:
 public:
     MS5611()
         : spiController(APM26_CS_PIN, SPISettings(8E6, MSBFIRST, SPI_MODE0)),
-          newData(true), TEMP_DUTY_CYCLE(2) {}
+          TEMP_DUTY_CYCLE(2) {}
     MS5611(uint8_t cs_pin)
         : spiController(cs_pin, SPISettings(8E6, MSBFIRST, SPI_MODE0)),
-          newData(true), TEMP_DUTY_CYCLE(2) {}
+          TEMP_DUTY_CYCLE(2) {}
     void begin();
     void end();
     void update();
@@ -147,7 +146,6 @@ MS5611::update(){
         } else {
             calculateP(tmp);
         }
-        newData = true;
 
         //send new request
         if(tempCycle >= TEMP_DUTY_CYCLE){
