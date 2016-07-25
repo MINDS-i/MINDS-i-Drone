@@ -176,6 +176,7 @@ void sendTelemetry(){
         comms.sendTelem(ALTITUDE+1 , altitude.getVelocity());
         comms.sendTelem(ALTITUDE+2 , altitudeSetpoint);
         comms.sendTelem(ALTITUDE+3 , baro.getAltitude());
+        comms.sendTelem(ALTITUDE+4 , profileTime(0));
 
         Serial.println();
         Serial.flush();
