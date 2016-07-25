@@ -269,7 +269,7 @@ namespace Platform {
          * 1.0 implies the vertical velocity estimate updates rapidly
          * 0.0 implies the vertical velocity estimate never changes
          */
-        settings.attach(19, 0.020f, [](float g){ altitude.setVelocityGain(g); });
+        settings.attach(19, 0.050f, [](float g){ altitude.setVelocityGain(g); });
 
         /*AIRSETTING index="20" name="Altitude Response" min="0.0" max="1.0" def="0.090"
          * How powerful the quadcopter's responses to unwanted changes in altitude are
