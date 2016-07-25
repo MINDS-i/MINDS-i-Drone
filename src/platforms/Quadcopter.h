@@ -64,12 +64,19 @@ namespace Platform {
     /**
      * Update function called in interrupts to read essential sensors,
      * calculate correction torques, and apply new motor outputs
+     *
+     * It also includes the barometer update, because, while not flight critical
+     *   it is best to keep all SPI bus reads in the same "thread" and
+     *   consistently timed. Reading the barometer takes ~.1 ms
      */
     void isrCallback(uint16_t microseconds) {
+        tic(0);
         float ms = ((float)microseconds)/1000.0;
         imu.update();
         orientation.update(imu, ms);
         output.update(orientation, ms);
+        baro.update();
+        toc(0);
     }
 
     /**

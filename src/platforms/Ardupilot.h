@@ -78,7 +78,6 @@ namespace Platform{
     void updateAPM() {
         comms.update();
         gps.update();
-        baro.update();
     }
 }
 #endif
