@@ -1,6 +1,7 @@
 #ifndef ALTITUDEHOLD_H
 #define ALTITUDEHOLD_H
 
+#include "Arduino.h"
 #include "filter/Altitude.h"
 #include "util/Interval.h"
 
@@ -10,6 +11,13 @@ private:
     const uint32_t UPDATE_INTERVAL = 10;
     /** The interval in seconds between altituhe hold update calculations */
     const float DT = ((float) UPDATE_INTERVAL)/1000.0;
+    /**
+     * The minimum and maximum multiplier's away from hoverThrottle
+     * that the output will ever go, effectivly setting a "liveband" on the
+     * output relative the starting hover throttle
+     */
+    const float MIN_THROTTLE_RATIO = 0.66;
+    const float MAX_THROTTLE_RATIO = 1.50;
     // Controller state variables
     float integral;
     float hover;
@@ -44,11 +52,13 @@ public:
             float error = targetAltitude-measurements.getAltitude();
             integral = integral + error*DT;
             float correction = error +
-                               measurements.getVelocity()*velocityFactor +
+                               -measurements.getVelocity()*velocityFactor +
                                integral*integralFactor;
             throttleOutput = hover + responseFactor * correction;
         }
-        return throttleOutput;
+        return constrain(throttleOutput,
+            hover*MIN_THROTTLE_RATIO,
+            hover*MAX_THROTTLE_RATIO);
     }
 };
 #endif
