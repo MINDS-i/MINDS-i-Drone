@@ -15,6 +15,8 @@ Solves a 4x4 linear system
 		1: front left motor  (cw)
 		2: back right motor  (cw)
 
+The input and output arrays can be equal
+
 The file is based on a plus flying configuration - The characteristic matrix:
 
          #0 #1 #2 #3
@@ -62,11 +64,13 @@ void solveOutputs(const float (&input)[4], float (&output)[4]){
 	out[1] = y[1]/2.0          + out[2];
 	out[0] = y[0]/1.0 + out[1] - out[2] + out[3];
 
-	// Lower the throttle to maintain full control on each axis
+	// Constrain the throttle to maintain full control on each axis
+	// Unrolled for 167 cycle savings
 	float throttle = input[3];
-	for(int i=0; i<4; i++){
-		throttle = min(throttle, 1.0-out[i]);
-	}
+	throttle = min(throttle, 1.0-out[0]);
+	throttle = min(throttle, 1.0-out[1]);
+	throttle = min(throttle, 1.0-out[2]);
+	throttle = min(throttle, 1.0-out[3]);
 
 	// Add the adjusted throttle back in to the outputs
 	output[0] = throttle + out[2];
