@@ -257,29 +257,29 @@ namespace Platform {
          */
         settings.attach(17, 1.0f, [](float g){ AltitudeTargetSlewRate = g; });
 
-        /*AIRSETTING index="18" name="Barometer Gain" min="0.0" max="1.0" def="0.046"
+        /*AIRSETTING index="18" name="Barometer Gain" min="0.0" max="1.0" def="0.3"
          * The altitude estimate's sensitivity to changes in barometer readings
          * 1.0 implies the altitude estimate is the exact barometer value
          * 0.0 implies the altitude estimate is not effected by the barometer at all
          */
-        settings.attach(18, 0.046f, [](float g){ altitude.setBarometerGain(g); });
+        settings.attach(18, 0.3f, [](float g){ altitude.setBarometerGain(g); });
 
-        /*AIRSETTING index="19" name="Velocity Gain" min="0.0" max="1.0" def="0.020"
+        /*AIRSETTING index="19" name="Velocity Gain" min="0.0" max="1.0" def="0.30"
          * The vertical velocity estimate's sensitivity
          * 1.0 implies the vertical velocity estimate updates rapidly
          * 0.0 implies the vertical velocity estimate never changes
          */
-        settings.attach(19, 0.050f, [](float g){ altitude.setVelocityGain(g); });
+        settings.attach(19, 0.3f, [](float g){ altitude.setVelocityGain(g); });
 
-        /*AIRSETTING index="20" name="Altitude Response" min="0.0" max="1.0" def="0.090"
+        /*AIRSETTING index="20" name="Altitude Response" min="0.0" max="1.0" def="0.010"
          * How powerful the quadcopter's responses to unwanted changes in altitude are
          */
-        settings.attach(20, 0.000f, [](float g){ altitudeHold.setResponseFactor(g); });
+        settings.attach(20, 0.010f, [](float g){ altitudeHold.setResponseFactor(g); });
 
-        /*AIRSETTING index="21" name="Altitude Velocity Factor" min="0.0" max="1.0" def="-2.00"
+        /*AIRSETTING index="21" name="Altitude Velocity Factor" min="0.0" max="1.0" def="0.06"
          * How much the quadcopter's vertical velocity impacts its altitude hold control
          */
-        settings.attach(21, 0.000f, [](float g){ altitudeHold.setVelocityFactor(g); });
+        settings.attach(21, 0.060f, [](float g){ altitudeHold.setVelocityFactor(g); });
 
         /*AIRSETTING index="22" name="Altitude Integral Factor" min="0.0" max="1.0" def="0.004"
          * How much the quadcopter's integrated altitude error contributes to its
