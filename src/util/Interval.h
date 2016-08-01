@@ -38,6 +38,19 @@ namespace Interval{
     SingleInterval elapsed(uint32_t milliseconds){
         return SingleInterval( millis() + milliseconds);
     }
+
+    class Timer{
+        uint32_t lastCall;
+    public:
+        Timer(){ reset(); }
+        void reset() { lastCall = micros(); }
+        uint32_t operator()() {
+            return micros() - lastCall;
+        }
+    };
+    Timer timer(){
+        return Timer();
+    }
 }
 
 #endif
