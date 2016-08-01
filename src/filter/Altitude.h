@@ -5,10 +5,8 @@
 
 class Altitude{
 private:
-    /** The interval in milliseconds between altitude update calculations*/
-    const uint32_t UPDATE_INTERVAL = 10;
-    /** The interval in seconds between altituhe update calculations */
-    const float DT = ((float) UPDATE_INTERVAL)/1000.0;
+    /** The interval in microseconds between altitude update calculations*/
+    const uint32_t UPDATE_INTERVAL = 10000;
     // Altitude state variables
     float altitudeEst;
     float velocityEst;
@@ -28,19 +26,24 @@ public:
     }
     /** Update altitude model */
     void update(float inputAltitude){
-        static auto timer = Interval::every(UPDATE_INTERVAL);
-        if(timer()){
+        static auto timer = Interval::timer();
+        uint32_t dt = timer();
+        if(dt > UPDATE_INTERVAL){
+            timer.reset();
+
             float C0 = barometerGain;
             float C1 = velocityGain;
 
             float altitude = inputAltitude*C0 + altitudeEst*(1.0-C0);
 
-            float newvelocity = (altitude-altitudeEst) / DT;
+            float dSecondsInv = 1E6 / ((float)dt);
+            float newvelocity = (altitude-altitudeEst) * dSecondsInv;
             float velocity = newvelocity*C1 + velocityEst*(1.0-C1);
 
             altitudeEst = (isnan(altitude))? 0.0 : altitude;
             velocityEst = (isnan(velocity))? 0.0 : velocity;
         }
+
     }
 };
 
