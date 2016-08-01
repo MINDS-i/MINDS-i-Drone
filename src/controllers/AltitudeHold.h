@@ -16,12 +16,12 @@ private:
      * that the output will ever go, effectivly setting a "liveband" on the
      * output relative the starting hover throttle
      */
-    const float MIN_THROTTLE_RATIO = 0.66;
-    const float MAX_THROTTLE_RATIO = 1.50;
+    const float MIN_THROTTLE_RATIO = 0.75;
+    const float MAX_THROTTLE_RATIO = 1.30;
     // Controller state variables
     float integral;
     float hover;
-    float throttleOutput;
+    float output;
     // Response calibration variables
     float responseFactor;
     float velocityFactor;
@@ -38,7 +38,7 @@ public:
     void setup(float hoverThrottle){
         hover = hoverThrottle;
         integral = 0.0;
-        throttleOutput = 0.0;
+        output = 0.0;
     }
     /**
      * Update the altituhe hold controller and return the target throttle value
@@ -50,15 +50,25 @@ public:
         static auto timer = Interval::every(UPDATE_INTERVAL);
         if(timer()) {
             float error = targetAltitude-measurements.getAltitude();
-            integral = integral + error*DT;
+            float newIntegral = integral + error*DT;
             float correction = error +
                                -measurements.getVelocity()*velocityFactor +
-                               integral*integralFactor;
-            throttleOutput = hover + responseFactor * correction;
+                               newIntegral*integralFactor;
+            float throttle = hover + responseFactor * correction;
+
+            if(throttle < hover*MIN_THROTTLE_RATIO){
+                // Cap the minimum throttle
+                output = hover*MIN_THROTTLE_RATIO;
+            } else if(throttle > hover*MAX_THROTTLE_RATIO) {
+                // Cap the maximum throttle
+                output = hover*MAX_THROTTLE_RATIO;
+            } else {
+                // Output the calculated value and store the new integral
+                output = throttle;
+                integral = newIntegral;
+            }
         }
-        return constrain(throttleOutput,
-            hover*MIN_THROTTLE_RATIO,
-            hover*MAX_THROTTLE_RATIO);
+        return output;
     }
 };
 #endif
