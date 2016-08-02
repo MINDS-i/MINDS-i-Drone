@@ -165,127 +165,133 @@ namespace Platform {
          */
         settings.attach(2, 0.0015f, [](float g){ orientation.setMagGain(g); });
 
-        /*AIRSETTING index="3" name="Unused" min="0.0" max="0.0" def="0.0"
-         */
-        settings.attach(3, 0.00f , [](float g){ });
-
-        /*AIRSETTING index="4" name="Att P Term" min="0" max="+inf" def="0.375"
+        /*AIRSETTING index="3" name="Att P Term" min="0" max="+inf" def="0.375"
          *Attitude Stabilization P term<br>
          *Control proportional to current error.<br>
          *Generally the main driver of PID control.<br>
          *Higher P makes reaction quicker, but increases overshoot and degrades stability.
          */
-        settings.attach(4, 0.375f, [](float g){ attPID.setIdealP(g); });
+        settings.attach(3, 0.375f, [](float g){ attPID.setIdealP(g); });
 
-        /*AIRSETTING index="5" name="Att I Term" min="0" max="+inf" def="0.000"
+        /*AIRSETTING index="4" name="Att I Term" min="0" max="+inf" def="0.000"
          *Attitude Stabilization I term<br>
          *Used to eliminate steady state error, too much I can increase overshoot and degrade stability.
          */
-        settings.attach(5, 0.000f, [](float g){ attPID.setIdealI(g); });
+        settings.attach(4, 0.000f, [](float g){ attPID.setIdealI(g); });
 
-        /*AIRSETTING index="6" name="Att D Term" min="0" max="+inf" def="0.006"
+        /*AIRSETTING index="5" name="Att D Term" min="0" max="+inf" def="0.006"
          *Attitude Stabilization D term<br>
          *D Will dampen the output by predicting the future quadcopter position with linear extrapolation.<br>
          *It will decrease overshoot and decrease settling time, but can cause new oscillations if set too high.
          */
-        settings.attach(6, 0.006f, [](float g){ attPID.setIdealD(g); });
+        settings.attach(5, 0.006f, [](float g){ attPID.setIdealD(g); });
 
-        /*AIRSETTING index="7" name="Att VP Term" min="0" max="+inf" def="4.50"
+        /*AIRSETTING index="6" name="Att VP Term" min="0" max="+inf" def="4.50"
          *P term on attitude Velocity control loop <br>
          *Higher values will make stabilization more aggressive.
          */
-        settings.attach(7, 4.50f, [](float g){ attVel.setIdealP(g); });
+        settings.attach(6, 4.50f, [](float g){ attVel.setIdealP(g); });
 
-        /*AIRSETTING index="8" name="Att VI Term" min="0" max="+inf" def="2.0"
+        /*AIRSETTING index="7" name="Att VI Term" min="0" max="+inf" def="2.0"
          *I term on attitude Velocity control loop <br>
          *Higher values increase response to drifting and unevent weight <br>\
          *Too high can cause instability and oscillations
          */
-        settings.attach(8, 2.00f, [](float g){ attVel.setIdealI(g); });
+        settings.attach(7, 2.00f, [](float g){ attVel.setIdealI(g); });
 
-        /*AIRSETTING index="9" name="Att VD Term" min="0" max="+inf" def="0.05"
+        /*AIRSETTING index="8" name="Att VD Term" min="0" max="+inf" def="0.05"
          *D term on attitude Velocity control loop <br>
          *Can be used to dampen oscillations and increase P's ceiling
          */
-        settings.attach(9, 0.05f, [](float g){ attVel.setIdealD(g); });
+        settings.attach(8, 0.05f, [](float g){ attVel.setIdealD(g); });
 
-        /*AIRSETTING index="10" name="Yaw P Term" min="-inf" max="+inf" def="1.0"
+        /*AIRSETTING index="9" name="Yaw P Term" min="-inf" max="+inf" def="1.0"
          *Yaw Stabilization P term<br>
          */
-        settings.attach(10, 1.0f, [](float g){ yawPID.setIdealP(g); });
+        settings.attach(9, 1.0f, [](float g){ yawPID.setIdealP(g); });
 
-        /*AIRSETTING index="11" name="Yaw I Term" min="0" max="+inf" def="0.0"
+        /*AIRSETTING index="10" name="Yaw I Term" min="0" max="+inf" def="0.0"
          *Yaw Stabilization I term<br>
          */
-        settings.attach(11, 0.00f, [](float g){ yawPID.setIdealI(g); });
+        settings.attach(10, 0.00f, [](float g){ yawPID.setIdealI(g); });
 
-        /*AIRSETTING index="12" name="Yaw D Term" min="0" max="+inf" def="0.0"
+        /*AIRSETTING index="11" name="Yaw D Term" min="0" max="+inf" def="0.0"
          *Yaw Stabilization D term<br>
          */
-        settings.attach(12, 0.00f, [](float g){ yawPID.setIdealD(g); });
+        settings.attach(11, 0.00f, [](float g){ yawPID.setIdealD(g); });
 
-        /*AIRSETTING index="13" name="Yaw V Term" min="0" max="+inf" def="8.00"
-         *Yaw stabilization V term<br>
+        /*AIRSETTING index="12" name="Yaw VP Term" min="0" max="+inf" def="8.00"
+         *Yaw stabilization VP term<br>
          */
-        settings.attach(13, 8.00f, [](float g){ yawVel.setIdealP(g); });
+        settings.attach(12, 8.00f, [](float g){ yawVel.setIdealP(g); });
 
-        /*AIRSETTING index="14" name="Hover Throttle" min="0" max="1.0" def="0.40"
+        /*AIRSETTING index="13" name="Yaw VI Term" min="0" max="+inf" def="8.00"
+         *Yaw stabilization VI term<br>
+         */
+        settings.attach(13, 0.00f, [](float g){ yawVel.setIdealI(g); });
+
+        /*AIRSETTING index="14" name="Yaw VD Term" min="0" max="+inf" def="8.00"
+         *Yaw stabilization VD term<br>
+         */
+        settings.attach(14, 0.00f, [](float g){ yawVel.setIdealD(g); });
+
+        /*AIRSETTING index="15" name="Hover Throttle" min="0" max="1.0" def="0.40"
          *Raw output throttle necessary to hover (used for throttle stick centering)<br>
          *Used in the RC radio throttle stick curve equation. When the throttle stick in at 50%,
          *This is what the quad's final output throttle will be at.
          */
-        settings.attach(14, 0.40f, [](float g){ throttleCurve.setHoverPoint(g); });
+        settings.attach(15, 0.40f, [](float g){ throttleCurve.setHoverPoint(g); });
 
-        /*AIRSETTING index="15" name="Throttle Linearity" min="0" max="1.0" def="0.40"
+        /*AIRSETTING index="16" name="Throttle Linearity" min="0" max="1.0" def="0.40"
          *Affects radio throttle curve linearity<br>
          *A Value of 0.5 is as linear as possible around the hover throttle<br>
          *A Value of 0.0 is heavily curved for fine control around the hover point<br>
          *A value of 1.0 is heavily curved for more sensitivity<br>
          *A value slightly under 0.5 tends to work best
          */
-        settings.attach(15, 0.40f, [](float g){ throttleCurve.setLinearity(g); });
+        settings.attach(16, 0.40f, [](float g){ throttleCurve.setLinearity(g); });
 
-        /*AIRSETTING index="16" name="Yaw Slew Rate" min="0" max="10.0" def="1.0"
+        /*AIRSETTING index="17" name="Yaw Slew Rate" min="0" max="10.0" def="1.0"
          *The maximum rate at which the yaw stick can adjust the yaw setpoint
          *in half turns per second
          */
-        settings.attach(16, 1.0f, [](float g){ YawTargetSlewRate = g; });
+        settings.attach(17, 1.0f, [](float g){ YawTargetSlewRate = g; });
 
-        /*AIRSETTING index="17" name="Altitude Hold Slew Rate" min="0" max="10.0" def="1.0"
+        /*AIRSETTING index="18" name="Altitude Hold Slew Rate" min="0" max="10.0" def="1.0"
          *The maximum rate at which the throttle stick can adjust the altitude
          *hold setpoint in feet per second
          */
-        settings.attach(17, 1.0f, [](float g){ AltitudeTargetSlewRate = g; });
+        settings.attach(18, 1.0f, [](float g){ AltitudeTargetSlewRate = g; });
 
-        /*AIRSETTING index="18" name="Barometer Gain" min="0.0" max="1.0" def="0.3"
+        /*AIRSETTING index="19" name="Barometer Gain" min="0.0" max="1.0" def="0.3"
          * The altitude estimate's sensitivity to changes in barometer readings
          * 1.0 implies the altitude estimate is the exact barometer value
          * 0.0 implies the altitude estimate is not effected by the barometer at all
          */
-        settings.attach(18, 0.3f, [](float g){ altitude.setBarometerGain(g); });
+        settings.attach(19, 0.3f, [](float g){ altitude.setBarometerGain(g); });
 
-        /*AIRSETTING index="19" name="Velocity Gain" min="0.0" max="1.0" def="0.30"
+        /*AIRSETTING index="20" name="Velocity Gain" min="0.0" max="1.0" def="0.30"
          * The vertical velocity estimate's sensitivity
          * 1.0 implies the vertical velocity estimate updates rapidly
          * 0.0 implies the vertical velocity estimate never changes
          */
-        settings.attach(19, 0.3f, [](float g){ altitude.setVelocityGain(g); });
+        settings.attach(20, 0.3f, [](float g){ altitude.setVelocityGain(g); });
 
-        /*AIRSETTING index="20" name="Altitude Response" min="0.0" max="1.0" def="0.010"
+        /*AIRSETTING index="21" name="Altitude Response" min="0.0" max="1.0" def="0.010"
          * How powerful the quadcopter's responses to unwanted changes in altitude are
          */
-        settings.attach(20, 0.010f, [](float g){ altitudeHold.setResponseFactor(g); });
+        settings.attach(21, 0.010f, [](float g){ altitudeHold.setResponseFactor(g); });
 
-        /*AIRSETTING index="21" name="Altitude Velocity Factor" min="0.0" max="1.0" def="0.06"
+        /*AIRSETTING index="22" name="Altitude Velocity Factor" min="0.0" max="1.0" def="0.06"
          * How much the quadcopter's vertical velocity impacts its altitude hold control
          */
-        settings.attach(21, 0.060f, [](float g){ altitudeHold.setVelocityFactor(g); });
+        settings.attach(22, 0.060f, [](float g){ altitudeHold.setVelocityFactor(g); });
 
-        /*AIRSETTING index="22" name="Altitude Integral Factor" min="0.0" max="1.0" def="0.004"
+        /*AIRSETTING index="23" name="Altitude Integral Factor" min="0.0" max="1.0" def="0.004"
          * How much the quadcopter's integrated altitude error contributes to its
          * overall altitude corrections
          */
-        settings.attach(22, 0.000f, [](float g){ altitudeHold.setIntegralFactor(g); });
+        settings.attach(23, 0.000f, [](float g){ altitudeHold.setIntegralFactor(g); });
     }
 }
 #endif
