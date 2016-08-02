@@ -9,7 +9,6 @@ private:
     PIDexternaltime  rollPID, rError;
     PIDexternaltime   yawPID, yError;
     float pitch, roll, yaw, throttle;
-    float tiltCompLimit;
 public:
     Horizon(PIDparameters* pitchI, PIDparameters* pitchO,
             PIDparameters*  rollI, PIDparameters*  rollO,
@@ -54,11 +53,5 @@ public:
         this->roll     = roll;
         this->yaw      = yaw;
         this->throttle = min(throttle, 1.0);
-    }
-    float getTiltCompLimit(){
-        return tiltCompLimit;
-    }
-    void setTiltCompLimit(float tcl){
-        tiltCompLimit = tcl;
     }
 };

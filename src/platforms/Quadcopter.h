@@ -165,9 +165,9 @@ namespace Platform {
          */
         settings.attach(2, 0.0015f, [](float g){ orientation.setMagGain(g); });
 
-        /*AIRSETTING index="3" name="Tilt Compensation" min="0.0" max="0.0" def="0.0"
+        /*AIRSETTING index="3" name="Unused" min="0.0" max="0.0" def="0.0"
          */
-        settings.attach(3, 0.00f , [](float g){ horizon.setTiltCompLimit(g); });
+        settings.attach(3, 0.00f , [](float g){ });
 
         /*AIRSETTING index="4" name="Att P Term" min="0" max="+inf" def="0.375"
          *Attitude Stabilization P term<br>
