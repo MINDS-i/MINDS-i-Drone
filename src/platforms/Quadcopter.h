@@ -205,25 +205,25 @@ namespace Platform {
          */
         settings.attach(8, 0.05f, [](float g){ attVel.setIdealD(g); });
 
-        /*AIRSETTING index="9" name="Yaw P Term" min="-inf" max="+inf" def="1.0"
+        /*AIRSETTING index="9" name="Yaw P Term" min="-inf" max="+inf" def="2.5"
          *Yaw Stabilization P term<br>
          */
-        settings.attach(9, 1.0f, [](float g){ yawPID.setIdealP(g); });
+        settings.attach(9, 2.5f, [](float g){ yawPID.setIdealP(g); });
 
         /*AIRSETTING index="10" name="Yaw I Term" min="0" max="+inf" def="0.0"
          *Yaw Stabilization I term<br>
          */
-        settings.attach(10, 0.00f, [](float g){ yawPID.setIdealI(g); });
+        settings.attach(10, 0.0f, [](float g){ yawPID.setIdealI(g); });
 
-        /*AIRSETTING index="11" name="Yaw D Term" min="0" max="+inf" def="0.0"
+        /*AIRSETTING index="11" name="Yaw D Term" min="0" max="+inf" def="0.003"
          *Yaw Stabilization D term<br>
          */
-        settings.attach(11, 0.00f, [](float g){ yawPID.setIdealD(g); });
+        settings.attach(11, 0.003f, [](float g){ yawPID.setIdealD(g); });
 
-        /*AIRSETTING index="12" name="Yaw VP Term" min="0" max="+inf" def="8.00"
+        /*AIRSETTING index="12" name="Yaw VP Term" min="0" max="+inf" def="4.00"
          *Yaw stabilization VP term<br>
          */
-        settings.attach(12, 8.00f, [](float g){ yawVel.setIdealP(g); });
+        settings.attach(12, 4.00f, [](float g){ yawVel.setIdealP(g); });
 
         /*AIRSETTING index="13" name="Yaw VI Term" min="0" max="+inf" def="8.00"
          *Yaw stabilization VI term<br>
