@@ -14,7 +14,7 @@ inline float truncateRadian(float val){ return simplifyRadian(0, val); }
 inline float truncateDegree(float val){ return simplifyDegree(0, val); }
 //deprecated, use truncateDegree instead
 inline float trunkAngle(float angle)  { return simplifyDegree(0, angle); }
-//calculate heading from a to b in standard degrees
+//calculate heading from a to b, North = 0.0, counter clockwise positive
 float calcHeading (Waypoint a, Waypoint b);
 //calculate distance in miles from a to b
 float calcDistance(Waypoint a, Waypoint b);
