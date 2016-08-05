@@ -53,7 +53,12 @@ void setup() {
     setState(DISARMED);
 }
 
+float averageInterval = 0.0;
 void loop() {
+    toc(1);
+    uint32_t loopUpdateTime = profileTime(1);
+    averageInterval = 0.01*loopUpdateTime + 0.99*averageInterval;
+    tic(1);
     //always running updates
     updateMultirotor();
     sendTelemetry();
@@ -157,28 +162,71 @@ void fly(){
     }
 }
 
+//
+//make this a class?
+float voltage = 0.0;
+float amperage = 0.0;
+float currentAmperage(){
+    return amperage;
+}
+float currentVoltage(){
+    amperage = float((analogRead(66)/1024.l)*5.l*17.0f);
+    float rawVolt = float((analogRead(67)/1024.l)*5.l*9.7f);
+    float adjVolt = rawVolt + 0.035*amperage;
+    voltage = adjVolt * 0.05 + voltage * 0.95;
+    return voltage;
+}
+//
+//
+
+typedef float (*telemLine)(void);
+const telemLine telemetryTable[] = {
+    [](){ return gps.getLatitude(); },             //LATITUDE
+    [](){ return gps.getLongitude(); },            //LONGITUDE
+    [](){ return toDeg(orientation.getYaw()); },   //HEADING
+    [](){ return toDeg(orientation.getPitch()); }, //PITCH
+    [](){ return toDeg(orientation.getRoll()); },  //ROLL
+    [](){ return gps.getGroundSpeed(); },          //GROUNDSPEED
+    [](){ return currentVoltage(); },              //VOLTAGE
+    [](){ return currentAmperage(); },             //AMPERAGE
+    [](){ return altitude.getAltitude(); },        //ALTITUDE
+
+    [](){ return 1E6f/averageInterval; },
+    [](){ return gps.getMagVar(); },
+    [](){ return gps.getCourse(); },
+/*
+    [](){ return posHold.targetSpeed; },
+    [](){ return posHold.direction; },
+    [](){ return posHold.course; },
+    [](){ return posHold.speed; },
+    [](){ return posHold.targetNS; },
+    [](){ return posHold.targetEW; },
+    [](){ return posHold.speedNS; },
+    [](){ return posHold.speedEW; },
+    [](){ return posHold.NSoutput; },
+    [](){ return posHold.EWoutput; },
+ */
+};
+
+const uint8_t telemetryTotal =
+    sizeof(telemetryTable)/sizeof(telemetryTable[0]);
+const uint16_t refreshInterval = 240;
+const uint16_t transmitInterval = refreshInterval / telemetryTotal;
 void sendTelemetry(){
-    static auto timer = Interval::every(250);
+    static auto timer = Interval::every(transmitInterval);
+    static int nextTelemIndex = 0;
     if(timer()){
-        float voltage  = float((analogRead(67)/1024.l)*5.l*10.1f);
-        float amperage = float((analogRead(66)/1024.l)*5.l*17.0f);
-
-        using namespace Protocol;
-        comms.sendTelem(LATITUDE   , gps.getLatitude());
-        comms.sendTelem(LONGITUDE  , gps.getLongitude());
-        comms.sendTelem(HEADING    , toDeg(orientation.getYaw()));
-        comms.sendTelem(PITCH      , toDeg(orientation.getPitch()));
-        comms.sendTelem(ROLL       , toDeg(orientation.getRoll()));
-        comms.sendTelem(GROUNDSPEED, outputThrottle);
-        comms.sendTelem(VOLTAGE    , voltage);
-        comms.sendTelem(AMPERAGE   , amperage);
-        comms.sendTelem(ALTITUDE   , altitude.getAltitude());
-        comms.sendTelem(ALTITUDE+1 , altitude.getVelocity());
-        comms.sendTelem(ALTITUDE+2 , altitudeSetpoint);
-        comms.sendTelem(ALTITUDE+3 , baro.getAltitude());
-        comms.sendTelem(ALTITUDE+4 , profileTime(0));
-
-        Serial.println();
-        Serial.flush();
+        comms.sendTelem(nextTelemIndex, telemetryTable[nextTelemIndex]());
+        nextTelemIndex = (nextTelemIndex+1) % telemetryTotal;
     }
+    /*using namespace Protocol;
+    comms.sendTelem(LATITUDE   , gps.getLatitude());
+    comms.sendTelem(LONGITUDE  , gps.getLongitude());
+    comms.sendTelem(HEADING    , toDeg(orientation.getYaw()));
+    comms.sendTelem(PITCH      , toDeg(orientation.getPitch()));
+    comms.sendTelem(ROLL       , toDeg(orientation.getRoll()));
+    comms.sendTelem(GROUNDSPEED, outputThrottle);
+    comms.sendTelem(VOLTAGE    , voltageFilter);
+    comms.sendTelem(AMPERAGE   , amperage);
+    comms.sendTelem(ALTITUDE   , altitude.getAltitude());*/
 }
