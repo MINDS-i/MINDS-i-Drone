@@ -43,6 +43,7 @@ Copyright 2015 MINDS-i Inc.
 
 #include "controllers/AltitudeHold.h"
 #include "controllers/Horizon.h"
+#include "controllers/PositionHold.h"
 
 #include "filter/AcclOnly.h"
 #include "filter/Altitude.h"
