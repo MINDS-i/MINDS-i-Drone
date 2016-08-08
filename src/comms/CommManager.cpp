@@ -144,11 +144,11 @@ CommManager::handleCommands(uint8_t a, uint8_t b){
 			break;
 	}
 }
-inline void
+void
 CommManager::handleString(uint8_t* msg, uint8_t length){
 	/*dead end for strings*/
 }
-inline Waypoint
+Waypoint
 CommManager::getWaypoint(uint16_t index){
 	if(index >= waypoints->size()) return Waypoint();
 	return waypoints->get(index);
@@ -157,7 +157,7 @@ void
 CommManager::clearWaypointList(){
 	waypoints->clear();
 }
-inline void
+void
 CommManager::sendConfirm(uint16_t digest){
 	byte datum[3];
 	datum[0] = buildMessageLabel(wordSubtype(CONFIRMATION));
