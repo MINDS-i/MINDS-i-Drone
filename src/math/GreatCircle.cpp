@@ -16,14 +16,18 @@ float simplifyDegree(float ref, float val){
 	if(diff < 0.0f) diff += 360.0f * ceil(diff / -360.0f);
 	return ref - fmod(diff, 360.0f);
 }
-float calcHeading(Waypoint a, Waypoint b){
+Components HeadingComponents(Waypoint a, Waypoint b){
 	float aRlat = a.radLatitude();
 	float aRlng = a.radLongitude();
 	float bRlat = b.radLatitude();
 	float bRlng = b.radLongitude();
 	float y = sin(bRlng - aRlng) * cos(bRlat);
 	float x = cos(aRlat)*sin(bRlat) - sin(aRlat)*cos(bRlat)*cos(bRlng - aRlng);
-	return toDeg(  atan2(y,x)  );
+	return { y, x };
+}
+float calcHeading(Waypoint a, Waypoint b){
+	auto cmps = HeadingComponents(a, b);
+	return toDeg( atan2(cmps.NS,cmps.EW) );
 }
 float calcDistance(Waypoint a, Waypoint b){
 	float aRlat  = a.radLatitude();
