@@ -25,52 +25,43 @@ public:
 		stream.setTimeout(0);
 	}
 	/** true if data has been updated since the last time anything was read */
-	bool newData(){
-		return isNew;
+	uint16_t dataIndex(){
+		return dataFrameIndex;
 	}
 	/** Latitude in decimal degrees, north is positive */
 	float getLatitude(){
-		isNew = false;
 		return latitude;
 	}
 	/** Longitude in decimal degrees, east is positive */
 	float getLongitude(){
-		isNew = false;
 		return longitude;
 	}
 	/** Time of GPS fix in HHMMSS format */
 	float getTimeOfFix(){
-		isNew = false;
 		return timeOfFix;
 	}
 	/** Date of fix in DDMMYY format */
 	float getDateOfFix(){
-		isNew = false;
 		return dateOfFix;
 	}
 	/** True if the location data may be missing or incorrect */
 	bool getWarning(){
-		isNew = false;
 		return warning;
 	}
 	/** Get ground speed in miles per hours */
 	float getGroundSpeed(){
-		isNew = false;
 		return groundSpeed;
 	}
 	/** Get course in degrees true (relative true north, clockwise positive) */
 	float getCourse(){
-		isNew = false;
 		return course;
 	}
 	/** Angle between magnetic north and true north */
 	float getMagVar(){
-		isNew = false;
 		return magVar;
 	}
 	/** Latitude/Longitude location as a Waypoint, CCW positive */
 	Waypoint getLocation(){
-		isNew = false;
 		return Waypoint(latitude,longitude);
 	}
 private:
@@ -83,6 +74,7 @@ private:
 	float groundSpeed = 0;
 	float course = 0;
 	float magVar = 0;
+	uint16_t dataFrameIndex = 0;
 	//holds a section between commas in a GPRMC string
 	char sectionBuf[16];
 	int sectionBufPos = 0;

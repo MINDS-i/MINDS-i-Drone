@@ -32,7 +32,7 @@ public:
     void update();
     //expose interface provided by NMEA parser
     bool  getWarning()    { update(); return parser.getWarning();     }
-    bool  newData()       { update(); return parser.newData();        }
+    uint16_t dataIndex()  { update(); return parser.dataIndex();      }
     float getCourse()     { update(); return parser.getCourse();      }
     float getDateOfFix()  { update(); return parser.getDateOfFix();   }
     float getGroundSpeed(){ update(); return parser.getGroundSpeed(); }

@@ -22,6 +22,7 @@ void NMEA::update(){
 		// until the end of the string is reached or a value fails to parse
 
 		if(n == '$') {
+			dataFrameIndex++;
 			seqPos = 0;
 			clearBuffer();
 		} else if (seqPos != -1) {
