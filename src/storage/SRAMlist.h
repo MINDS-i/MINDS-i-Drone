@@ -5,7 +5,6 @@
 	amount of RAM, so a Linked List Implementation using a constant number of
 	Nodes and a free list is necessary for stability
 */
-
 namespace{
 	template<typename T>
 	struct Node{
@@ -16,33 +15,33 @@ namespace{
 template<typename T>
 class SRAMlist : public List<T>{
 public:
-	explicit SRAMlist(uint16_t numberOfNodes);
+	explicit SRAMlist(size_t numberOfNodes);
 	~SRAMlist();
-	uint16_t size();
-	uint16_t maxSize();
-	bool add(uint16_t index, T item);
+	size_t size();
+	size_t maxSize();
+	bool add(size_t index, T item);
 	bool add(T item);
 	bool pushTop(T item);
 	bool pushBottom(T item);
-	bool set(uint16_t index, T item);
-	T get(uint16_t index);
-	T remove(uint16_t index);
+	bool set(size_t index, T item);
+	T get(size_t index);
+	T remove(size_t index);
 	T popTop();
 	T popBottom();
 	void clear();
 private:
 	SRAMlist(const SRAMlist&);
-	int curSize, maxNodes;
+	size_t curSize, maxNodes;
 	Node<T> *root, *last;
 	Node<T> *freeRoot;
 	void* raw;
 
 	void pushFree(Node<T>* node);
 	Node<T>* popFree();
-	Node<T>* getNode(uint16_t index);
+	Node<T>* getNode(size_t index);
 };
 template<typename T>
-SRAMlist<T>::SRAMlist(uint16_t numberOfNodes)
+SRAMlist<T>::SRAMlist(size_t numberOfNodes)
 		:curSize(0), maxNodes(numberOfNodes), root(0), last(0){
 	raw = malloc( maxNodes*sizeof(Node<T>) );
 	if(raw == 0) maxNodes = 0; //not enough memory; disable the list
@@ -67,7 +66,7 @@ Node<T>* SRAMlist<T>::popFree(){
 	return freed;
 }
 template<typename T> inline
-Node<T>* SRAMlist<T>::getNode(uint16_t index){
+Node<T>* SRAMlist<T>::getNode(size_t index){
 	if(index > curSize) return false;
 	Node<T> *cur = root;
 	for(int i=0; i<index; i++) cur = cur->next;
@@ -75,15 +74,15 @@ Node<T>* SRAMlist<T>::getNode(uint16_t index){
 }
 //-- public from here on --//
 template<typename T>
-uint16_t SRAMlist<T>::size(){
+size_t SRAMlist<T>::size(){
 	return curSize;
 }
 template<typename T>
-uint16_t SRAMlist<T>::maxSize(){
+size_t SRAMlist<T>::maxSize(){
 	return maxNodes;
 }
 template<typename T>
-bool SRAMlist<T>::add(uint16_t index, T item){
+bool SRAMlist<T>::add(size_t index, T item){
 	if(curSize >= maxNodes) return false;
 
 	if(index == 0) return pushTop(item);
@@ -130,20 +129,20 @@ bool SRAMlist<T>::pushBottom(T item){
 	return true;
 }
 template<typename T>
-bool SRAMlist<T>::set(uint16_t index, T item){
+bool SRAMlist<T>::set(size_t index, T item){
 	if(index >= curSize) return false;
 	Node<T> *node = getNode(index);
 	node->data = item;
 	return true;
 }
 template<typename T>
-T SRAMlist<T>::get(uint16_t index){
+T SRAMlist<T>::get(size_t index){
 	if(index >= curSize || index < 0) return T();
 	else if(index == curSize-1) return last->data;
 	return getNode(index)->data;
 }
 template<typename T>
-T SRAMlist<T>::remove(uint16_t index){
+T SRAMlist<T>::remove(size_t index){
 	if(curSize <= 0) return T();
 	else if(index >= curSize || index < 0) return T();
 	else if(index == 0) return popTop();
