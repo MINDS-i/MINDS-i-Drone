@@ -46,7 +46,7 @@ SRAMlist<T>::SRAMlist(size_t numberOfNodes)
 	raw = malloc( maxNodes*sizeof(Node<T>) );
 	if(raw == 0) maxNodes = 0; //not enough memory; disable the list
 	freeRoot = (Node<T>*) raw;
-	for (int i = 0; i < maxNodes-1; i++){
+	for(size_t i = 0; i < maxNodes-1; i++){
 		(freeRoot+i)->next = (freeRoot+(i+1));
 	}
 }
@@ -69,7 +69,7 @@ template<typename T> inline
 Node<T>* SRAMlist<T>::getNode(size_t index){
 	if(index > curSize) return false;
 	Node<T> *cur = root;
-	for(int i=0; i<index; i++) cur = cur->next;
+	for(size_t i=0; i<index; i++) cur = cur->next;
 	return cur;
 }
 //-- public from here on --//
@@ -177,7 +177,7 @@ T SRAMlist<T>::popBottom(){
 template<typename T>
 void SRAMlist<T>::clear(){
 	if(curSize == 0) return;
-	for (int i = 0; i < curSize; i++){
+	for(size_t i = 0; i < curSize; i++){
 		Node<T>* tmp = root;
 		root = root->next;
 		pushFree(tmp);
