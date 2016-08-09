@@ -31,6 +31,8 @@ namespace Platform {
     PIDparameters position(-0.25, 0.25);
     PositionHold positionHold(&position);
 
+    Power power;
+
     // Input parameter variables; default values rewritten by settings
     ThrottleCurve throttleCurve(0.0, 0.0);
     float YawTargetSlewRate;

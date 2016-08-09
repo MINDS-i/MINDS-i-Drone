@@ -178,23 +178,6 @@ void fly(){
     }
 }
 
-//
-//make this a class?
-float voltage = 0.0;
-float amperage = 0.0;
-float currentAmperage(){
-    return amperage;
-}
-float currentVoltage(){
-    amperage = float((analogRead(66)/1024.l)*5.l*17.0f);
-    float rawVolt = float((analogRead(67)/1024.l)*5.l*9.7f);
-    float adjVolt = rawVolt + 0.035*amperage;
-    voltage = adjVolt * 0.05 + voltage * 0.95;
-    return voltage;
-}
-//
-//
-
 typedef float (*telemLine)(void);
 const telemLine telemetryTable[] = {
     [](){ return gps.getLatitude(); },             //LATITUDE
@@ -206,8 +189,8 @@ const telemLine telemetryTable[] = {
     [](){ return toDeg(orientation.getPitch()); }, //PITCH
     [](){ return toDeg(orientation.getRoll()); },  //ROLL
     [](){ return gps.getGroundSpeed(); },          //GROUNDSPEED
-    [](){ return currentVoltage(); },              //VOLTAGE
-    [](){ return currentAmperage(); },             //AMPERAGE
+    [](){ return power.getVoltage(); },            //VOLTAGE
+    [](){ return power.getAmperage(); },           //AMPERAGE
     [](){ return altitude.getAltitude(); },        //ALTITUDE
 
     [](){ return 1E6f/averageInterval; },
