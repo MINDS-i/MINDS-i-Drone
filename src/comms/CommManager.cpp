@@ -71,18 +71,20 @@ CommManager::handleWaypoint(uint8_t* msg, uint8_t length){
 		lat.bytes[3-i] = msg[1+i];
 		lon.bytes[3-i] = msg[5+i];
 	}
-	uint16_t alt   = (((uint16_t)msg[9])<<8) | msg[10];
+	uint16_t alt  = (((uint16_t)msg[9])<<8) | msg[10];
+	Waypoint data = Waypoint(lat.f, lon.f, Units::DEGREES, alt);
+
 	uint8_t  index = msg[11];
 	switch(subtype){
 		case ADD:
 			if(index > waypoints->size()) return;
-			waypoints->add(index, Waypoint(lat.f, lon.f, alt));
+			waypoints->add(index, data);
 			if(index <  getTargetIndex()) advanceTargetIndex();
 			if(index == getTargetIndex()) cachedTarget = getWaypoint(index);
 			break;
 		case ALTER:
 			if(index >= waypoints->size()) return;
-			waypoints->set(index, Waypoint(lat.f, lon.f, alt));
+			waypoints->set(index, data);
 			if(index == getTargetIndex()) cachedTarget = getWaypoint(index);
 			break;
 	}

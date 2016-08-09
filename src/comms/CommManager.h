@@ -6,7 +6,7 @@
 
 #include "comms/NMEA.h"
 #include "comms/Protocol.h"
-#include "math/GreatCircle.h"
+#include "math/SpatialMath.h"
 #include "math/Waypoint.h"
 #include "storage/List.h"
 #include "storage/SRAMlist.h"

@@ -1,7 +1,7 @@
 #ifndef NMEA_H
 #define NMEA_H
 #include "Arduino.h"
-#include "math/GreatCircle.h"
+#include "math/SpatialMath.h"
 #include "math/Waypoint.h"
 
 class NMEA;

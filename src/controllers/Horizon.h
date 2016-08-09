@@ -1,6 +1,6 @@
 #include "util/PIDexternaltime.h"
 #include "util/PIDparameters.h"
-#include "math/GreatCircle.h"
+#include "math/SpatialMath.h"
 #include "output/FlightStrategy.h"
 
 class Horizon : public FlightStrategy {

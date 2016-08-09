@@ -3,6 +3,7 @@
 #include "input/APM/LEA6H.h"
 #include "util/PIDcontroller.h"
 #include "util/PIDparameters.h"
+#include "util/profile.h"
 
 // custom velocity from distance P controller
 // pid velocity controller in real world coordinates
@@ -17,15 +18,14 @@
 
 class PositionHold {
 private:
-    const float FEET_PER_MILE = 5280.0f;
     Waypoint target;
     PIDcontroller NS, EW;
     // maximum velocity in miles per hour
     float maxVelocity = 4.0;
     // velocity scale in (miles per hour) / (miles from target)
-    float velocityScale = FEET_PER_MILE / 5.0;
+    float velocityScale = Units::FEET_PER_MILE / 5.0;
     // Distance away from the target the quad needs to be to attempt movement
-    float triggerDistance = 1.5 / FEET_PER_MILE;
+    float triggerDistance = 1.5 / Units::FEET_PER_MILE;
 public:
     PositionHold(PIDparameters* parameters):
         NS(parameters), EW(parameters) {}
@@ -48,7 +48,7 @@ public:
 
     //
     float targetSpeed;
-    float direction;
+    float distance;
     float course;
     float speed;
     float targetNS;
@@ -61,17 +61,32 @@ public:
 
     struct Result{ float pitch; float roll; };
     Result update(LEA6H& gps, float yaw){
-        Waypoint position = gps.getLocation();
-        float distance = calcDistance(position, target);
+        static uint16_t lastIndex = -1;
+        static Result output = { 0.0, 0.0 };
+        if(gps.dataIndex() == lastIndex) return output;
+        lastIndex = gps.dataIndex();
+tic(2);
 
-        if(distance < triggerDistance){
+        Waypoint position = gps.getLocation();
+        distance = position.distanceTo(target);
+            //calcDistance(position, target);
+
+        /**
+         * distances are in miles
+         * angles are in radians
+         * time is in hours
+         */
+
+        /*if(distance < triggerDistance){
             return { 0.0, 0.0 };
-        }
+        }*/
 
         targetSpeed = min(distance*velocityScale, maxVelocity);
-        direction = toRad(calcHeading(position, target));
-        targetNS = targetSpeed*cos(direction);
-        targetEW = targetSpeed*sin(direction);
+        auto targetComponents = position.headingComponents(target);
+            //HeadingComponents(position, target);
+        float mag = 1.0/sqrt(sq(targetComponents.x)+sq(targetComponents.y));
+        targetNS = targetSpeed*targetComponents.x*mag;
+        targetEW = targetSpeed*targetComponents.y*mag;
 
         speed = gps.getGroundSpeed();
         course = toRad(gps.getCourse());
@@ -83,11 +98,12 @@ public:
         NSoutput = NS.update(speedNS);
         EWoutput = EW.update(speedEW);
 
-        float cs = cos(yaw);
-        float sn = sin(yaw);
+        float cs = cos(-yaw);
+        float sn = sin(-yaw);
         float pitch = cs*NSoutput - sn*EWoutput;
-        float roll  = cs*EWoutput + sn*EWoutput;
-
-        return { pitch, roll };
+        float roll  = cs*EWoutput + sn*NSoutput;
+toc(2);
+        output = { pitch, roll };
+        return output;
     }
 };

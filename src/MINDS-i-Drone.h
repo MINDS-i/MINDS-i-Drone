@@ -68,7 +68,6 @@ Copyright 2015 MINDS-i Inc.
 #include "input/UM7.h"
 
 #include "math/Algebra.h"
-#include "math/GreatCircle.h"
 #include "math/Quaternion.h"
 #include "math/SpatialMath.h"
 #include "math/Vec3.h"
