@@ -87,6 +87,7 @@ void loop() {
                 orientation.calibrate(false);
                 yawTarget = orientation.getYaw();
                 output.standby();
+                positionHold.setTarget(gps.getLocation());
                 setState(FLYING);
             }
             break;
@@ -102,6 +103,10 @@ void loop() {
             break;
     }
 }
+
+PositionHold::Result proutput;
+float radioPitch;
+float radioRoll;
 
 void fly(){
     static auto timer = Interval::every(10);
@@ -156,9 +161,20 @@ void fly(){
             altitudeHold.update(altitudeSetpoint, altitude) :
             throttleCurve.get(throttle);
 
-        // set outputs
+
+        radioPitch = pitchCmd;
+        radioRoll = rollCmd;
         outputThrottle = throttleOut;
-        horizon.set(pitchCmd, rollCmd, yawTarget, throttleOut);
+
+        proutput = positionHold.update(gps, orientation.getYaw());
+
+        if(altHoldEnabled){
+            horizon.set(proutput.pitch, proutput.roll, yawTarget, throttleOut);
+        } else {
+            horizon.set(pitchCmd, rollCmd, yawTarget, throttleOut);
+        }
+        // set outputs
+
     }
 }
 
@@ -184,6 +200,9 @@ const telemLine telemetryTable[] = {
     [](){ return gps.getLatitude(); },             //LATITUDE
     [](){ return gps.getLongitude(); },            //LONGITUDE
     [](){ return toDeg(orientation.getYaw()); },   //HEADING
+    [](){ return 1E6f/averageInterval; },
+    [](){ return (float)profileTime(2); },
+/*
     [](){ return toDeg(orientation.getPitch()); }, //PITCH
     [](){ return toDeg(orientation.getRoll()); },  //ROLL
     [](){ return gps.getGroundSpeed(); },          //GROUNDSPEED
@@ -194,18 +213,23 @@ const telemLine telemetryTable[] = {
     [](){ return 1E6f/averageInterval; },
     [](){ return gps.getMagVar(); },
     [](){ return gps.getCourse(); },
-/*
-    [](){ return posHold.targetSpeed; },
-    [](){ return posHold.direction; },
-    [](){ return posHold.course; },
-    [](){ return posHold.speed; },
-    [](){ return posHold.targetNS; },
-    [](){ return posHold.targetEW; },
-    [](){ return posHold.speedNS; },
-    [](){ return posHold.speedEW; },
-    [](){ return posHold.NSoutput; },
-    [](){ return posHold.EWoutput; },
- */
+*/
+    [](){ return positionHold.targetSpeed; },
+    [](){ return positionHold.distance; },
+    [](){ return gps.getCourse(); },
+    [](){ return positionHold.speed; },
+    [](){ return positionHold.targetNS; },
+    [](){ return positionHold.targetEW; },
+    [](){ return positionHold.speedNS; },
+    [](){ return positionHold.speedEW; },
+    [](){ return positionHold.NSoutput; },
+    [](){ return positionHold.EWoutput; },
+
+    [](){ return proutput.pitch; },
+    [](){ return proutput.roll; },
+
+    [](){ return radioPitch; },
+    [](){ return radioRoll; },
 };
 
 const uint8_t telemetryTotal =
@@ -219,14 +243,4 @@ void sendTelemetry(){
         comms.sendTelem(nextTelemIndex, telemetryTable[nextTelemIndex]());
         nextTelemIndex = (nextTelemIndex+1) % telemetryTotal;
     }
-    /*using namespace Protocol;
-    comms.sendTelem(LATITUDE   , gps.getLatitude());
-    comms.sendTelem(LONGITUDE  , gps.getLongitude());
-    comms.sendTelem(HEADING    , toDeg(orientation.getYaw()));
-    comms.sendTelem(PITCH      , toDeg(orientation.getPitch()));
-    comms.sendTelem(ROLL       , toDeg(orientation.getRoll()));
-    comms.sendTelem(GROUNDSPEED, outputThrottle);
-    comms.sendTelem(VOLTAGE    , voltageFilter);
-    comms.sendTelem(AMPERAGE   , amperage);
-    comms.sendTelem(ALTITUDE   , altitude.getAltitude());*/
 }

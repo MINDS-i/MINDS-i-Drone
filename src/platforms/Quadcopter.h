@@ -28,6 +28,9 @@ namespace Platform {
     // Altitude hold controller; paramaters configured by settings
     AltitudeHold altitudeHold;
 
+    PIDparameters position(-0.25, 0.25);
+    PositionHold positionHold(&position);
+
     // Input parameter variables; default values rewritten by settings
     ThrottleCurve throttleCurve(0.0, 0.0);
     float YawTargetSlewRate;
@@ -292,6 +295,12 @@ namespace Platform {
          * overall altitude corrections
          */
         settings.attach(23, 0.000f, [](float g){ altitudeHold.setIntegralFactor(g); });
+
+
+
+        settings.attach(24, 0.010f, [](float g){ position.setIdealP(g); });
+        settings.attach(25, 0.000f, [](float g){ position.setIdealI(g); });
+        settings.attach(26, 0.000f, [](float g){ position.setIdealD(g); });
     }
 }
 #endif
