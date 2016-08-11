@@ -64,7 +64,7 @@ public:
         //to prevent integral windup, we only change the integral if the output
         //is not fully saturated
 
-        if(isnan(newAcc)){
+        if(!isfinite(newAcc)){
             acc = 0.0;
             return 0.0;
         } else {
