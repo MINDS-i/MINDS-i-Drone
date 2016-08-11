@@ -1,6 +1,6 @@
 
 #include "math/Waypoint.h"
-#include "input/APM/LEA6H.h"
+#include "input/GPS.h"
 #include "util/PIDcontroller.h"
 #include "util/PIDparameters.h"
 #include "util/profile.h"
@@ -60,13 +60,12 @@ public:
     //
 
     struct Result{ float pitch; float roll; };
-    Result update(LEA6H& gps, float yaw){
+    Result update(GPS& gps, float yaw){
         static uint16_t lastIndex = -1;
         static Result output = { 0.0, 0.0 };
         if(gps.dataIndex() == lastIndex) return output;
         lastIndex = gps.dataIndex();
 tic(2);
-
         Waypoint position = gps.getLocation();
         distance = position.distanceTo(target);
             //calcDistance(position, target);

@@ -5,8 +5,9 @@
 #include <inttypes.h>
 #include "comms/NMEA.h"
 #include "input/Sensor.h"
+#include "input/GPS.h"
 
-class LEA6H : public Sensor{
+class LEA6H : public Sensor, public GPS {
 protected:
     //GPS_SETUP messages
     const static uint8_t GPS_SETUP[];
