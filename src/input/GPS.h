@@ -13,7 +13,8 @@ public:
      */
     virtual Waypoint getLocation() = 0;
     /**
-     * The course over the ground in degrees, 0 = north, ccw positie
+     * The course over the ground in degrees, 0 = north, range 0-360,
+     * clockwise positive
      */
     virtual float getCourse() = 0;
     /**

@@ -90,7 +90,7 @@ tic(2);
         targetEW = targetSpeed*targetComponents.y*mag;
 
         speed = gps.getGroundSpeed();
-        course = toRad(gps.getCourse());
+        course = toRad(-gps.getCourse());
         speedNS = speed*cos(course);
         speedEW = speed*sin(course);
 
