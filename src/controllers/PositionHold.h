@@ -85,6 +85,8 @@ tic(2);
         auto targetComponents = position.headingComponents(target);
             //HeadingComponents(position, target);
         float mag = 1.0/sqrt(sq(targetComponents.x)+sq(targetComponents.y));
+        if(isnan(mag)) mag = 0.0;
+
         targetNS = targetSpeed*targetComponents.x*mag;
         targetEW = targetSpeed*targetComponents.y*mag;
 
