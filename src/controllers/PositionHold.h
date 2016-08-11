@@ -99,8 +99,8 @@ tic(2);
         NSoutput = NS.update(speedNS);
         EWoutput = EW.update(speedEW);
 
-        float cs = cos(-yaw);
-        float sn = sin(-yaw);
+        float cs = cos(yaw);
+        float sn = sin(yaw);
         float pitch = cs*NSoutput - sn*EWoutput;
         float roll  = cs*EWoutput + sn*NSoutput;
 toc(2);
