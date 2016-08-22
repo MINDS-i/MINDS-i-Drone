@@ -1,0 +1,48 @@
+Notes on a quaternion based targeting system:
+
+pitch roll and yaw velocity targets can be scaled derivatives calculated like
+
+    orientation.getAttitude().getDerivative(target);
+    -OR- (Not sure which is correct right now)
+    target.getDerivative(orientation.getAttitude());
+
+The derivative operation uses rotateBy internally, could be optimized a bit,
+and is still faster than calculating Pitch,Roll,Yaw using asin,atan. PRY values
+can then stop being calculated and cached in the flight stabilization loop.
+
+This will stabilize itself slightly differently for multiaxis turns, effectivly
+LERPing to the target instead of indepently correcting each axis. I beleive
+the LERP would be more efficient.
+
+The target then needs to be specified as a quaternion instead of as PRY. An easy
+way to get a quaternion from a pitch and roll value off the radio stick is below
+
+    float x = ((float)APMRadio::get(RADIO_PITCH)-90) /-90.0;
+    float y = ((float)APMRadio::get(RADIO_ROLL)-90)  /-90.0;
+    float squares = x*x + y*y;
+
+    Vec3 target;
+    if(squares > 1.0){
+        float norm = invSqrt(squares);
+        target = Vec3(x/norm, y/norm, 0.0);
+    } else {
+        float z = sqrt(1.0 - squares);
+        target = Vec3(x,y,z);
+    }
+
+    targetOrientation = Quaternion(Vec3(0,0,1), target);
+    horizon.target = targetOrientation;
+
+    float pitchCmd = targetOrientation.getPitch();
+    float rollCmd = targetOrientation.getRoll();
+
+This uses the x,y values to find a point on the bottom half of a sphere, and
+then finds the quaternion that rotates <0,0,1> to that point. This could be
+optimized with the knowledge that most terms in the Quaternion consturctor math
+will be 0.
+
+All that leaves is a way to apply the target yaw slew to target quaternion. That
+could be represented as continually integrated quaternion or broked down to a
+yaw only quaternion thats constructed each loop and multiplied by the
+PR quaternion to get the final target orientation, or there could be a better
+way not currently known to me.
