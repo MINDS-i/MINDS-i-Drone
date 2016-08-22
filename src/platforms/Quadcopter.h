@@ -300,9 +300,14 @@ namespace Platform {
 
 
 
-        settings.attach(24, 0.010f, [](float g){ position.setIdealP(g); });
+        settings.attach(24, 0.050f, [](float g){ position.setIdealP(g); });
         settings.attach(25, 0.000f, [](float g){ position.setIdealI(g); });
         settings.attach(26, 0.000f, [](float g){ position.setIdealD(g); });
+
+        settings.attach(27, 4.000f, [](float g){ positionHold.setMaximumVelocityTarget(g); });
+        settings.attach(28, Units::FEET_PER_MILE / 5.0f, [](float g){ positionHold.setVelocityScale(g); });
+        settings.attach(29, 0.0, [](float g){ positionHold.setTriggerDistance(g); });
+        settings.attach(30, 1.5 / Units::FEET_PER_MILE, [](float g){  });
     }
 }
 #endif

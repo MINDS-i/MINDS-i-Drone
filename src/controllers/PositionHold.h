@@ -61,31 +61,27 @@ public:
 
     struct Result{ float pitch; float roll; };
     Result update(GPS& gps, float yaw){
-        static uint16_t lastIndex = -1;
-        static Result output = { 0.0, 0.0 };
-        if(gps.dataIndex() == lastIndex) return output;
-        lastIndex = gps.dataIndex();
-tic(2);
-        Waypoint position = gps.getLocation();
-        distance = position.distanceTo(target);
-            //calcDistance(position, target);
-
         /**
          * distances are in miles
          * angles are in radians
          * time is in hours
          */
+        static uint16_t lastIndex = -1;
+        static Result output = { 0.0, 0.0 };
+        if(gps.dataIndex() == lastIndex) return output;
 
-        /*if(distance < triggerDistance){
+        lastIndex = gps.dataIndex();
+        Waypoint position = gps.getLocation();
+        distance = position.distanceTo(target);
+
+        if(distance < triggerDistance){
             return { 0.0, 0.0 };
-        }*/
+        }
 
         targetSpeed = min(distance*velocityScale, maxVelocity);
         auto targetComponents = position.headingComponents(target);
-            //HeadingComponents(position, target);
         float mag = 1.0/sqrt(sq(targetComponents.x)+sq(targetComponents.y));
         if(isnan(mag)) mag = 0.0;
-
         targetNS = targetSpeed*targetComponents.x*mag;
         targetEW = targetSpeed*targetComponents.y*mag;
 
@@ -101,9 +97,9 @@ tic(2);
 
         float cs = cos(yaw);
         float sn = sin(yaw);
-        float pitch = cs*NSoutput - sn*EWoutput;
-        float roll  = cs*EWoutput + sn*NSoutput;
-toc(2);
+        float pitch = -(cs*NSoutput - sn*EWoutput);
+        float roll  = -(cs*EWoutput + sn*NSoutput);
+
         output = { pitch, roll };
         return output;
     }

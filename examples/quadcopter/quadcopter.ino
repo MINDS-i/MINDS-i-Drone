@@ -183,9 +183,7 @@ const telemLine telemetryTable[] = {
     [](){ return gps.getLatitude(); },             //LATITUDE
     [](){ return gps.getLongitude(); },            //LONGITUDE
     [](){ return toDeg(orientation.getYaw()); },   //HEADING
-    [](){ return 1E6f/averageInterval; },
-    [](){ return (float)profileTime(2); },
-/*
+
     [](){ return toDeg(orientation.getPitch()); }, //PITCH
     [](){ return toDeg(orientation.getRoll()); },  //ROLL
     [](){ return gps.getGroundSpeed(); },          //GROUNDSPEED
@@ -194,23 +192,15 @@ const telemLine telemetryTable[] = {
     [](){ return altitude.getAltitude(); },        //ALTITUDE
 
     [](){ return 1E6f/averageInterval; },
-    [](){ return gps.getMagVar(); },
+
     [](){ return gps.getCourse(); },
-*/
-    [](){ return positionHold.targetSpeed; },
+    [](){ return gps.getGroundSpeed(); },
     [](){ return positionHold.distance; },
-    [](){ return gps.getCourse(); },
-    [](){ return positionHold.speed; },
+    [](){ return positionHold.targetSpeed; },
     [](){ return positionHold.targetNS; },
     [](){ return positionHold.targetEW; },
-    [](){ return positionHold.speedNS; },
-    [](){ return positionHold.speedEW; },
-    [](){ return positionHold.NSoutput; },
-    [](){ return positionHold.EWoutput; },
-
     [](){ return proutput.pitch; },
     [](){ return proutput.roll; },
-
     [](){ return radioPitch; },
     [](){ return radioRoll; },
 };
