@@ -53,6 +53,7 @@ void setup() {
     setState(DISARMED);
 }
 
+Quaternion targetOrientation;
 float averageInterval = 0.0;
 void loop() {
     toc(1);
@@ -111,8 +112,27 @@ float radioRoll;
 void fly(){
     static auto timer = Interval::every(10);
     if(timer()){
-        float pitchCmd = ((float)APMRadio::get(RADIO_PITCH)-90) /-70.0;
-        float rollCmd  = ((float)APMRadio::get(RADIO_ROLL)-90)  /-70.0;
+
+
+        float x = ((float)APMRadio::get(RADIO_PITCH)-90) /-90.0;
+        float y = ((float)APMRadio::get(RADIO_ROLL)-90)  /-90.0;
+        float squares = x*x + y*y;
+
+        Vec3 target;
+        if(squares > 1.0){
+            float norm = invSqrt(squares);
+            target = Vec3(x/norm, y/norm, 0.0);
+        } else {
+            float z = sqrt(1.0 - squares);
+            target = Vec3(x,y,z);
+        }
+
+        targetOrientation = Quaternion(Vec3(0,0,1), target);
+        horizon.target = targetOrientation;
+
+        float pitchCmd = targetOrientation.getPitch();
+        float rollCmd = targetOrientation.getRoll();
+
         float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   / 90.0;
         float throttle = ((float)APMRadio::get(RADIO_THROTTLE)-25)/130.0;
         bool altSwitch = (APMRadio::get(RADIO_GEAR) > 90);
@@ -184,9 +204,21 @@ const telemLine telemetryTable[] = {
     [](){ return gps.getLongitude(); },            //LONGITUDE
     [](){ return toDeg(orientation.getYaw()); },   //HEADING
 
-    [](){ return toDeg(orientation.getPitch()); }, //PITCH
+/*    [](){ return toDeg(orientation.getPitch()); }, //PITCH
     [](){ return toDeg(orientation.getRoll()); },  //ROLL
-    [](){ return gps.getGroundSpeed(); },          //GROUNDSPEED
+    */
+    [](){ return toDeg(targetOrientation.getPitch()); }, //PITCH
+    [](){ return toDeg(targetOrientation.getRoll());  },  //ROLL
+
+    [](){ return horizon.aPRY[0]; },
+    [](){ return horizon.aPRY[1]; },
+    [](){ return horizon.aPRY[2]; },
+    [](){ return horizon.qPRY[0]; },
+    [](){ return horizon.qPRY[1]; },
+    [](){ return horizon.qPRY[2]; },
+
+
+    /*[](){ return gps.getGroundSpeed(); },          //GROUNDSPEED
     [](){ return power.getVoltage(); },            //VOLTAGE
     [](){ return power.getAmperage(); },           //AMPERAGE
     [](){ return altitude.getAltitude(); },        //ALTITUDE
@@ -202,12 +234,12 @@ const telemLine telemetryTable[] = {
     [](){ return proutput.pitch; },
     [](){ return proutput.roll; },
     [](){ return radioPitch; },
-    [](){ return radioRoll; },
+    [](){ return radioRoll; },*/
 };
 
 const uint8_t telemetryTotal =
     sizeof(telemetryTable)/sizeof(telemetryTable[0]);
-const uint16_t refreshInterval = 240;
+const uint16_t refreshInterval = 50;//240;
 const uint16_t transmitInterval = refreshInterval / telemetryTotal;
 void sendTelemetry(){
     static auto timer = Interval::every(transmitInterval);

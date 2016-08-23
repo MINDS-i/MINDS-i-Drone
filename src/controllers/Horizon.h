@@ -10,6 +10,12 @@ private:
     PIDexternaltime   yawPID, yError;
     float pitch, roll, yaw, throttle;
 public:
+
+    Quaternion target;
+
+    float qPRY[3];
+    float aPRY[3];
+
     Horizon(PIDparameters* pitchI, PIDparameters* pitchO,
             PIDparameters*  rollI, PIDparameters*  rollO,
             PIDparameters*   yawI, PIDparameters*   yawO ) :
@@ -17,6 +23,18 @@ public:
                  rollPID( rollI), rError( rollO),
                   yawPID(  yawI), yError(  yawO) {}
     void update(OrientationEngine& orientation, float ms, float (&torques)[4]){
+
+        aPRY[0] = orientation.getPitch() - pitch;
+        aPRY[1] = orientation.getRoll() - roll;
+        aPRY[2] = distanceRadian(yaw,orientation.getYaw());
+
+        //auto q = orientation.getAttitude().getDerivative(target);
+        auto q = target.getDerivative(orientation.getAttitude());
+
+        qPRY[0] = toDeg(q[1]);
+        qPRY[1] = toDeg(q[0]);
+        qPRY[2] = toDeg(q[2]);
+
         //calculate outer loop
         float p = pError.update(orientation.getPitch() - pitch, ms);
         float r = rError.update(orientation.getRoll() - roll, ms);
