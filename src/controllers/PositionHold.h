@@ -24,8 +24,6 @@ private:
     float maxVelocity = 4.0;
     // velocity scale in (miles per hour) / (miles from target)
     float velocityScale = Units::FEET_PER_MILE / 5.0;
-    // Distance away from the target the quad needs to be to attempt movement
-    float triggerDistance = 1.5 / Units::FEET_PER_MILE;
 public:
     PositionHold(PIDparameters* parameters):
         NS(parameters), EW(parameters) {}
@@ -36,10 +34,6 @@ public:
     // maximum velocity in miles per hour
     void setMaximumVelocityTarget(float mv) {
         maxVelocity = mv;
-    }
-    // Distance away from the target the quad needs to be to attempt movement
-    void setTriggerDistance(float miles){
-        triggerDistance = miles;
     }
     // velocity scale in (miles per hour) / (miles from target)
     void setVelocityScale(float vs){
@@ -103,8 +97,13 @@ public:
         // Rotate output into local frame
         float cs = cos(yaw);
         float sn = sin(yaw);
-        float pitch = -(cs*NSoutput - sn*EWoutput);
+        float pitch = -(cs*NSoutput + sn*EWoutput);
+        float roll  =  (cs*EWoutput - sn*NSoutput);
+
+/*        float pitch = -(cs*NSoutput - sn*EWoutput);
         float roll  = -(cs*EWoutput + sn*NSoutput);
+        //^^ 0 target slowing seemed to work with this formulation
+*/
 
         // cache output and return
         output = { pitch, roll };
