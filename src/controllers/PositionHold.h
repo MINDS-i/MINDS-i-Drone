@@ -63,43 +63,50 @@ public:
     Result update(GPS& gps, float yaw){
         /**
          * distances are in miles
-         * angles are in radians
+         * angles are in radians, ccw positive, 0 = north
          * time is in hours
          */
+
+        // Recalculate output only when the gps reports new data
         static uint16_t lastIndex = -1;
         static Result output = { 0.0, 0.0 };
         if(gps.dataIndex() == lastIndex) return output;
-
         lastIndex = gps.dataIndex();
+
         Waypoint position = gps.getLocation();
+
+        // target speed to destination
         distance = position.distanceTo(target);
-
-        if(distance < triggerDistance){
-            return { 0.0, 0.0 };
-        }
-
         targetSpeed = min(distance*velocityScale, maxVelocity);
+
+        // target direction to destination
         auto targetComponents = position.headingComponents(target);
         float mag = 1.0/sqrt(sq(targetComponents.x)+sq(targetComponents.y));
         if(isnan(mag)) mag = 0.0;
+
+        // target components to destination
         targetNS = targetSpeed*targetComponents.x*mag;
         targetEW = targetSpeed*targetComponents.y*mag;
 
+        // current speed components
         speed = gps.getGroundSpeed();
-        course = toRad(-gps.getCourse());
+        course = toRad(-gps.getCourse()/*course is cw positive*/);
         speedNS = speed*cos(course);
         speedEW = speed*sin(course);
 
+        // Update PID loops
         NS.set(targetNS);
         EW.set(targetEW);
         NSoutput = NS.update(speedNS);
         EWoutput = EW.update(speedEW);
 
+        // Rotate output into local frame
         float cs = cos(yaw);
         float sn = sin(yaw);
         float pitch = -(cs*NSoutput - sn*EWoutput);
         float roll  = -(cs*EWoutput + sn*NSoutput);
 
+        // cache output and return
         output = { pitch, roll };
         return output;
     }
