@@ -306,8 +306,6 @@ namespace Platform {
 
         settings.attach(27, 4.000f, [](float g){ positionHold.setMaximumVelocityTarget(g); });
         settings.attach(28, Units::FEET_PER_MILE / 5.0f, [](float g){ positionHold.setVelocityScale(g); });
-        settings.attach(29, 0.0, [](float g){ positionHold.setTriggerDistance(g); });
-        settings.attach(30, 1.5 / Units::FEET_PER_MILE, [](float g){  });
     }
 }
 #endif
