@@ -163,7 +163,7 @@ namespace Platform {
          */
         settings.attach(1, 0.003f, [](float g){ orientation.setAccelGain(g); });
 
-        /*AIRSETTING index="2" name="Mag Gain" min="0.0" max="1.0" def="0.00015"
+        /*AIRSETTING index="2" name="Mag Gain" min="0.0" max="1.0" def="0.0015"
          *Factor used during sensor update step. Should be between 0.0 and 1.0
          *The closer to 1 it is, the larger impact the magnetometer has on the aircraft's
          *yaw estimate
