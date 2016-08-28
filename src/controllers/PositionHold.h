@@ -57,7 +57,7 @@ public:
     Result update(GPS& gps, float yaw){
         /**
          * distances are in miles
-         * angles are in radians, ccw positive, 0 = north
+         * angles are in radians, ccw positive, 0 = north, NED frame
          * time is in hours
          */
 
@@ -73,18 +73,20 @@ public:
         distance = position.distanceTo(target);
         targetSpeed = min(distance*velocityScale, maxVelocity);
 
-        // target direction to destination
+        // target direction and components to destination
         auto targetComponents = position.headingComponents(target);
         float mag = 1.0/sqrt(sq(targetComponents.x)+sq(targetComponents.y));
-        if(isnan(mag)) mag = 0.0;
-
-        // target components to destination
         targetNS = targetSpeed*targetComponents.x*mag;
         targetEW = targetSpeed*targetComponents.y*mag;
+        if(isnan(targetNS) || isnan(targetEW)) {
+            // components end up NaN when exactly on the target location
+            targetNS = 0.0;
+            targetEW = 0.0;
+        }
 
         // current speed components
         speed = gps.getGroundSpeed();
-        course = toRad(-gps.getCourse()/*course is cw positive*/);
+        course = toRad(gps.getCourse());
         speedNS = speed*cos(course);
         speedEW = speed*sin(course);
 
@@ -97,12 +99,13 @@ public:
         // Rotate output into local frame
         float cs = cos(yaw);
         float sn = sin(yaw);
-        float pitch = -(cs*NSoutput + sn*EWoutput);
-        float roll  =  (cs*EWoutput - sn*NSoutput);
-
-/*        float pitch = -(cs*NSoutput - sn*EWoutput);
+        float pitch = -(+cs*NSoutput +sn*EWoutput); // negative pitch => north
+        float roll  =  (+cs*EWoutput -sn*NSoutput); // positive roll  => east
+/*
+        float pitch = -(cs*NSoutput - sn*EWoutput);
         float roll  = -(cs*EWoutput + sn*NSoutput);
         //^^ 0 target slowing seemed to work with this formulation
+        // before I un-inverted the course rotation value
 */
 
         // cache output and return

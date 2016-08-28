@@ -56,8 +56,9 @@ public:
 	 */
 	Components headingComponents(const Waypoint& target) const;
 	/**
-	 * The heading in degrees from north ccw positive to travel from this
-	 * Waypoint to the target Waypoint on the shortest possible path
+	 * The heading in degrees from north ccw positive around the "down" vector
+	 * to travel from this Waypoint to the target Waypoint on the shortest
+	 * possible path
 	 * @param  target Target Waypoint
 	 * @return        Heading to travel in degrees, ccw from north
 	 */
