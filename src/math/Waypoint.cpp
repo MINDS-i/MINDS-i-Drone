@@ -8,7 +8,7 @@ float Waypoint::getAltitude(){
 float Waypoint::getApproachSpeed(){
     return ((double)extra)/((double)Protocol::U16_FIXED_FACTOR);
 }
-Waypoint::Components Waypoint::headingComponents(Waypoint target) const {
+Waypoint::Components Waypoint::headingComponents(const Waypoint& target) const {
     float aRlat = this->radLatitude();
     float aRlng = this->radLongitude();
     float bRlat = target.radLatitude();
@@ -18,11 +18,11 @@ Waypoint::Components Waypoint::headingComponents(Waypoint target) const {
     result.x = cos(aRlat)*sin(bRlat) - sin(aRlat)*cos(bRlat)*cos(bRlng - aRlng);
     return result;
 }
-float Waypoint::headingTo(Waypoint target) const {
+float Waypoint::headingTo(const Waypoint& target) const {
     auto cmps = headingComponents(target);
     return toDeg( atan2(cmps.y,cmps.x) );
 }
-float Waypoint::distanceTo(Waypoint target) const {
+float Waypoint::distanceTo(const Waypoint& target) const {
     float aRlat  = this->radLatitude();
     float aRlng  = this->radLongitude();
     float bRlat  = target.radLatitude();

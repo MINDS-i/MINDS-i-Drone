@@ -54,20 +54,20 @@ public:
 	 * @param  target The target waypoint
 	 * @return        The vector of the shortest path
 	 */
-	Components headingComponents(Waypoint target) const;
+	Components headingComponents(const Waypoint& target) const;
 	/**
 	 * The heading in degrees from north ccw positive to travel from this
 	 * Waypoint to the target Waypoint on the shortest possible path
 	 * @param  target Target Waypoint
 	 * @return        Heading to travel in degrees, ccw from north
 	 */
-	float headingTo (Waypoint target) const;
+	float headingTo (const Waypoint& target) const;
 	/**
 	 * The distance in miles from this Waypoint to the target Waypoint
 	 * @param  target Target Waypoint
 	 * @return        Distance in miles
 	 */
-	float distanceTo(Waypoint target) const;
+	float distanceTo(const Waypoint& target) const;
 	/**
 	 * calculate gps the waypoint after traveling `distance` on `bearing`
 	 * from this waypoint
