@@ -139,7 +139,7 @@ void navigate(){
 	} else {
 		//drive based on pathHeading and side ping sensors
 		double x,y;
-		double angularError = trunkAngle(pathHeading - trueHeading);
+		double angularError = truncateDegree(pathHeading - trueHeading);
 
 		double outputAngle;
 		switch(steerStyle){
@@ -185,7 +185,10 @@ void navigate(){
 
 void updateGPS(){
 	gps.update();
-	if(gps.newData()){
+	// Read gps only when new data is available
+	static auto readIdx = gps.dataIndex();
+	if(gps.dataIndex() != readIdx){
+		readIdx = gps.dataIndex();
 		location = gps.getLocation();
 		waypointUpdated();
 		syncHeading();
@@ -197,7 +200,8 @@ void updateGPS(){
 void waypointUpdated(){
 	if(manager.numWaypoints() > 0 && !gps.getWarning()){
 		stop = false;
- 		distance = calcDistance(manager.getTargetWaypoint(),  location);
+ 		//distance = calcDistance(manager.getTargetWaypoint(),  location);
+ 		distance = manager.getTargetWaypoint().distanceTo(location);
 
 		if(distance > PointRadius)  return;
 
@@ -220,7 +224,7 @@ void updateGyro(){
 	float Gz = -toDeg(mpu.gyroZ());
 	lowFilter.update(Gz);
 	highFilter.update(Gz-lowFilter.get());
-	trueHeading = trunkAngle(trueHeading + dt*(highFilter.get()));
+	trueHeading = truncateDegree(trueHeading + dt*(highFilter.get()));
 
 	if(gpsHalfTime < millis() && gpsHalfTime!=0){
 		gyroHalf = trueHeading;
@@ -233,9 +237,9 @@ void syncHeading(){
 		trueHeading = gps.getCourse();
 		/*
 		if(millis() - gpsTime < 1500) //dont use gyrohalf if it is too old
-			trueHeading = trunkAngle(gps.getCourse() + trueHeading - gyroHalf);
+			trueHeading = truncateDegree(gps.getCourse() + trueHeading - gyroHalf);
 		else
-			trueHeading = trunkAngle(gps.getCourse());
+			trueHeading = truncateDegree(gps.getCourse());
 		gpsHalfTime = millis()+(millis()-gpsTime)/2;*/
 	}
 	else if(stop) trueHeading = pathHeading;
@@ -254,7 +258,7 @@ void extrapPosition(){
 		//3600000 = milliseconds per hour
 		float dTraveled = gps.getGroundSpeed()*dT/3600000.f;
 		dTraveled *= (2.l/3.l);//purposly undershoot
-		location = extrapPosition(location, trueHeading, dTraveled);
+		location = location.extrapolate(trueHeading, dTraveled);
 	}
 	positionChanged();
 }
@@ -263,17 +267,17 @@ void positionChanged(){
 	nTime = millis();
 	if(manager.numWaypoints() <= 0) return;
 
-	distance = calcDistance(manager.getTargetWaypoint(), location);
+	distance = manager.getTargetWaypoint().distanceTo(location);
 	if(backWaypoint.radLongitude() == 0 || distance*5280.l < 25){
-		pathHeading = calcHeading(location, manager.getTargetWaypoint());
+		pathHeading = location.headingTo(manager.getTargetWaypoint());
 	} else {
-		double full  = calcDistance(backWaypoint, manager.getTargetWaypoint());
-		double AB    = calcHeading(backWaypoint, manager.getTargetWaypoint());
-		double AL    = calcHeading(backWaypoint, location);
-		double d     = cos(toRad(AL-AB))*calcDistance(backWaypoint, location);
+		double full  = backWaypoint.distanceTo(manager.getTargetWaypoint());
+		double AB    = backWaypoint.headingTo(manager.getTargetWaypoint());
+		double AL    = backWaypoint.headingTo(location);
+		double d     = cos(toRad(AL-AB)) * backWaypoint.distanceTo(location);
 		double D     = d + (full-d)*(1.l-lineGravity);
-		Waypoint target = extrapPosition(backWaypoint, AB, D);
-		pathHeading  = calcHeading(location, target);
+		Waypoint target = backWaypoint.extrapolate(AB, D);
+		pathHeading  = location.headingTo(target);
 	}
 }
 
