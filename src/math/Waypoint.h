@@ -73,6 +73,7 @@ public:
 	 * calculate gps the waypoint after traveling `distance` on `bearing`
 	 * from this waypoint
 	 * @param  bearing  Direction of travel, degrees, north = 0, ccw positive
+	 * around the down vector
 	 * @param  distance Distance in miles
 	 * @return          The resulting GPS location
 	 */
