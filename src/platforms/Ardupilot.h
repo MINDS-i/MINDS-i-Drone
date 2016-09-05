@@ -20,6 +20,7 @@ namespace Platform{
     HMC5883L hmc;
     LEA6H gps;
     MS5611 baro;
+    Power power;
 
     // State variables
     bool errorsDetected = false;
