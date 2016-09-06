@@ -4,17 +4,17 @@
 #include "Encoder.h"
 #include "MINDS-i-Drone.h"
 #include "util/callbackTemplate.h"
+#include "platforms/Ardupilot.h"
+using namespace Platform;
 
 //Constants that should never change during driving and never/rarely tuned
 #define useEncoder true
-const uint8_t VoltagePin  = 67;
 const uint8_t LEDpin[]    = {25, 26, 27}; //blue, yellow, red
 const uint8_t PingPin[]	  = {A0, A1, A2, A3, A4}; //left to right
 const uint8_t ServoPin[]  = {12, 11,  8};//drive, steer, backS; APM 1,2,3 resp.
 const uint8_t RadioPin[]  = {7, 0, 1}; //auto switch, drive, steer
 const uint8_t EncoderPin[]= {2/*APM pin 7*/, 3 /*APM pin 6*/};
 const double  pAngle[5]   = { 79.27, 36.83, 0.0, -36.83, -79.27};
-const int ScheduleDelay   = 22;
 const uint16_t warn[]     = {1000, 1600, 3000, 1600, 1000};
 const double PointRadius  = .001; //in miles, margin for error in rover location
 							//tire circ in miles per inch diameter * diff ratio
@@ -23,43 +23,28 @@ const float MilesPerRev   = (((PI)/12.f)/5280.f) * (13.f/37.f);
 const float MPHvRPM       = (1.f/60.f)        * (1.f/MilesPerRev);
 
 //Global variables used throught the program
-HardwareSerial *commSerial	= &Serial;
-Storage<float> *storage	= eeStorage::getInstance();
-CommManager		manager(commSerial, storage);
-Settings		settings(storage);
-LEA6H			gps;
-MPU6000			mpu;
-Waypoint		location(0,0);
-Waypoint		backWaypoint(0,0);
-HLA				lowFilter (600000, 0);//10 minutes
-HLA				highFilter(    10, 0);//10 milliseconds
-HLA 			pitch( 100, 0);
-HLA 			roll ( 100, 0);
-PIDparameters   cruisePID(0,0,0,-90,90);
-PIDcontroller   cruise(&cruisePID);
+Waypoint location(0,0);
+Waypoint backWaypoint(0,0);
+PIDparameters cruisePID(0,0,0,-90,90);
+PIDcontroller cruise(&cruisePID);
 ServoGenerator::Servo servo[3]; //drive, steer, backSteer
-		//scheduler, navigation, obstacle, stop times
-uint32_t uTime = 0, nTime = 0, oTime = 0, sTime = 0;
-uint32_t gpsHalfTime = 0, gpsTime = 0;
- int32_t Ax,Ay,Az; //used in accelerometer calculations
+		//obstacle, stop times
+uint32_t oTime = 0, sTime = 0;
 uint16_t ping[5] = {20000,20000,20000,20000,20000};
-uint8_t  sIter,pIter; //iterators for scheduler and ping
-double   pathHeading; //All Headings are Clockwise+, -179 to 180, 0=north
-double   trueHeading;
-double   gyroHalf; //Store Gyro Heading halfway between gps points
-double   distance;
-boolean  stop = true;
-boolean  backDir;
+float pathHeading; //All Headings are CCW+ around down, -179 to 180, 0=north
+float trueHeading;
+float headingLastGPSUpdate;
+float distance;
+boolean stop = true;
+boolean backDir;
+auto extrapolationTimer = Interval::timer();
 
 void checkPing();
-void readAccelerometer();
 void reportLocation();
 void extrapPosition();
-void (*schedule[])(void) = {	extrapPosition,
-								checkPing,
-								readAccelerometer,
-								reportLocation,
-								};
+void (*schedule[])(void) = { extrapPosition, checkPing, reportLocation };
+auto ScheduleTimer = Interval::every(22); //milliseconds
+const int ScheduleSize = sizeof(schedule)/sizeof(schedule[0]);
 
 //These parameters are loaded from eeprom if the code has not been reuploaded
 //since when they were last set.
@@ -75,43 +60,51 @@ float	pingWeight;
 int		coastTime, dangerTime; //danger should include coastTime
 float	tireDiameter;
 int		steerCenter;
-void dangerTimeCallback(float in){ dangerTime = coastTime+in; }
 inline float MPHtoRPM(float mph){ return (mph*MPHvRPM)/tireDiameter; }
 inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
 
 void setupSettings();
 
+RCFilter orientation(0.003,0.0015);
+InertialVec* sens[2] = {&hmc, &mpu};
+Translator   conv[2] = {Translators::APM, Translators::APM};
+InertialManager imu(sens, conv, 2);
+
+void isrCallback(uint16_t microseconds){
+    float ms = ((float)microseconds)/1000.0;
+    imu.update();
+    orientation.update(imu, ms);
+}
+
 void setup() {
+	Platform::beginAPM();
 	setupSettings();
 
-	gps.begin();
-	mpu.begin();
+    ServoGenerator::setUpdateCallback(isrCallback);
+
 	commSerial->begin(Protocol::BAUD_RATE);
 	for(int i=0; i<3; i++) pinMode(LEDpin[i], OUTPUT);
 	for(int i=0; i<3; i++) servo[i].attach(ServoPin[i]);
 	output(0.0f,steerCenter);
 
 	delay(2000);
-	calibrateGyro(); //this also takes one second
 
-	APMRadio::setup();
 	#if useEncoder
 		encoder::begin(EncoderPin[0], EncoderPin[1]);
 	#endif
-	manager.requestResync();
-	uTime = millis();
+	comms.requestResync();
 }
 
 void loop(){
-	manager.update();
-	updateGPS();
-	updateGyro();
-	if(uTime <= millis()){
-		uTime += ScheduleDelay;
+	Platform::updateAPM();
+	updatePath();
+	navigate();
+
+	if(ScheduleTimer()){
+		static uint8_t sIter = 0;
 		schedule[sIter]();
 		sIter++;
-		sIter = sIter%(sizeof(schedule)/sizeof(*schedule));
-		navigate();
+		sIter = sIter%ScheduleSize;
 	}
 }
 
@@ -174,7 +167,7 @@ void navigate(){
 		float disp  = steerThrow - abs(steerCenter-outputAngle);
 		float speed = (distance*5280.l);
 		speed = min(speed, disp)/6.f; //logical speed clamps
-		float approachSpeed = manager.getTargetWaypoint().getApproachSpeed();
+		float approachSpeed = comms.getTargetWaypoint().getApproachSpeed();
 		speed = min(speed, approachSpeed); //put in target approach speed
 		speed = constrain(speed, minFwd, maxFwd);
 
@@ -183,35 +176,34 @@ void navigate(){
 	}
 }
 
-void updateGPS(){
-	gps.update();
-	// Read gps only when new data is available
+void updatePath(){
 	static auto readIdx = gps.dataIndex();
 	if(gps.dataIndex() != readIdx){
 		readIdx = gps.dataIndex();
+
+		headingLastGPSUpdate = orientation.getYaw();
 		location = gps.getLocation();
+		extrapolationTimer.reset();
 		waypointUpdated();
-		syncHeading();
 		positionChanged();
-		gpsTime = millis();
 	}
+	trueHeading = gps.getCourse() + (orientation.getYaw()-headingLastGPSUpdate);
 }
 
 void waypointUpdated(){
-	if(manager.numWaypoints() > 0 && !gps.getWarning()){
+	if(comms.numWaypoints() > 0 && !gps.getWarning()){
 		stop = false;
- 		//distance = calcDistance(manager.getTargetWaypoint(),  location);
- 		distance = manager.getTargetWaypoint().distanceTo(location);
+ 		distance = comms.getTargetWaypoint().distanceTo(location);
 
 		if(distance > PointRadius)  return;
 
-		if(manager.getTargetIndex() < manager.numWaypoints()-1){
-			backWaypoint = manager.getTargetWaypoint();
-			manager.advanceTargetIndex();
+		if(comms.getTargetIndex() < comms.numWaypoints()-1){
+			backWaypoint = comms.getTargetWaypoint();
+			comms.advanceTargetIndex();
 		}
-		else if (manager.loopWaypoints()){
-			backWaypoint = manager.getTargetWaypoint();
-			manager.setTargetIndex(0);
+		else if (comms.loopWaypoints()){
+			backWaypoint = comms.getTargetWaypoint();
+			comms.setTargetIndex(0);
 		}
 		else{
 			stop = true;
@@ -219,33 +211,8 @@ void waypointUpdated(){
 	}
 }
 
-void updateGyro(){
-	float dt = lowFilter.millisSinceUpdate();
-	float Gz = -toDeg(mpu.gyroZ());
-	lowFilter.update(Gz);
-	highFilter.update(Gz-lowFilter.get());
-	trueHeading = truncateDegree(trueHeading + dt*(highFilter.get()));
-
-	if(gpsHalfTime < millis() && gpsHalfTime!=0){
-		gyroHalf = trueHeading;
-		gpsHalfTime = 0;
-	}
-}
-
-void syncHeading(){
-	if(!gps.getWarning() && gps.getCourse()!=0){
-		trueHeading = gps.getCourse();
-		/*
-		if(millis() - gpsTime < 1500) //dont use gyrohalf if it is too old
-			trueHeading = truncateDegree(gps.getCourse() + trueHeading - gyroHalf);
-		else
-			trueHeading = truncateDegree(gps.getCourse());
-		gpsHalfTime = millis()+(millis()-gpsTime)/2;*/
-	}
-	else if(stop) trueHeading = pathHeading;
-}
-
 void checkPing(){
+	static uint8_t pIter = 0;
 	ping[pIter] = getPing(PingPin[pIter]);
 	pIter+=2;
 	pIter = pIter%5;
@@ -253,63 +220,55 @@ void checkPing(){
 }
 
 void extrapPosition(){
-	float dT = millis()-nTime;
-	if(dT < 1000 && !gps.getWarning()){ //ignore irrational values
-		//3600000 = milliseconds per hour
-		float dTraveled = gps.getGroundSpeed()*dT/3600000.f;
-		dTraveled *= (2.l/3.l);//purposly undershoot
-		location = location.extrapolate(trueHeading, dTraveled);
+	uint32_t dt = extrapolationTimer();
+	if(dt > 1E5) {
+		extrapolationTimer.reset();
+
+		// convert to miles per hour
+		float dTraveled = gps.getGroundSpeed()*((float)dt)/(60.f*60.f*1E6f);
+		dTraveled *= (2.l/3.l); //intetionally undershoot
+
+		comms.sendTelem(AMPERAGE+4, dTraveled);
+		comms.sendTelem(AMPERAGE+5, trueHeading);
+
+		if(dTraveled != 0){
+			location = location.extrapolate(trueHeading, dTraveled);
+		}
 	}
 	positionChanged();
 }
 
 void positionChanged(){
-	nTime = millis();
-	if(manager.numWaypoints() <= 0) return;
+	if(comms.numWaypoints() <= 0) return;
 
-	distance = manager.getTargetWaypoint().distanceTo(location);
+	distance = comms.getTargetWaypoint().distanceTo(location);
 	if(backWaypoint.radLongitude() == 0 || distance*5280.l < 25){
-		pathHeading = location.headingTo(manager.getTargetWaypoint());
+		pathHeading = location.headingTo(comms.getTargetWaypoint());
 	} else {
-		double full  = backWaypoint.distanceTo(manager.getTargetWaypoint());
-		double AB    = backWaypoint.headingTo(manager.getTargetWaypoint());
-		double AL    = backWaypoint.headingTo(location);
-		double d     = cos(toRad(AL-AB)) * backWaypoint.distanceTo(location);
-		double D     = d + (full-d)*(1.l-lineGravity);
+		double full = backWaypoint.distanceTo(comms.getTargetWaypoint());
+		double AB   = backWaypoint.headingTo(comms.getTargetWaypoint());
+		double AL   = backWaypoint.headingTo(location);
+		double d    = cos(toRad(AL-AB)) * backWaypoint.distanceTo(location);
+		double D    = d + (full-d)*(1.l-lineGravity);
 		Waypoint target = backWaypoint.extrapolate(AB, D);
 		pathHeading  = location.headingTo(target);
 	}
 }
 
-void readAccelerometer(){
-	Ax = mpu.acclX();
-	Ay = mpu.acclY();
-	Az = mpu.acclZ();
-	pitch.update( atan2(sqrt(Ax*Ax+Az*Az), Ay) );
-	roll .update( atan2(sqrt(Ay*Ay+Az*Az),-Ax) );
-}
-
 void reportLocation(){
-	float voltage  = float(analogRead(67)/1024.l*5.l*10.1f);
-	float amperage = float(analogRead(66)/1024.l*5.l*17.0f);
-	manager.sendTelem(Protocol::telemetryType(LATITUDE),    location.degLatitude());
-	manager.sendTelem(Protocol::telemetryType(LONGITUDE),   location.degLongitude());
-	manager.sendTelem(Protocol::telemetryType(HEADING),     trueHeading);
-	manager.sendTelem(Protocol::telemetryType(PITCH),       toDeg(pitch.get())-90);
-	manager.sendTelem(Protocol::telemetryType(ROLL),        toDeg(roll.get())-90);
-	manager.sendTelem(Protocol::telemetryType(GROUNDSPEED), RPMtoMPH(encoder::getRPM()));
-	manager.sendTelem(Protocol::telemetryType(VOLTAGE),     voltage);
-	manager.sendTelem(Protocol::telemetryType(VOLTAGE+1),   amperage);
-}
+	using namespace Protocol;
+	comms.sendTelem(LATITUDE,    location.degLatitude());
+	comms.sendTelem(LONGITUDE,   location.degLongitude());
+	comms.sendTelem(HEADING,     trueHeading);
+	comms.sendTelem(PITCH,       toDeg(orientation.getPitch()));
+	comms.sendTelem(ROLL,        toDeg(orientation.getRoll()));
+	comms.sendTelem(GROUNDSPEED, RPMtoMPH(encoder::getRPM()));
+	comms.sendTelem(VOLTAGE,     power.getVoltage());
+	comms.sendTelem(AMPERAGE,    power.getAmperage());
 
-void calibrateGyro(){ //takes one second
-	double tmp = 0;
-	for(int i=0; i<100; i++){
-		double Gz = toDeg(mpu.gyroZ());
-		tmp += Gz/100;
-		delay(10);
-	}
-	lowFilter.set(tmp);
+	comms.sendTelem(AMPERAGE+1,  gps.getLatitude());
+	comms.sendTelem(AMPERAGE+2,  gps.getLongitude());
+	comms.sendTelem(AMPERAGE+3,  gps.getGroundSpeed());
 }
 
 void output(float mph, uint8_t steer){
@@ -329,14 +288,6 @@ void output(float mph, uint8_t steer){
 	servo[1].write(steer);
 	servo[2].write(180-steer);
 }
-
-void newPIDparam(float x){
-	// indexes for cruise control PID settings defined below
-	cruisePID = PIDparameters(settings.get(11),
-                              settings.get(12),
-                              settings.get(13), -90, 90 );
-}
-
 
 void setupSettings(){
 	/*GROUNDSETTING index="0" name="line gravity " min="0" max="1" def="0.50"
@@ -398,22 +349,26 @@ void setupSettings(){
 	/*GROUNDSETTING index="10" name="min rev time" min="0" max="+inf" def="800"
 	 *minimum time in milliseconds to reverse away from an obstacle
 	 */
-	settings.attach(10, 800, &dangerTimeCallback);
+	settings.attach(10, 800, [](float in){
+		// The program logic has dangerTime start after coastTime completes
+		// so the time when danger is over must be shifted by coastTime
+		dangerTime = coastTime+in;
+	});
 
 	/*GROUNDSETTING index="11" name="Cruise P" min="0" max="+inf" def="0.05"
 	 *P term in cruise control PID loop
 	 */
-	settings.attach(11, 0.05, &newPIDparam);
+	settings.attach(11, 0.05, [](float p){ cruisePID.setIdealP(p); });
 
 	/*GROUNDSETTING index="12" name="Cruise I" min="0" max="+inf" def="0.1"
 	 *I term in cruise control PID loop
 	 */
-	settings.attach(12, 0.1, &newPIDparam);
+	settings.attach(12, 0.1, [](float i){ cruisePID.setIdealI(i); });
 
 	/*GROUNDSETTING index="13" name="Cruise D" min="0" max="+inf" def="0.0"
 	 *D term in cruise control PID loop
 	 */
-	settings.attach(13, 0.0, &newPIDparam);
+	settings.attach(13, 0.0, [](float d){ cruisePID.setIdealD(d); });
 
 	/*GROUNDSETTING index="14" name="Tire Diameter" min="0" max="+inf" def="5.85"
 	 *Tire Diameter in inches, used to calculate MPH
