@@ -97,10 +97,16 @@ public:
         EWoutput = EW.update(speedEW);
 
         // Rotate output into local frame
-        float cs = cos(yaw);
+        float cs = cos(-yaw);
+        float sn = sin(-yaw);
+        float pitch = -(+cs*NSoutput -sn*EWoutput); // negative pitch => north
+        float roll  =  (+sn*NSoutput +cs*EWoutput); // positive roll  => east
+
+/*        float cs = cos(yaw);
         float sn = sin(yaw);
         float pitch = -(+cs*NSoutput +sn*EWoutput); // negative pitch => north
         float roll  =  (+cs*EWoutput -sn*NSoutput); // positive roll  => east
+*/
 /*
         float pitch = -(cs*NSoutput - sn*EWoutput);
         float roll  = -(cs*EWoutput + sn*NSoutput);
