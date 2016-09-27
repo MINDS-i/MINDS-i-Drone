@@ -1,5 +1,9 @@
 #include "MINDS-i-Drone.h"
 
+#if not defined(__AVR_ATmega2560__)
+    #error "Quadcopter platform only supported on arduino Mega"
+#endif
+
 const float MINIMUM_INT_PERIOD = 5000;
 Settings        settings(eeStorage::getInstance());
 HardwareSerial *commSerial  = &Serial;
