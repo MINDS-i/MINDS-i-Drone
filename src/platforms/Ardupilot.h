@@ -3,6 +3,10 @@
 
 #include "MINDS-i-Drone.h"
 
+#if not defined(__AVR_ATmega2560__)
+    #error "Quadcopter platform only supported on arduino Mega"
+#endif
+
 /**
  * Platform code for the sensors and hardware capabilites of the
  * Ardupilot mega 2.*
