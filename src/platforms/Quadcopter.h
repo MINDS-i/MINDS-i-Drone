@@ -31,8 +31,6 @@ namespace Platform {
     PIDparameters position(-0.25, 0.25);
     PositionHold positionHold(&position);
 
-    Power power;
-
     // Input parameter variables; default values rewritten by settings
     ThrottleCurve throttleCurve(0.0, 0.0);
     float YawTargetSlewRate;
@@ -163,7 +161,7 @@ namespace Platform {
          */
         settings.attach(1, 0.003f, [](float g){ orientation.setAccelGain(g); });
 
-        /*AIRSETTING index="2" name="Mag Gain" min="0.0" max="1.0" def="0.00015"
+        /*AIRSETTING index="2" name="Mag Gain" min="0.0" max="1.0" def="0.0015"
          *Factor used during sensor update step. Should be between 0.0 and 1.0
          *The closer to 1 it is, the larger impact the magnetometer has on the aircraft's
          *yaw estimate
@@ -306,8 +304,6 @@ namespace Platform {
 
         settings.attach(27, 4.000f, [](float g){ positionHold.setMaximumVelocityTarget(g); });
         settings.attach(28, Units::FEET_PER_MILE / 5.0f, [](float g){ positionHold.setVelocityScale(g); });
-        settings.attach(29, 0.0, [](float g){ positionHold.setTriggerDistance(g); });
-        settings.attach(30, 1.5 / Units::FEET_PER_MILE, [](float g){  });
     }
 }
 #endif

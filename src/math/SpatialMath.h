@@ -13,6 +13,8 @@ namespace Units{
     const float EARTH_RAD = 3958.761;
     // one revolution in radians
     const float twoPI = 2.0*M_PI;
+    // earth's average circumference in miles
+    const float EARTH_CIRC = EARTH_RAD*twoPI;
     // number of feet in a mile
     const float FEET_PER_MILE = 5280.0f;
 }

@@ -102,10 +102,11 @@ RCFilter::update(InertialManager& sensors, float dt){
     // get the gyroscope value
     rate = *sensors.gyroRef();
 
-    // Apply gyro drift calibration terms
     if(!calMode) {
+        // Apply gyro drift calibration terms
         rate += rateCal;
     } else {
+        // Integrate gyroscope readings
         rateCal -= rate;
         calTrack++;
     }
@@ -125,6 +126,14 @@ RCFilter::update(InertialManager& sensors, float dt){
     // accelerometer and magnetometer values and their respective global
     // reference vectors, "up" and "north"; apply the delta as an integration
     Vec3 delta(-accelGain*rawA[1], accelGain*rawA[0], -magGain*rawM[1]);
+
+    // While calibrating, dramatically increase the correction gains to
+    // force the attitude estimate to settle on the inertial sensor's readings
+    if(calMode){
+        // Scale so the largest gain becomes 0.25
+        delta *= 0.25/max(accelGain, magGain);
+    }
+
     attitude.preintegrate(delta);
 
     // Normalize, check for errors, recalculate pitch/roll/yaw

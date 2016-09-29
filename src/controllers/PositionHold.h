@@ -24,8 +24,6 @@ private:
     float maxVelocity = 4.0;
     // velocity scale in (miles per hour) / (miles from target)
     float velocityScale = Units::FEET_PER_MILE / 5.0;
-    // Distance away from the target the quad needs to be to attempt movement
-    float triggerDistance = 1.5 / Units::FEET_PER_MILE;
 public:
     PositionHold(PIDparameters* parameters):
         NS(parameters), EW(parameters) {}
@@ -36,10 +34,6 @@ public:
     // maximum velocity in miles per hour
     void setMaximumVelocityTarget(float mv) {
         maxVelocity = mv;
-    }
-    // Distance away from the target the quad needs to be to attempt movement
-    void setTriggerDistance(float miles){
-        triggerDistance = miles;
     }
     // velocity scale in (miles per hour) / (miles from target)
     void setVelocityScale(float vs){
@@ -63,43 +57,64 @@ public:
     Result update(GPS& gps, float yaw){
         /**
          * distances are in miles
-         * angles are in radians
+         * angles are in radians, ccw positive, 0 = north, NED frame
          * time is in hours
          */
+
+        // Recalculate output only when the gps reports new data
         static uint16_t lastIndex = -1;
         static Result output = { 0.0, 0.0 };
         if(gps.dataIndex() == lastIndex) return output;
-
         lastIndex = gps.dataIndex();
+
         Waypoint position = gps.getLocation();
+
+        // target speed to destination
         distance = position.distanceTo(target);
-
-        if(distance < triggerDistance){
-            return { 0.0, 0.0 };
-        }
-
         targetSpeed = min(distance*velocityScale, maxVelocity);
+
+        // target direction and components to destination
         auto targetComponents = position.headingComponents(target);
         float mag = 1.0/sqrt(sq(targetComponents.x)+sq(targetComponents.y));
-        if(isnan(mag)) mag = 0.0;
         targetNS = targetSpeed*targetComponents.x*mag;
         targetEW = targetSpeed*targetComponents.y*mag;
+        if(isnan(targetNS) || isnan(targetEW)) {
+            // components end up NaN when exactly on the target location
+            targetNS = 0.0;
+            targetEW = 0.0;
+        }
 
+        // current speed components
         speed = gps.getGroundSpeed();
-        course = toRad(-gps.getCourse());
+        course = toRad(gps.getCourse());
         speedNS = speed*cos(course);
         speedEW = speed*sin(course);
 
+        // Update PID loops
         NS.set(targetNS);
         EW.set(targetEW);
         NSoutput = NS.update(speedNS);
         EWoutput = EW.update(speedEW);
 
-        float cs = cos(yaw);
+        // Rotate output into local frame
+        float cs = cos(-yaw);
+        float sn = sin(-yaw);
+        float pitch = -(+cs*NSoutput -sn*EWoutput); // negative pitch => north
+        float roll  =  (+sn*NSoutput +cs*EWoutput); // positive roll  => east
+
+/*        float cs = cos(yaw);
         float sn = sin(yaw);
+        float pitch = -(+cs*NSoutput +sn*EWoutput); // negative pitch => north
+        float roll  =  (+cs*EWoutput -sn*NSoutput); // positive roll  => east
+*/
+/*
         float pitch = -(cs*NSoutput - sn*EWoutput);
         float roll  = -(cs*EWoutput + sn*NSoutput);
+        //^^ 0 target slowing seemed to work with this formulation
+        // before I un-inverted the course rotation value
+*/
 
+        // cache output and return
         output = { pitch, roll };
         return output;
     }

@@ -3,6 +3,10 @@
 
 #include "MINDS-i-Drone.h"
 
+#if not defined(__AVR_ATmega2560__)
+    #error "Quadcopter platform only supported on arduino Mega"
+#endif
+
 /**
  * Platform code for the sensors and hardware capabilites of the
  * Ardupilot mega 2.*
@@ -20,6 +24,7 @@ namespace Platform{
     HMC5883L hmc;
     LEA6H gps;
     MS5611 baro;
+    Power power;
 
     // State variables
     bool errorsDetected = false;
