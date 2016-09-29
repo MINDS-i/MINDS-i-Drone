@@ -47,7 +47,7 @@ void showList(){
     Serial.print(eeList->size());
     Serial.print(" stored waypoints:");
     Serial.println();
-    for(int i=0; i<eeList->size(); i++){
+    for(size_t i=0; i<eeList->size(); i++){
         Waypoint point = eeList->get(i);
         display(point);
     }

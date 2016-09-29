@@ -19,7 +19,7 @@ namespace EENode{
             if(address >= EE_MAX) return;
             byte data[sizeof(T)];
             *((T*)data) = newData;
-            for(int i=0; i<sizeof(T); i++){
+            for(size_t i=0; i<sizeof(T); i++){
                 eeprom::safeWrite(address+i, data[i]);
             }
         }
@@ -28,7 +28,7 @@ namespace EENode{
             if(address < EE_LIST_START) return T();
             if(address >= EE_MAX) return T();
             byte data[sizeof(T)];
-            for(int i=0; i<sizeof(T); i++){
+            for(size_t i=0; i<sizeof(T); i++){
                 data[i] = eeprom::safeRead(address+i);
             }
             return *((T*)data);
