@@ -11,7 +11,7 @@ ServoGenerator::Servo table;
 
 void setup(){
     beginAPM();
-    Serial.begin(57600);
+    Serial.begin(9600);
     table.attach(A0);
 }
 void loop(){
