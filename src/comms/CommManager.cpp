@@ -77,13 +77,19 @@ CommManager::handleWaypoint(uint8_t* msg, uint8_t length){
 	uint8_t  index = msg[11];
 	switch(subtype){
 		case ADD:
-			if(index > waypoints->size()) return;
+			if(index > waypoints->size()) {
+				requestResync();
+				return;
+			}
 			waypoints->add(index, data);
-			if(index <  getTargetIndex()) advanceTargetIndex();
+			if(index <= getTargetIndex()) advanceTargetIndex();
 			if(index == getTargetIndex()) cachedTarget = getWaypoint(index);
 			break;
 		case ALTER:
-			if(index >= waypoints->size()) return;
+			if(index >= waypoints->size()) {
+				requestResync();
+				return;
+			}
 			waypoints->set(index, data);
 			if(index == getTargetIndex()) cachedTarget = getWaypoint(index);
 			break;
@@ -140,6 +146,10 @@ CommManager::handleCommands(uint8_t a, uint8_t b){
 			waypoints->clear();
 			break;
 		case DELETE_WAYPOINT:
+			if(b < 0 || b >= waypoints->size()){
+				requestResync();
+				return;
+			}
 			waypoints->remove(b);
 			if(b <= getTargetIndex()) retardTargetIndex();
 			if(waypoints->size()==0) cachedTarget = Waypoint();

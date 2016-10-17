@@ -31,7 +31,6 @@ void loop(){
 		comms.sendTelem(Protocol::telemetryType(LONGITUDE), loc.degLongitude());
 		comms.sendTelem(2, comms.numWaypoints());
 
-		comms.sendString("Hello from the arduino!");
 
 		//advance waypoint list
 		if(comms.getTargetIndex() < comms.numWaypoints()-1){
@@ -41,4 +40,9 @@ void loop(){
 			comms.setTargetIndex(0);
 		}
 	}
+
+	static auto stringTimer = Interval::every(10000);
+    if(stringTimer()){
+		comms.sendString("Hello from the arduino!");
+    }
 }
