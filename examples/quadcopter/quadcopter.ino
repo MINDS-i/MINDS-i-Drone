@@ -19,7 +19,8 @@ const uint32_t DISARMING_TIME = 750;
 StateTimer radioDownRight([](){
     bool down  = APMRadio::get(RADIO_THROTTLE) <= CHANNEL_TRIGGER_MIN;
     bool right = APMRadio::get(RADIO_YAW)      <= CHANNEL_TRIGGER_MIN;
-    return down && right;
+    //return down && right;
+    return true;
 });
 
 // State timer used to detect DISARMING
@@ -89,6 +90,7 @@ void loop() {
                 output.standby();
                 positionHold.setTarget(gps.getLocation());
                 setState(FLYING);
+                sendHomeLocation();
             }
             break;
         /*#FLYING
@@ -191,7 +193,7 @@ const telemLine telemetryTable[] = {
     [](){ return power.getAmperage(); },           //AMPERAGE
     [](){ return altitude.getAltitude(); },        //ALTITUDE
 
-    [](){ return 1E6f/averageInterval; },
+    /*[](){ return 1E6f/averageInterval; },
 
     [](){ return gps.getCourse(); },
     [](){ return gps.getGroundSpeed(); },
@@ -202,7 +204,7 @@ const telemLine telemetryTable[] = {
     [](){ return proutput.pitch; },
     [](){ return proutput.roll; },
     [](){ return radioPitch; },
-    [](){ return radioRoll; },
+    [](){ return radioRoll; },*/
 };
 
 const uint8_t telemetryTotal =
@@ -216,4 +218,10 @@ void sendTelemetry(){
         comms.sendTelem(nextTelemIndex, telemetryTable[nextTelemIndex]());
         nextTelemIndex = (nextTelemIndex+1) % telemetryTotal;
     }
+}
+
+void sendHomeLocation(){
+    comms.sendTelem(Protocol::HOMELATITUDE, gps.getLatitude());
+    comms.sendTelem(Protocol::HOMELONGITUDE, gps.getLongitude());
+    comms.sendTelem(Protocol::HOMEALTITUDE, altitude.getAltitude());
 }

@@ -50,7 +50,10 @@ namespace Protocol{
                         GROUNDSPEED = 5,
                         VOLTAGE     = 6,
                         AMPERAGE    = 7,
-                        ALTITUDE    = 8 };
+                        ALTITUDE    = 8,
+                        HOMELATITUDE = 9,
+                        HOMELONGITUDE = 10,
+                        HOMEALTITUDE = 11 };
 
     enum commandType{ ESTOP           = 0,
                       TARGET          = 1,
