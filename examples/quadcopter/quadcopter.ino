@@ -19,8 +19,7 @@ const uint32_t DISARMING_TIME = 750;
 StateTimer radioDownRight([](){
     bool down  = APMRadio::get(RADIO_THROTTLE) <= CHANNEL_TRIGGER_MIN;
     bool right = APMRadio::get(RADIO_YAW)      <= CHANNEL_TRIGGER_MIN;
-    //return down && right;
-    return true;
+    return down && right;
 });
 
 // State timer used to detect DISARMING
@@ -120,7 +119,7 @@ void fly(){
         bool altSwitch = (APMRadio::get(RADIO_GEAR) > 90);
 
         // check for low throttle standby mode
-        if(APMRadio::get(RADIO_THROTTLE) <= CHANNEL_TRIGGER_MIN){
+        if(APMRadio::get(RADIO_THROTTLE) <= CHANNEL_TRIGGER_MIN && !altHoldEnabled){
             output.standby();
             return;
         } else {
