@@ -297,11 +297,30 @@ namespace Platform {
          */
         settings.attach(23, 0.000f, [](float g){ altitudeHold.setIntegralFactor(g); });
 
-        settings.attach(24, 0.050f, [](float g){ position.setIdealP(g); });
+        /*AIRSETTING index="24" name="Position P Term" min="-inf" max="+inf" def="0.10"
+         *Position hold P term<br>
+         */
+        settings.attach(24, 0.100f, [](float g){ position.setIdealP(g); });
+
+        /*AIRSETTING index="25" name="Position I Term" min="-inf" max="+inf" def="0"
+         *Position hold I Term<br>
+         */
         settings.attach(25, 0.000f, [](float g){ position.setIdealI(g); });
+
+        /*AIRSETTING index="26" name="Position D Term" min="-inf" max="+inf" def="0.0"
+         *Position hold D term
+         */
         settings.attach(26, 0.000f, [](float g){ position.setIdealD(g); });
 
+        /*AIRSETTING index="27" name="Maximum Velocity" min="-inf" max="+inf" def="4.0"
+         *Maximum over-ground travel velocity<br>
+         */
         settings.attach(27, 4.000f, [](float g){ positionHold.setMaximumVelocityTarget(g); });
+
+        /*AIRSETTING index="28" name="MaxV Distance" min="-inf" max="+inf" def="1056"
+         *Minimum away from desired position that results in flying towards the
+         *target at the maximum allowed velocity
+         */
         settings.attach(28, Units::FEET_PER_MILE / 5.0f, [](float g){ positionHold.setVelocityScale(g); });
 
         /*AIRSETTING index="29" name="Low Battery Warning" min="0.0" max="+inf" def="14.0"
