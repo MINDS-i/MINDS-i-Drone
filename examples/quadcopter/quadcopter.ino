@@ -114,7 +114,7 @@ void fly(){
     if(timer()){
         float pitchCmd = ((float)APMRadio::get(RADIO_PITCH)-90) /-70.0;
         float rollCmd  = ((float)APMRadio::get(RADIO_ROLL)-90)  /-70.0;
-        float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   / 90.0;
+        float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   /-90.0;
         float throttle = ((float)APMRadio::get(RADIO_THROTTLE)-25)/130.0;
         bool altSwitch = (APMRadio::get(RADIO_GEAR) > 90);
 
