@@ -134,6 +134,7 @@ void fly(){
             comms.sendString("Alt Hold");
             altitudeHold.setup(outputThrottle);
             altitudeSetpoint = altitude.getAltitude();
+            positionHold.setTarget(gps.getLocation());
             altHoldEnabled = true;
         }
 
@@ -192,8 +193,8 @@ const telemLine telemetryTable[] = {
     [](){ return power.getAmperage(); },           //AMPERAGE
     [](){ return altitude.getAltitude(); },        //ALTITUDE
 
-    /*[](){ return 1E6f/averageInterval; },
-
+    /*
+    [](){ return 1E6f/averageInterval; },
     [](){ return gps.getCourse(); },
     [](){ return gps.getGroundSpeed(); },
     [](){ return positionHold.distance; },
@@ -203,7 +204,8 @@ const telemLine telemetryTable[] = {
     [](){ return proutput.pitch; },
     [](){ return proutput.roll; },
     [](){ return radioPitch; },
-    [](){ return radioRoll; },*/
+    [](){ return radioRoll; },
+    */
 };
 
 const uint8_t telemetryTotal =
