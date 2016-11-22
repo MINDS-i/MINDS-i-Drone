@@ -168,7 +168,7 @@ void fly(){
         radioRoll = rollCmd;
         outputThrottle = throttleOut;
 
-        proutput = positionHold.update(gps, orientation.getYaw());
+        proutput = positionHold.update(gps, orientation.getYaw()+magneticDeclination);
 
         if(altHoldEnabled){
             horizon.set(proutput.pitch, proutput.roll, yawTarget, throttleOut);

@@ -35,6 +35,7 @@ namespace Platform {
     ThrottleCurve throttleCurve(0.0, 0.0);
     float YawTargetSlewRate;
     float AltitudeTargetSlewRate;
+    float magneticDeclination;
 
     // Minimum time between orientation and output updates in milliseconds
     const float MINIMUM_INT_PERIOD = 5000;
@@ -327,6 +328,13 @@ namespace Platform {
          * At what voltage to consider the quadcopter low on battery
          */
         settings.attach(29, 12.0f, [](float g){ power.setLowVolt(g); });
+
+        /*AIRSETTING index="30" name="Magnetic Declination" min="-180" max="180" def="15.0f"
+         * The magnetic declination in degrees of the area the quad will be
+         *   flying in
+         */
+        settings.attach(30, 15.0f, [](float g){ magneticDeclination = toRad(g); });
+
     }
 }
 #endif
