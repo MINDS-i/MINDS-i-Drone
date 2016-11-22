@@ -298,20 +298,20 @@ namespace Platform {
          */
         settings.attach(23, 0.000f, [](float g){ altitudeHold.setIntegralFactor(g); });
 
-        /*AIRSETTING index="24" name="Position P Term" min="-inf" max="+inf" def="0.10"
+        /*AIRSETTING index="24" name="Position P Term" min="-inf" max="+inf" def="0.0375"
          *Position hold P term<br>
          */
-        settings.attach(24, 0.100f, [](float g){ position.setIdealP(g); });
+        settings.attach(24, 0.0375f, [](float g){ position.setIdealP(g); });
 
-        /*AIRSETTING index="25" name="Position I Term" min="-inf" max="+inf" def="0"
+        /*AIRSETTING index="25" name="Position I Term" min="-inf" max="+inf" def="0.005"
          *Position hold I Term<br>
          */
-        settings.attach(25, 0.000f, [](float g){ position.setIdealI(g); });
+        settings.attach(25, 0.005f, [](float g){ position.setIdealI(g); });
 
-        /*AIRSETTING index="26" name="Position D Term" min="-inf" max="+inf" def="0.0"
+        /*AIRSETTING index="26" name="Position D Term" min="-inf" max="+inf" def="0.01"
          *Position hold D term
          */
-        settings.attach(26, 0.000f, [](float g){ position.setIdealD(g); });
+        settings.attach(26, 0.010f, [](float g){ position.setIdealD(g); });
 
         /*AIRSETTING index="27" name="Maximum Velocity" min="-inf" max="+inf" def="4.0"
          *Maximum over-ground travel velocity<br>
