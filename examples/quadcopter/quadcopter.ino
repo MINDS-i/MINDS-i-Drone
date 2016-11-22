@@ -169,7 +169,6 @@ void fly(){
                 /* implied prStickCentered == true, gpsAssist == true */
                 gpsStabilization = true;
                 positionHold.setTarget(gps.getLocation());
-                comms.sendString("gps");
             }
 
             // calculate gps stabilization corrections
