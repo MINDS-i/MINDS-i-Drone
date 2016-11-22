@@ -163,9 +163,10 @@ void fly(){
             bool prStickCentered =
                 (pitchCmd <= CENTER_RATIO && pitchCmd >= -CENTER_RATIO) &&
                 (rollCmd  <= CENTER_RATIO && rollCmd  >= -CENTER_RATIO);
-            if(!prStickCentered){
+            if(!gpsAssist || !prStickCentered){
                 gpsStabilization = false;
-            } else if (gpsStabilization == false /* implied prStickCentered == true*/){
+            } else if (gpsStabilization == false ){
+                /* implied prStickCentered == true, gpsAssist == true */
                 gpsStabilization = true;
                 positionHold.setTarget(gps.getLocation());
                 comms.sendString("gps");

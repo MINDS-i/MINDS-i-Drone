@@ -36,6 +36,7 @@ namespace Platform {
     float YawTargetSlewRate;
     float AltitudeTargetSlewRate;
     float magneticDeclination;
+    bool gpsAssist;
 
     // Minimum time between orientation and output updates in milliseconds
     const float MINIMUM_INT_PERIOD = 5000;
@@ -335,6 +336,14 @@ namespace Platform {
          */
         settings.attach(30, 15.0f, [](float g){ magneticDeclination = toRad(g); });
 
+        /*AIRSETTING index="31" name="GPS assist" min="0" max="1" def="1"
+         * Set to 1 to enable gps loitering when flying in assisted mode with
+         *   the pitch/roll commands centered.
+         * Set to 0 to disable gps loitering; the pilot retains complete
+         *   control of pitch and roll when in assisted mode, with the processor
+         *   only stabilizing the altitude autonomously
+         */
+        settings.attach(31, 1.0f, [](float g){ gpsAssist = (g != 0.0f); });
     }
 }
 #endif
