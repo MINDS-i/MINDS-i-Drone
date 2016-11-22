@@ -64,7 +64,7 @@ void loop() {
         **/
         case DISARMED:
             if(radioDownRight.trueFor(ARMING_TIME)) {
-                if(safe()){
+                if(safe() && !power.isBatteryLow()){
                     calibrateEndTimer = Interval::elapsed(CALIBRATING_TIME);
                     setState(CALIBRATE);
                 } else {
@@ -185,6 +185,11 @@ void fly(){
             outputThrottle = altitudeHold.update(altitudeSetpoint, altitude);
         }
 
+        // limit throttle power when the battery is low
+        if(power.isBatteryLow()){
+            outputThrottle *= power.suggestedPowerCap();
+        }
+
         horizon.set(outputPitch, outputRoll, yawTarget, outputThrottle);
     }
 }
@@ -193,9 +198,7 @@ typedef float (*telemLine)(void);
 const telemLine telemetryTable[] = {
     [](){ return gps.getLatitude(); },             //LATITUDE
     [](){ return gps.getLongitude(); },            //LONGITUDE
-
     [](){ return toDeg(orientation.getYaw()); },   //HEADING
-
     [](){ return toDeg(orientation.getPitch()); }, //PITCH
     [](){ return toDeg(orientation.getRoll()); },  //ROLL
     [](){ return gps.getGroundSpeed(); },          //GROUNDSPEED
