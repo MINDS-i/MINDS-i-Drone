@@ -36,6 +36,7 @@ namespace Platform {
     float YawTargetSlewRate;
     float AltitudeTargetSlewRate;
     float magneticDeclination;
+    float autolandDescentRate;
     bool gpsAssist;
 
     // Minimum time between orientation and output updates in milliseconds
@@ -344,6 +345,12 @@ namespace Platform {
          *   only stabilizing the altitude autonomously
          */
         settings.attach(31, 1.0f, [](float g){ gpsAssist = (g != 0.0f); });
+
+        /*AIRSETTING index="32" name="Auto Descent Rate" min="0" max="+inf" def="1"
+         * The desired descent rate in feet per second for the quadcopter to
+         *   fall at when auto landing because of a radio signall loss
+         */
+        settings.attach(32, 1.0f, [](float g){ autolandDescentRate = g; });
     }
 }
 #endif

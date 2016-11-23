@@ -26,6 +26,8 @@ private:
     float responseFactor;
     float velocityFactor;
     float integralFactor;
+    // landing detection variables
+    bool minThrottleHit;
 public:
     AltitudeHold() {}
     void setResponseFactor(float f) { responseFactor = f; }
@@ -57,18 +59,28 @@ public:
             float throttle = hover + responseFactor * correction;
 
             if(throttle < hover*MIN_THROTTLE_RATIO){
+                minThrottleHit = true;
                 // Cap the minimum throttle
                 output = hover*MIN_THROTTLE_RATIO;
             } else if(throttle > hover*MAX_THROTTLE_RATIO) {
+                minThrottleHit = false;
                 // Cap the maximum throttle
                 output = hover*MAX_THROTTLE_RATIO;
             } else {
+                minThrottleHit = false;
                 // Output the calculated value and store the new integral
                 output = throttle;
                 integral = newIntegral;
             }
         }
         return output;
+    }
+    /**
+     * Returns true if the quadcopter has likely hit land and can descend
+     *   no further
+     */
+    bool landingDetected(){
+        return minThrottleHit;
     }
 };
 #endif

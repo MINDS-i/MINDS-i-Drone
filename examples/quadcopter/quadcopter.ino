@@ -31,9 +31,10 @@ StateTimer radioDownLeft([](){
 });
 
 // State machine Variables
-enum State { DISARMED, CALIBRATE, FLYING } state;
+enum State { DISARMED, CALIBRATE, FLYING, FAILSAFE } state;
 const char* stateString[] = {
-    [DISARMED] = "DISARMED", [CALIBRATE] = "CALIBRATE", [FLYING] = "FLYING" };
+    [DISARMED] = "DISARMED", [CALIBRATE] = "CALIBRATE",
+    [FLYING] = "FLYING", [FAILSAFE] = "FAILSAFE" };
 
 auto calibrateEndTimer = Interval::elapsed(0);
 float yawTarget = 0.0;
@@ -97,6 +98,12 @@ void loop() {
                 setState(DISARMED);
             }
             break;
+        /*#FAILSAFE
+         * Auto-landing; Radio signal loss detected
+        **/
+        case FLYING:
+            land();
+            break;
     }
 }
 
@@ -107,91 +114,120 @@ float outputPitch, outputRoll, outputThrottle;
 
 void fly(){
     static auto timer = Interval::every(10);
-    if(timer()){
-        // check for low throttle standby mode
-        if(APMRadio::get(RADIO_THROTTLE) <= CHANNEL_TRIGGER_MIN && !assistedMode){
-            output.standby();
-            return;
-        } else {
-            output.enable();
+    if(!timer()) return;
+
+    uint8_t radioBaseThrottle = APMRadio::get(RADIO_THROTTLE);
+
+    if(radioBaseThrottle == 0) {
+        // radio disconnect failsafe
+        altitudeSetpoint = altitude.getAltitude();
+        setState(FAILSAFE);
+    } else if(radioBaseThrottle <= CHANNEL_TRIGGER_MIN && !assistedMode){
+        // low throttle standby mode
+        output.standby();
+        return;
+    }
+
+    // normal flight mode
+    output.enable();
+
+    // read radio controls
+    float pitchCmd = ((float)APMRadio::get(RADIO_PITCH)-90) /-70.0;
+    float rollCmd  = ((float)APMRadio::get(RADIO_ROLL)-90)  /-70.0;
+    float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   /-90.0;
+    float throttle = ((float)radioBaseThrottle-25)/130.0;
+    bool altSwitch = (APMRadio::get(RADIO_GEAR) > 90);
+
+    // Calculate time delta
+    static uint32_t lastRunTime = micros();
+    uint32_t now = micros();
+    float dt = (now - lastRunTime)/1e6; // in seconds
+    lastRunTime = now;
+
+    // update yaw target
+    if(fabs(yawCmd) > 0.1){
+        yawTarget += yawCmd*dt*M_PI*YawTargetSlewRate;
+        yawTarget = truncateRadian(yawTarget);
+    }
+
+    // switch into and out of altitude hold mode
+    if(altSwitch == false){
+        assistedMode = false;
+        gpsStabilization = false;
+    } else if (assistedMode == false /* implied altSwitch == true*/){
+        comms.sendString("Alt Hold");
+        altitudeHold.setup(outputThrottle);
+        altitudeSetpoint = altitude.getAltitude();
+        positionHold.setTarget(gps.getLocation());
+        assistedMode = true;
+    }
+
+    // calculate desired outputs
+    if(!assistedMode){
+        outputPitch = pitchCmd;
+        outputRoll = rollCmd;
+        outputThrottle = throttleCurve.get(throttle);
+    } else {
+        // update altitude setpoint
+        float setpointCommand = throttle-0.5;
+        if(fabs(setpointCommand) > 0.1){
+            altitudeSetpoint += setpointCommand*dt*AltitudeTargetSlewRate;
         }
 
-        // read radio controls
-        float pitchCmd = ((float)APMRadio::get(RADIO_PITCH)-90) /-70.0;
-        float rollCmd  = ((float)APMRadio::get(RADIO_ROLL)-90)  /-70.0;
-        float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   /-90.0;
-        float throttle = ((float)APMRadio::get(RADIO_THROTTLE)-25)/130.0;
-        bool altSwitch = (APMRadio::get(RADIO_GEAR) > 90);
-
-        // Calculate time delta
-        static uint32_t lastRunTime = micros();
-        uint32_t now = micros();
-        float dt = (now - lastRunTime)/1e6; // in seconds
-        lastRunTime = now;
-
-        // update yaw target
-        if(fabs(yawCmd) > 0.1){
-            yawTarget += yawCmd*dt*M_PI*YawTargetSlewRate;
-            yawTarget = truncateRadian(yawTarget);
-        }
-
-        // switch into and out of altitude hold mode
-        if(altSwitch == false){
-            assistedMode = false;
+        // switch in and out of loiter gps stabilization mode
+        bool prStickCentered =
+            (pitchCmd <= CENTER_RATIO && pitchCmd >= -CENTER_RATIO) &&
+            (rollCmd  <= CENTER_RATIO && rollCmd  >= -CENTER_RATIO);
+        if(!gpsAssist || !prStickCentered){
             gpsStabilization = false;
-        } else if (assistedMode == false /* implied altSwitch == true*/){
-            comms.sendString("Alt Hold");
-            altitudeHold.setup(outputThrottle);
-            altitudeSetpoint = altitude.getAltitude();
+        } else if (gpsStabilization == false ){
+            /* implied prStickCentered == true, gpsAssist == true */
+            gpsStabilization = true;
             positionHold.setTarget(gps.getLocation());
-            assistedMode = true;
         }
 
-        // calculate desired outputs
-        if(!assistedMode){
+        // calculate gps stabilization corrections
+        auto proutput = positionHold.update(gps, orientation.getYaw()+magneticDeclination);
+
+        // set outputs
+        if(gpsStabilization){
+            outputPitch = proutput.pitch;
+            outputRoll = proutput.roll;
+        } else {
             outputPitch = pitchCmd;
             outputRoll = rollCmd;
-            outputThrottle = throttleCurve.get(throttle);
-        } else {
-            // update altitude setpoint
-            float setpointCommand = throttle-0.5;
-            if(fabs(setpointCommand) > 0.1){
-                altitudeSetpoint += setpointCommand*dt*AltitudeTargetSlewRate;
-            }
-
-            // switch in and out of loiter gps stabilization mode
-            bool prStickCentered =
-                (pitchCmd <= CENTER_RATIO && pitchCmd >= -CENTER_RATIO) &&
-                (rollCmd  <= CENTER_RATIO && rollCmd  >= -CENTER_RATIO);
-            if(!gpsAssist || !prStickCentered){
-                gpsStabilization = false;
-            } else if (gpsStabilization == false ){
-                /* implied prStickCentered == true, gpsAssist == true */
-                gpsStabilization = true;
-                positionHold.setTarget(gps.getLocation());
-            }
-
-            // calculate gps stabilization corrections
-            auto proutput = positionHold.update(gps, orientation.getYaw()+magneticDeclination);
-
-            // set outputs
-            if(gpsStabilization){
-                outputPitch = proutput.pitch;
-                outputRoll = proutput.roll;
-            } else {
-                outputPitch = pitchCmd;
-                outputRoll = rollCmd;
-            }
-            outputThrottle = altitudeHold.update(altitudeSetpoint, altitude);
         }
-
-        // limit throttle power when the battery is low
-        if(power.isBatteryLow()){
-            outputThrottle *= power.suggestedPowerCap();
-        }
-
-        horizon.set(outputPitch, outputRoll, yawTarget, outputThrottle);
+        outputThrottle = altitudeHold.update(altitudeSetpoint, altitude);
     }
+
+    // limit throttle power when the battery is low
+    if(power.isBatteryLow()){
+        outputThrottle *= power.suggestedPowerCap();
+    }
+
+    horizon.set(outputPitch, outputRoll, yawTarget, outputThrottle);
+}
+
+void land(){
+    static auto timer = Interval::every(10);
+    if(!timer()) return;
+
+    static bool landed = false;
+
+    if(landed){
+        output.disable();
+    } else {
+        altitudeSetpoint -= autolandDescentRate/(1e2/*interval in seconds*/);
+        outputThrottle = altitudeHold.update(altitudeSetpoint, altitude);
+        horizon.set(0, 0, yawTarget, outputThrottle);
+        if(altitudeHold.landingDetected()) landed = true;
+    }
+}
+
+void sendHomeLocation(){
+    comms.sendTelem(Protocol::HOMELATITUDE, gps.getLatitude());
+    comms.sendTelem(Protocol::HOMELONGITUDE, gps.getLongitude());
+    comms.sendTelem(Protocol::HOMEALTITUDE, altitude.getAltitude());
 }
 
 typedef float (*telemLine)(void);
@@ -205,20 +241,6 @@ const telemLine telemetryTable[] = {
     [](){ return power.getVoltage(); },            //VOLTAGE
     [](){ return power.getAmperage(); },           //AMPERAGE
     [](){ return altitude.getAltitude(); },        //ALTITUDE
-
-    /*
-    [](){ return 1E6f/averageInterval; },
-    [](){ return gps.getCourse(); },
-    [](){ return gps.getGroundSpeed(); },
-    [](){ return positionHold.distance; },
-    [](){ return positionHold.targetSpeed; },
-    [](){ return positionHold.targetNS; },
-    [](){ return positionHold.targetEW; },
-    [](){ return proutput.pitch; },
-    [](){ return proutput.roll; },
-    [](){ return radioPitch; },
-    [](){ return radioRoll; },
-    */
 };
 
 const uint8_t telemetryTotal =
@@ -234,8 +256,3 @@ void sendTelemetry(){
     }
 }
 
-void sendHomeLocation(){
-    comms.sendTelem(Protocol::HOMELATITUDE, gps.getLatitude());
-    comms.sendTelem(Protocol::HOMELONGITUDE, gps.getLongitude());
-    comms.sendTelem(Protocol::HOMEALTITUDE, altitude.getAltitude());
-}
