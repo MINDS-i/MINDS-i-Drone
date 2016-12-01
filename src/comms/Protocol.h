@@ -51,9 +51,14 @@ namespace Protocol{
                         VOLTAGE     = 6,
                         AMPERAGE    = 7,
                         ALTITUDE    = 8,
-                        HOMELATITUDE = 9,
-                        HOMELONGITUDE = 10,
-                        HOMEALTITUDE = 11 };
+                        RDTHROTTLE  = 9,
+                        RDPITCH     = 10,
+                        RDROLL      = 11,
+                        RDYAW       = 12,
+                        RDGEAR      = 13,
+                        HOMELATITUDE = 14,
+                        HOMELONGITUDE = 15,
+                        HOMEALTITUDE = 16 };
 
     enum commandType{ ESTOP           = 0,
                       TARGET          = 1,
