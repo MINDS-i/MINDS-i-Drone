@@ -9,7 +9,9 @@ void setup(){
 
 void loop() {
     gps.update();
-    if(gps.newData()){
+    static size_t lastGpsDataIndex = gps.dataIndex();
+    if(gps.dataIndex() > lastGpsDataIndex){
+        lastGpsDataIndex = gps.dataIndex();
         Serial.print("gps.getWarning()     ");
         Serial.println(gps.getWarning()    );
         Serial.print("gps.getCourse()      ");

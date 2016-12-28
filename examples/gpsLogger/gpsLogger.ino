@@ -24,7 +24,9 @@ void loop(){
 
     //update the gps and store good readings periodically
     gps.update();
-    if(gps.newData() && gps.status().good()){
+    static size_t lastGpsDataIndex = gps.dataIndex();
+    if((gps.dataIndex() > lastGpsDataIndex) && gps.status().good()){
+        lastGpsDataIndex = gps.dataIndex();
         Waypoint newPoint = gps.getLocation();
         static uint32_t intervalTimer;
         if(millis()>intervalTimer){

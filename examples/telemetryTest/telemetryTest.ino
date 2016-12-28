@@ -42,7 +42,9 @@ void readAccelerometer(){
 }
 void updateGPS(){
     gps.update();
-    if(gps.newData()){
+    static size_t lastGpsDataIndex = gps.dataIndex();
+    if(gps.dataIndex() > lastGpsDataIndex){
+        lastGpsDataIndex = gps.dataIndex();
         location = gps.getLocation();
     }
 }
