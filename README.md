@@ -63,6 +63,15 @@ Operating your Quadcopter
    should begin spinning slowly.
 6. To disarm, hold the throttle stick down and the yaw stick left (CCW).
 
++ When flying with the gear switch down, you will have manual control over
+  the quadcopter. With the gear switch up, it will switch to assisted mode.
+  In assisted mode the quadcopter will hold its elevation automatically using
+  the barometer; hold the throttle at 50% to keep its current elevation, move it
+  up to ascend, and move it down to descend. If the "GPS assist" setting is enabled
+  (true by default) then assisted mode will also attempt to hold the quadcopter
+  in its current position laterally when the right radio stick is centered, giving
+  manual control back when the right stick is moved away from its center position.
+
 + To diagnose problems, connect the quadcopter to the [MINDS-i Dashboard][1] and read
   the error messages produced.
 
