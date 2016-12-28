@@ -102,18 +102,6 @@ public:
         float pitch = -(+cs*NSoutput -sn*EWoutput); // negative pitch => north
         float roll  =  (+sn*NSoutput +cs*EWoutput); // positive roll  => east
 
-/*        float cs = cos(yaw);
-        float sn = sin(yaw);
-        float pitch = -(+cs*NSoutput +sn*EWoutput); // negative pitch => north
-        float roll  =  (+cs*EWoutput -sn*NSoutput); // positive roll  => east
-*/
-/*
-        float pitch = -(cs*NSoutput - sn*EWoutput);
-        float roll  = -(cs*EWoutput + sn*NSoutput);
-        //^^ 0 target slowing seemed to work with this formulation
-        // before I un-inverted the course rotation value
-*/
-
         // cache output and return
         output = { pitch, roll };
         return output;

@@ -35,7 +35,12 @@ void NMEA::update(){
 				seqPos = (parseSuccess)? seqPos+1 : -1; //reset parser on fail
 				clearBuffer();
 				if(seqPos >= NumSections) {
-					isNew = true;
+					// dataFrameIndex++; could be here to only advance the
+					// index when a full packed is completed, but the
+					// position hold algorithm was tested with it marking
+					// the beginnings of the packets so it should remain where
+					// it is until enough testing of position hold can be done
+					// to validate its placement here
 					seqPos = -1; //done reading
 				}
 			}

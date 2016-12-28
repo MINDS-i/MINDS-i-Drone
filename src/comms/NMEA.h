@@ -66,7 +66,6 @@ public:
 	}
 private:
 	Stream& inStream;
-	bool isNew = false;
 	float latitude = 0.0;
 	float longitude = 0.0;
 	float timeOfFix = 0, dateOfFix = 0;
