@@ -1,22 +1,22 @@
 # MINDS-i-Drone
 Advanced library for the [MINDS-i][3] Drone platform
 
-To use the library, install it in your arduino *sketchbook/libraries* folder
-manually or from within the arduino library manager.
+To use the library, install it with the arduino library manager or manually add
+it to your *sketchbook/libraries* folder.
 
 Setting up your Quadcopter
 --------------------------
 1. Install your motors in the following configuration:
    ```
      ^ Forward ^
-   .---.   .---.
+   .->-.   .-<-.
    | 3 |   | 1 |
-   .---\ ^ /---.
+   .-<-\ ^ /->-.
          XXX
          XXX
-   .---/   \---.
+   .-<-/   \->-.
    | 2 |   | 4 |
-   .---.   .---.
+   .->-.   .-<-.
   ```
 
    | Output Channel | Position      | Direction         |
@@ -56,14 +56,14 @@ Operating your Quadcopter
    The dashboard can be used to view, graph, and log live telemetry as well as
    configure the drone's onboard settings and display error messages.
 4. To arm, hold the radio throttle stick down and the yaw stick all the way to the right
-   (the direction for clockwise rotation on the drone) for 2 seconds. If an error is
-   detected, the quadcopter will refuse to arm.
-5. The drone will calibrate its inertial sensors for 2 seconds, it must remain
-   as still as possible during this time. It will then be ready to fly; the motors
-   should begin spinning slowly.
-6. To disarm, hold the throttle stick down and the yaw stick left (CCW).
+   for 2 seconds. If the quadcopter refuses to arm, check the error message
+   display on the MINDS-i dashboard.
+5. The drone will calibrate its inertial sensors for 2 seconds; it must remain
+   as still as possible during this time. When it is ready to fly, the motors
+   should begin to spin slowly.
+6. To disarm, hold the throttle stick down and the yaw stick left.
 
-+ When flying with the gear switch down, you will have manual control over
++ When flying with the Mode/Gear switch down, you will have manual control over
   the quadcopter. With the gear switch up, it will switch to assisted mode.
   In assisted mode the quadcopter will hold its elevation automatically using
   the barometer; hold the throttle at 50% to keep its current elevation, move it
@@ -72,8 +72,8 @@ Operating your Quadcopter
   in its current position laterally when the right radio stick is centered, giving
   manual control back when the right stick is moved away from its center position.
 
-+ To diagnose problems, connect the quadcopter to the [MINDS-i Dashboard][1] and read
-  the error messages produced.
++ Always take off with the Mode/Gear switch down, and only use it to activate
+  assisted flight mode when the quadcopter is stable and hovering
 
 [1]: https://github.com/MINDS-i/Dashboard/releases
 [2]: https://github.com/MINDS-i/Drone-Tests
