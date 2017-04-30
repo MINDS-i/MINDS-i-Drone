@@ -6,6 +6,7 @@
 #include "storage/EEPROMconfig.h"
 #include "storage/queue.h"
 #include "util/byteConv.h"
+#include <util/atomic.h>
 
 struct eepromWrite{
 	EEaddr  addr;
@@ -52,14 +53,21 @@ eeprom::enableInterrupt(){
 void
 eeprom::write(EEaddr addr, uint8_t val){
 	if(addr == EENULL || addr >= EE_MAX) return;
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
+		_eepromWriteQueue.push(eepromWrite(addr,val));
+	}
 	eeprom::enableInterrupt();
-	_eepromWriteQueue.push(eepromWrite(addr,val));
 }
 void
 eeprom::safeWrite(EEaddr addr, uint8_t val){
 	if(addr == EENULL || addr >= EE_MAX) return;
 	eeprom::enableInterrupt();
-	while( !_eepromWriteQueue.push(eepromWrite(addr,val)) );
+	bool success = false;
+	while(!success) {
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
+			success = _eepromWriteQueue.push(eepromWrite(addr,val));
+		}
+	}
 }
 void
 eeprom::writeLong(EEaddr addr, uint32_t val){
