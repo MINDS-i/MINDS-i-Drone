@@ -51,10 +51,12 @@ LEA6H::status(){
 }
 void
 LEA6H::begin(){
+    stream.begin(9600);
+    sendUBloxMessage(0x06, 0x00, 0x0014, CFG_PRT);
+    stream.flush();
     stream.begin(38400);
     sendUBloxMessage(0x06, 0x01, 0x0003, GPRMC_On);
     sendUBloxMessage(0x06, 0x17, 0x0004, CFG_NMEA);
-    sendUBloxMessage(0x06, 0x00, 0x0014, CFG_PRT);
     sendUBloxMessage(0x06, 0x24, 0x0024, Pedestrian_Mode);
 }
 void

@@ -69,7 +69,10 @@ bool NMEA::handleSections(){
 */
 const SectionHandler NMEA::sectionHandlers[] {
 	//GPRMC
-	[](NMEA& nmea) -> bool { return strcmp("GPRMC", nmea.sectionBuf) == 0; },
+	[](NMEA& nmea) -> bool {
+		return strcmp("GPRMC", nmea.sectionBuf) == 0
+				|| strcmp("GNRMC", nmea.sectionBuf) == 0;
+	},
 	//TimeOfFix
 	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.timeOfFix); },
 	//Status
