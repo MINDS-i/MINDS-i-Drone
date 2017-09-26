@@ -7,6 +7,7 @@ HardwareSerial *commSerial  = &Serial;
 Waypoint        location(0,0);
 LEA6H           gps;
 MPU6000         mpu;
+MS5611          baro;
 HLA             pitch( 100, 0);
 HLA             roll ( 100, 0);
 
@@ -14,10 +15,15 @@ void setup(){
     commSerial->begin(Protocol::BAUD_RATE);
     mpu.begin();
     gps.begin();
+    baro.begin();
+
+    delay(100);
+    baro.calibrate();
 }
 void loop(){
     updateGPS();
     readAccelerometer();
+    baro.update();
 
     static uint32_t outputTrack = millis();
     if(millis() > outputTrack){
@@ -74,5 +80,12 @@ void reportTelemetry(){
     commSerial->print(voltage);
     commSerial->print("\tupTime: ");
     commSerial->print(millis());
+    commSerial->print("\n");
+
+    //barometer
+    commSerial->print(  "MBar: ");
+    commSerial->print(baro.getMilliBar());
+    commSerial->print("\tAlt: ");
+    commSerial->print(baro.getAltitude());
     commSerial->print("\n");
 }
