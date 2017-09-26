@@ -1,16 +1,18 @@
 #include <MINDS-i-Drone.h>
 
-ServoGenerator::Servo drive, steer;
+ServoGenerator::Servo drive, steer, backsteer;
 
 void setup() {
   drive.attach(12 /* APM pin 1 */);
   steer.attach(11 /* APM pin 2 */);
+  backsteer.attach(8 /* APM pin 3 */);
 
   ServoGenerator::begin();
 
   //set the initial throttle/direction for the ESC/servo
   drive.write(90);
   steer.write(90);
+  backsteer.write(90);
 
   APMRadio::setup();
   Serial.begin(9600);
@@ -36,4 +38,5 @@ void loop() {
 
   drive.write( driveSig );
   steer.write( steerSig );
+  backsteer.write( 90 - steerSig );
 }
