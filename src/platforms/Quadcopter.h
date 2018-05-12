@@ -337,14 +337,14 @@ namespace Platform {
          */
         settings.attach(30, 15.0f, [](float g){ magneticDeclination = toRad(g); });
 
-        /*AIRSETTING index="31" name="GPS assist" min="0" max="1" def="1"
+        /*AIRSETTING index="31" name="GPS assist" min="0" max="1" def="0"
          * Set to 1 to enable gps loitering when flying in assisted mode with
          *   the pitch/roll commands centered.
          * Set to 0 to disable gps loitering; the pilot retains complete
          *   control of pitch and roll when in assisted mode, with the processor
          *   only stabilizing the altitude autonomously
          */
-        settings.attach(31, 1.0f, [](float g){ gpsAssist = (g != 0.0f); });
+        settings.attach(31, 0.0f, [](float g){ gpsAssist = (g != 0.0f); });
 
         /*AIRSETTING index="32" name="Auto Descent Rate" min="0" max="+inf" def="1"
          * The desired descent rate in feet per second for the quadcopter to
