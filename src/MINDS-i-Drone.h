@@ -75,6 +75,7 @@ Copyright 2015 MINDS-i Inc.
 #include "math/Waypoint.h"
 
 #include "output/AfroESC.h"
+#include "output/EMaxESC.h"
 #include "output/FlightStrategy.h"
 #include "output/HK_ESCOutputDevice.h"
 #include "output/OutputDevice.h"

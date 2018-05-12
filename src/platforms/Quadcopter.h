@@ -6,7 +6,9 @@
 
 namespace Platform {
     // Output devices
+    #ifndef Output_t
     #define Output_t AfroESC
+    #endif
     Output_t esc[4] =
         { Output_t(12/*CCW TR APM 1*/), Output_t(11/*CCW BL APM 2*/),
           Output_t( 8/*CW  TL APM 3*/), Output_t( 7/*CW  BR APM 4*/) };
