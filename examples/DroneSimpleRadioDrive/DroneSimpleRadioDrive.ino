@@ -38,5 +38,5 @@ void loop() {
 
   drive.write( driveSig );
   steer.write( steerSig );
-  backsteer.write( 90 - steerSig );
+  backsteer.write( 180 - steerSig );
 }
