@@ -67,7 +67,7 @@ Node<T>* SRAMlist<T>::popFree(){
 }
 template<typename T> inline
 Node<T>* SRAMlist<T>::getNode(size_t index){
-	if(index > curSize) return false;
+	if(index > curSize) return 0;
 	Node<T> *cur = root;
 	for(size_t i=0; i<index; i++) cur = cur->next;
 	return cur;
