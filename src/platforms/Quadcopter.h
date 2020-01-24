@@ -331,7 +331,7 @@ namespace Platform {
         /*AIRSETTING index="29" name="Low Battery Warning" min="0.0" max="+inf" def="14.0"
          * At what voltage to consider the quadcopter low on battery
          */
-        settings.attach(29, 14.0f, [](float g){ power.setLowVolt(g); });
+        settings.attach(29, 10.5f, [](float g){ power.setLowVolt(g); });
 
         /*AIRSETTING index="30" name="Magnetic Declination" min="-180" max="180" def="15.0f"
          * The magnetic declination in degrees of the area the quad will be
