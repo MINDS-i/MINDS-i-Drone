@@ -5,7 +5,7 @@
 using namespace Platform;
 
 // Radio Channel Mapping
-enum RadioChannel{ RADIO_PITCH = 0, RADIO_ROLL = 1, RADIO_THROTTLE = 2,
+enum RadioChannel{ RADIO_PITCH = 1, RADIO_ROLL = 0, RADIO_THROTTLE = 2,
                    RADIO_YAW   = 3, RADIO_GEAR = 4, RADIO_AUX      = 5 };
 const uint8_t CHANNEL_TRIGGER_MIN = 32;
 const uint8_t CHANNEL_TRIGGER_MAX = 148;
@@ -260,4 +260,3 @@ void sendTelemetry(){
         nextTelemIndex = (nextTelemIndex+1) % telemetryTotal;
     }
 }
-
