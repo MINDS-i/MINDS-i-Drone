@@ -68,6 +68,12 @@ HMC5883L::status()
     }
 
     isTrueHMC5883L = false;//bad return value either compass failed or is clone. Set compass as clone.
+    /*set the compass to continous mode, this is the only mode the clone works in*/
+    Wire.beginTransmission(address);
+    Wire.write((uint8_t)0x02);
+    Wire.write((uint8_t)0x00);
+    Wire.endTransmission();
+
     return Sensor::OK; //always return sensor ok here, this function is called when board is powered on, good values will be checked at arming time.
 }
 void
@@ -93,7 +99,6 @@ HMC5883L::rawValues(int& x, int& y, int& z) {
         Wire.write((uint8_t)0x03);
     }
     Wire.endTransmission();
-
 
     Wire.requestFrom(address, (uint8_t)0x06);
     if(Wire.available()>=6){
