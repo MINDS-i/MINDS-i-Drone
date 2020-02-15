@@ -17,6 +17,12 @@ HMC5883L::begin(){
     Wire.write((uint8_t) 0x01);
     Wire.write((uint8_t) 0x00);
     Wire.endTransmission();
+
+    /*set the compass to continous mode, this is the only mode the clone works in*/
+    Wire.beginTransmission(address);
+    Wire.write((uint8_t)0x02);
+    Wire.write((uint8_t)0x00);
+    Wire.endTransmission();
 }
 void
 HMC5883L::tune(LTATune t){
@@ -28,18 +34,7 @@ HMC5883L::end(){
 }
 bool
 HMC5883L::checkGoodValues() {
-    /*perform the original check that looks for a good status bit */
-    Wire.beginTransmission(address);
-    Wire.write((uint8_t)0x09);
-    Wire.endTransmission();
-    Wire.requestFrom(address, (uint8_t)0x01);
-    if (Wire.available() >= 1) {
-        uint8_t status = Wire.read();
-        if ((status & 0x3) == 1) return true;
-    }
-
-    /*bad return value: either compass failed or is clone. */
-    /*if not reporting as a good HMC5883L then check the values returned by the compass to determine if it is ok*/
+    /*check the values returned by the compass to determine if it is ok*/
     int m[3];
     rawValues(m[0], m[1], m[2]);
     float mag = (float)(m[0] * m[0] + m[1] * m[1]);
@@ -66,14 +61,7 @@ HMC5883L::status()
         uint8_t status = Wire.read();
         if ((status & 0x3) == 1) return Sensor::OK; //always return ok here
     }
-
     isTrueHMC5883L = false;//bad return value either compass failed or is clone. Set compass as clone.
-    /*set the compass to continous mode, this is the only mode the clone works in*/
-    Wire.beginTransmission(address);
-    Wire.write((uint8_t)0x02);
-    Wire.write((uint8_t)0x00);
-    Wire.endTransmission();
-
     return Sensor::OK; //always return sensor ok here, this function is called when board is powered on, good values will be checked at arming time.
 }
 void
@@ -91,13 +79,7 @@ HMC5883L::update(InertialManager& man, Translator axis){
 void
 HMC5883L::rawValues(int& x, int& y, int& z) {
     Wire.beginTransmission(address);
-    if (isTrueHMC5883L) {
-        Wire.write((uint8_t)0x02);
-        Wire.write((uint8_t)0x01);
-    }
-    else {
-        Wire.write((uint8_t)0x03);
-    }
+    Wire.write((uint8_t)0x03);
     Wire.endTransmission();
 
     Wire.requestFrom(address, (uint8_t)0x06);
