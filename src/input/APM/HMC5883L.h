@@ -3,7 +3,7 @@
 
 #include "input/InertialManager.h"
 #include "util/LTATune.h"
-constexpr auto HMC5883L_MAX_EXPECTED_VALUE_MAG = 1500;
+constexpr auto HMC5883L_MAX_EXPECTED_VALUE_MAG = 2500;
 constexpr auto HMC5883L_MIN_EXPECTED_VALUE_MAG = 50;
 
 //HMC5883L Compass
