@@ -216,6 +216,8 @@ void waypointUpdated(){
 		else{
 			stop = true;
 		}
+	} else {
+		stop = true;
 	}
 }
 
