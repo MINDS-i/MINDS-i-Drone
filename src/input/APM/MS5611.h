@@ -2,7 +2,6 @@
 #define MS5611_H
 
 #include "input/InertialManager.h"
-#include "input/Sensor.h"
 #include "input/SPIcontroller.h"
 #include "util/byteConv.h"
 #include <SPI.h>

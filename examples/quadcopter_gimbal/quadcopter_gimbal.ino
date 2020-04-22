@@ -3,6 +3,7 @@
 #include "MINDS-i-Drone.h"
 #include "platforms/Quadcopter.h"
 using namespace Platform;
+const uint8_t MAX_ALLOWED_THROTTLE = 75;
 
 // Radio Channel Mapping
 enum RadioChannel{ RADIO_PITCH = 1, RADIO_ROLL = 0, RADIO_THROTTLE = 2,
@@ -117,6 +118,7 @@ void fly(){
     if(!timer()) return;
 
     uint8_t radioBaseThrottle = APMRadio::get(RADIO_THROTTLE);
+    if(radioBaseThrottle>MAX_ALLOWED_THROTTLE) radioBaseThrottle=MAX_ALLOWED_THROTTLE; //limit maximum throttle for drone on gimbal
 
     if(radioBaseThrottle == 0) {
         // radio disconnect failsafe
@@ -163,7 +165,7 @@ void fly(){
     }
 
     // calculate desired outputs
-    if(!assistedMode){
+    if(true){//!assistedMode){  lock quadcopter on gimbal in standard mode never go into assisted(altitude hold)
         outputPitch = pitchCmd;
         outputRoll = rollCmd;
         outputThrottle = throttleCurve.get(throttle);

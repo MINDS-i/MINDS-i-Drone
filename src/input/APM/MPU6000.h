@@ -1,5 +1,4 @@
 #include "input/InertialManager.h"
-#include "input/Sensor.h"
 #include "input/SPIcontroller.h"
 #include "input/AxisTranslator.h"
 #include "util/byteConv.h"

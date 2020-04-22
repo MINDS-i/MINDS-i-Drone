@@ -33,6 +33,14 @@ namespace Platform{
      * Returns true if none of the hardware has reported an error
      */
     bool safe(){
+        if (errorsDetected)/*if errors were detected when board powered on return false*/
+            return false;
+        /*at arm time check compass to see if it is returning good values*/
+        bool status = hmc.checkGoodValues();
+        if (!status) {
+            errorsDetected = true;
+            comms.sendString("HMCFAIL");
+        }
         return !errorsDetected;
     }
 

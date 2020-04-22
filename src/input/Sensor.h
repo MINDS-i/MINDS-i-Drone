@@ -29,7 +29,7 @@ public:
 	virtual Status status() = 0;
 	virtual void   end() = 0;
 };
-const Sensor::Status Sensor::OK("OK");
+
 /*
 Inertial Vector sensors are sensors that read a 3-vector relating
 	to the sensor's orientation. They provide an extra method for the
@@ -45,5 +45,4 @@ class InertialVec : public Sensor{
 public:
 	virtual void update(InertialManager& man, Translator axis) = 0;
 };
-
 #endif
