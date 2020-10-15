@@ -25,44 +25,34 @@ public:
 		stream.setTimeout(0);
 	}
 	/** true if data has been updated since the last time anything was read */
-	uint16_t dataIndex(){
-		return dataFrameIndex;
-	}
+	uint16_t dataIndex(){ return dataFrameIndex;	}
 	/** Latitude in decimal degrees, north is positive */
-	float getLatitude(){
-		return latitude;
-	}
+	float getLatitude(){ return latitude;	}
 	/** Longitude in decimal degrees, east is positive */
-	float getLongitude(){
-		return longitude;
-	}
+	float getLongitude(){ return longitude;	}
 	/** Time of GPS fix in HHMMSS format */
-	float getTimeOfFix(){
-		return timeOfFix;
-	}
+	float getTimeOfFix(){ return timeOfFix;	}
 	/** Date of fix in DDMMYY format */
-	float getDateOfFix(){
-		return dateOfFix;
-	}
+	float getDateOfFix(){ return dateOfFix;	}
 	/** True if the location data may be missing or incorrect */
-	bool getWarning(){
-		return warning;
-	}
+	bool getWarning(){ return warning;	}
 	/** Get ground speed in miles per hours */
-	float getGroundSpeed(){
-		return groundSpeed;
-	}
+	float getGroundSpeed(){ return groundSpeed;	}
 	/** Get course in degrees true (relative true north, clockwise positive) */
-	float getCourse(){
-		return course;
-	}
+	float getCourse(){ return course;	}
 	/** Angle between magnetic north and true north */
-	float getMagVar(){
-		return magVar;
-	}
+	float getMagVar(){ return magVar;	}
 	/** Latitude/Longitude location as a Waypoint, CCW positive */
-	Waypoint getLocation(){
-		return Waypoint(latitude,longitude);
+	Waypoint getLocation(){ return Waypoint(latitude,longitude);	}
+
+	bool getUpdatedRMC()
+	{
+		return updatedRMC;
+	}
+
+	void clearUpdatedRMC()
+	{
+		updatedRMC=false;
 	}
 private:
 	Stream& inStream;
@@ -74,6 +64,9 @@ private:
 	float course = 0;
 	float magVar = 0;
 	uint16_t dataFrameIndex = 0;
+
+	bool updatedRMC = false;
+
 	//holds a section between commas in a GPRMC string
 	char sectionBuf[16];
 	int sectionBufPos = 0;

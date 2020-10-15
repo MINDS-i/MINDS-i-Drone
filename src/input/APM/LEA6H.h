@@ -15,6 +15,7 @@ protected:
     const static uint8_t GPRMC_On[];
     const static uint8_t CFG_NMEA[];
     const static uint8_t CFG_PRT[];
+    const static uint8_t CFG_RATE[];
     void sendUBloxMessage(uint8_t Type, uint8_t ID,
                           uint16_t len, const uint8_t* buf);
     void calcChecksum(const uint8_t* msg, uint8_t len,
@@ -32,17 +33,19 @@ public:
     void calibrate();
     void update();
     //expose interface provided by NMEA parser
-    bool  getWarning()    { update(); return parser.getWarning();     }
-    uint16_t dataIndex()  { update(); return parser.dataIndex();      }
-    float getCourse()     { update(); return parser.getCourse();      }
-    float getDateOfFix()  { update(); return parser.getDateOfFix();   }
-    float getGroundSpeed(){ update(); return parser.getGroundSpeed(); }
-    float getLatitude()   { update(); return parser.getLatitude();    }
-    float getLongitude()  { update(); return parser.getLongitude();   }
-    float getMagVar()     { update(); return parser.getMagVar();      }
-    float getTimeOfFix()  { update(); return parser.getTimeOfFix();   }
+    bool  getWarning()      { update(); return parser.getWarning();     }
+    bool  getUpdatedRMC()   { update(); return parser.getUpdatedRMC();  }    
+    void  clearUpdatedRMC() { parser.clearUpdatedRMC();                 }
+    uint16_t dataIndex()    { update(); return parser.dataIndex();      }
+    float getCourse()       { update(); return parser.getCourse();      }
+    float getDateOfFix()    { update(); return parser.getDateOfFix();   }
+    float getGroundSpeed()  { update(); return parser.getGroundSpeed(); }
+    float getLatitude()     { update(); return parser.getLatitude();    }
+    float getLongitude()    { update(); return parser.getLongitude();   }
+    float getMagVar()       { update(); return parser.getMagVar();      }
+    float getTimeOfFix()    { update(); return parser.getTimeOfFix();   }
     #ifdef WAYPOINT_H
-    Waypoint getLocation(){ update(); return parser.getLocation();    }
+    Waypoint getLocation()  { update(); return parser.getLocation();    }
     #endif
 };
 Sensor::Status
@@ -58,6 +61,7 @@ LEA6H::begin(){
     sendUBloxMessage(0x06, 0x01, 0x0003, GPRMC_On);
     sendUBloxMessage(0x06, 0x17, 0x0004, CFG_NMEA);
     sendUBloxMessage(0x06, 0x24, 0x0024, Pedestrian_Mode);
+    sendUBloxMessage(0x06, 0x08, 0x0006, CFG_RATE);
 }
 void
 LEA6H::calibrate(){
@@ -110,4 +114,5 @@ const uint8_t LEA6H::CFG_PRT[] =  { 0x01, 0x00, 0x00, 0x00, 0xc0, 0x08,
                                     0x00, 0x00, 0x00, 0x96, 0x00, 0x00,
                                     0x07, 0x00, 0x02, 0x00, 0x00, 0x00,
                                     0x00, 0x00};
+const uint8_t LEA6H::CFG_RATE[] = { 0xC8, 0x00, 0x01, 0x00, 0x01, 0x00 };
 #endif

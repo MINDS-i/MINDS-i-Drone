@@ -59,6 +59,9 @@ Copyright 2015 MINDS-i Inc.
 #include "input/altIMU/STMtwi.h"
 #include "input/APM/HMC5883L.h"
 #include "input/APM/LEA6H.h"
+
+#include "input/APM/LEA6H_sim.h"
+
 #include "input/APM/MPU6000.h"
 #include "input/APM/MS5611.h"
 #include "input/APM/Power.h"

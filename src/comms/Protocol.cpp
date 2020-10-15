@@ -2,13 +2,15 @@
 #include <inttypes.h>
 #include "Arduino.h"
 
-namespace Protocol{
-	uint16_t
-	fletcher16(uint8_t const *data, int length){
+namespace Protocol
+{
+	uint16_t fletcher16(uint8_t const *data, int length)
+	{
 		return fletcher16_resume(data, length, 0xFFFF);
 	}
-	uint16_t
-	fletcher16_resume(uint8_t const *data, int length, uint16_t lastResult){
+
+	uint16_t fletcher16_resume(uint8_t const *data, int length, uint16_t lastResult)
+	{
 			uint16_t Asum, Bsum;
 			Asum = lastResult & 0xff;
 			Bsum = (lastResult>>8) & 0xff;
@@ -26,14 +28,16 @@ namespace Protocol{
 			Bsum = (Bsum & 0xff) + (Bsum >> 8);
 			return (Bsum << 8) | Asum;
 	}
-	bool
-	fletcher(uint8_t* data, int length){
+	
+	bool fletcher(uint8_t* data, int length)
+	{
 		uint16_t foundSum = data[length-2]<<8 | data[length-1];
 		uint16_t calcSum = fletcher16(data, length-2);
 		return foundSum==calcSum;
 	}
-	void
-	sendMessage(uint8_t* data, int length, HardwareSerial *stream){
+
+	void sendMessage(uint8_t* data, int length, HardwareSerial *stream)
+	{
 		uint16_t sum = Protocol::fletcher16(data, length);
 		stream->write(HEADER, HEADER_SIZE);
 		stream->write(data,length);
@@ -41,8 +45,9 @@ namespace Protocol{
 		stream->write(sum&0xff);
 		stream->write(FOOTER, FOOTER_SIZE);
 	}
-	void
-	sendStringMessage(uint8_t label, const char * msg, int len, HardwareSerial* stream){
+
+	void sendStringMessage(uint8_t label, const char * msg, int len, HardwareSerial* stream)
+	{
 		uint16_t labelSum = Protocol::fletcher16(&label, 1);
 		uint16_t sum = Protocol::fletcher16_resume((uint8_t const*)msg, len, labelSum);
 		stream->write(HEADER, HEADER_SIZE);
@@ -52,8 +57,9 @@ namespace Protocol{
 		stream->write(sum&0xff);
 		stream->write(FOOTER, FOOTER_SIZE);
 	}
-	bool
-	needsConfirmation(uint8_t label){
+
+	bool needsConfirmation(uint8_t label)
+	{
 		uint8_t type = getMessageType(label);
 		uint8_t subtype = getSubtype(label);
 
@@ -62,25 +68,34 @@ namespace Protocol{
 
 		return false;
 	}
-	messageType getMessageType(uint8_t label){
+
+	messageType getMessageType(uint8_t label)
+	{
 		return (messageType) (label & 0x0F);
 	}
-	uint8_t getSubtype(uint8_t label){
+
+	uint8_t getSubtype(uint8_t label)
+	{
 		return (label>>4) & 0x0F;
 	}
-	uint8_t buildMessageLabel(waypointSubtype subtype){
+
+	uint8_t buildMessageLabel(waypointSubtype subtype)
+	{
 		if(subtype > 0x0F) return 0;
 		return (subtype<<4) | messageType(WAYPOINT);
 	}
-	uint8_t buildMessageLabel(dataSubtype subtype){
+	uint8_t buildMessageLabel(dataSubtype subtype)
+	{
 		if(subtype > 0x0F) return 0;
 		return (subtype<<4) | messageType(DATA);
 	}
-	uint8_t buildMessageLabel(wordSubtype subtype){
+	uint8_t buildMessageLabel(wordSubtype subtype)
+	{
 		if(subtype > 0x0F) return 0;
 		return (subtype<<4) | messageType(WORD);
 	}
-	uint8_t buildMessageLabel(stringSubtype subtype){
+	uint8_t buildMessageLabel(stringSubtype subtype)
+	{
 		if(subtype > 0x0F) return 0;
 		return (subtype<<4) | messageType(STRING);
 	}

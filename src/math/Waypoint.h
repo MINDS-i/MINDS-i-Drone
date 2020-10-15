@@ -5,7 +5,9 @@
 #include "SpatialMath.h"
 #include <stdint.h>
 
-class Waypoint{
+class Waypoint
+{
+
 public:
 	float lat, lng; //these are stored in degrees
 	uint16_t extra; //8.8 fixed value used for altitude (air) or speed (ground)
@@ -33,18 +35,10 @@ public:
 			lng = longitude;
 		}
 	}
-	float radLatitude() const {
-		return toRad(lat);
-	}
-	float radLongitude() const {
-		return toRad(lng);
-	}
-	float degLatitude() const {
-		return lat;
-	}
-	float degLongitude() const {
-		return lng;
-	}
+	float radLatitude() const  { return toRad(lat); }
+	float radLongitude() const { return toRad(lng); }
+	float degLatitude() const  { return lat; }
+	float degLongitude() const { return lng; }
     struct Components{ float y, x; };
 	/**
 	 * Calculate the resulting vector as components for direct travel to

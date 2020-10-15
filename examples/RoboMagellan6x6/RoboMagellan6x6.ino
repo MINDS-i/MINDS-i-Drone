@@ -139,56 +139,97 @@ void navigate(){
 	} else {
 		//drive based on pathHeading and side ping sensors
 		double x,y;
+		//difference between pathheadgin (based on waypoints (previous and current))
+		//error can only be as much as 180 degrees off (opposite directions).
 		double angularError = truncateDegree(pathHeading - trueHeading);
 
 		double outputAngle;
 		switch(steerStyle){
 			case 0:
+				//not sure.  Ratio of opposite/adjacent multiplied by steering throw
+				//not sure why divided by PI.
 				outputAngle = atan( angularError*PI/180.l )*(2*steerThrow/PI);
 				break;
 			case 1:
+				//get squared of percentage of error from 180
 				outputAngle = ((angularError/180.l)*(angularError/180.l));
+				//above percentage of the full steerthrow (example: 45 degree*.01)
 				outputAngle *=(2.l*steerThrow);
-				if(angularError < 0) outputAngle *= -1;
+				//negative angle if left turning vs right turning ( or opposite?)
+				if(angularError < 0)
+					outputAngle *= -1;
 				break;
 			default:
+				//simplest. Percentage of error multipled by 2x the steerthow
+				// if angularError is 90 degrees off we max out the steering (left/right)
+				// this is constrained below
+				// at this point we could be 180 degress off and have output angle of 90
 				outputAngle = (angularError/180.l)*(2.l*steerThrow);
 				break;
 		}
+
+		//scale angle (default of 1, no change)
 		outputAngle *= steerFactor;
 
+		//find x and y component of output angle
 		x = cos(toRad(outputAngle));
 		y = sin(toRad(outputAngle));
-		for(int i=0; i<5; i++){
-			double tmp = ping[i]/pingWeight;
+
+		//Not 100 sure:  Generally using pings sensor values to adjust output angle
+		//modify x and y based on what pings are seeing		
+		for(int i=0; i<5; i++)
+		{
+			//temp is some percentage (at ping of 1400 would mean tmp==1)
+			float tmp = ping[i]/pingWeight;
+			//value is squared?
 			tmp *= tmp;
+			//add to x,y based on set angle of sensor inverse scaled of percentage
 			x += cos(toRad(pAngle[i]))/tmp;
 			y += sin(toRad(pAngle[i]))/tmp;
 		}
 
+		//determine angle based on x,y then adjust from steering center ( 0 )
 		outputAngle = toDeg(atan2(y,x))+steerCenter;
+		//Can't steer more then throw
 		outputAngle = constrain(outputAngle,
 				  				double(steerCenter-steerThrow),
 			 	  				double(steerCenter+steerThrow));
 
+
+		//disp should with default values be [(-45)-45]?
+		//output angle is contrainted between -45 and +45. 
+		//90(default)-/+45 => [45-135]
+		//90 - [45-135] => [45-(-45)]
+		//why?
 		float disp  = steerThrow - abs(steerCenter-outputAngle);
+		//distance is in miles.  Not sure why we convert to feet?
 		float speed = (distance*5280.l);
+
+		//not sure why one would use disp vs speed?  Is this for turning distance?
+		//speed is even a distance.  if we get Less the x feet away and it is smaller 
+		//then approachSpeed and turning angle then we us it?
+
 		speed = min(speed, disp)/6.f; //logical speed clamps
 		float approachSpeed = manager.getTargetWaypoint().getApproachSpeed();
 		speed = min(speed, approachSpeed); //put in target approach speed
 		speed = constrain(speed, minFwd, maxFwd);
-
-		if(stop) output(0 , steerCenter);
-		else     output(speed, outputAngle);
+		
+		if(stop) 
+			output(0 , steerCenter);
+		else     
+			output(speed, outputAngle);
 	}
 }
 
-void updateGPS(){
+void updateGPS()
+{
 	gps.update();
-	// Read gps only when new data is available
-	static auto readIdx = gps.dataIndex();
-	if(gps.dataIndex() != readIdx){
-		readIdx = gps.dataIndex();
+
+	if(gps.getUpdatedRMC())
+	{
+
+		gps.clearUpdatedRMC();
+		//readIdx = gps.dataIndex();
 		location = gps.getLocation();
 		waypointUpdated();
 		syncHeading();
@@ -197,29 +238,36 @@ void updateGPS(){
 	}
 }
 
-void waypointUpdated(){
-	if(manager.numWaypoints() > 0 && !gps.getWarning()){
+void waypointUpdated()
+{
+	if(manager.numWaypoints() > 0 && !gps.getWarning())
+	{
 		stop = false;
- 		//distance = calcDistance(manager.getTargetWaypoint(),  location);
+
  		distance = manager.getTargetWaypoint().distanceTo(location);
 
-		if(distance > PointRadius)  return;
+		if(distance > PointRadius)  
+			return;
 
-		if(manager.getTargetIndex() < manager.numWaypoints()-1){
+		if(manager.getTargetIndex() < manager.numWaypoints()-1)
+		{
 			backWaypoint = manager.getTargetWaypoint();
 			manager.advanceTargetIndex();
 		}
-		else if (manager.loopWaypoints()){
+		else if (manager.loopWaypoints())
+		{
 			backWaypoint = manager.getTargetWaypoint();
 			manager.setTargetIndex(0);
 		}
-		else{
+		else
+		{
 			stop = true;
 		}
 	}
 }
 
-void updateGyro(){
+void updateGyro()
+{
 	float dt = lowFilter.millisSinceUpdate();
 	float Gz = -toDeg(mpu.gyroZ());
 	lowFilter.update(Gz);
@@ -232,8 +280,10 @@ void updateGyro(){
 	}
 }
 
-void syncHeading(){
-	if(!gps.getWarning() && gps.getCourse()!=0){
+void syncHeading()
+{
+	if(!gps.getWarning() && gps.getCourse()!=0)
+	{
 		trueHeading = gps.getCourse();
 		/*
 		if(millis() - gpsTime < 1500) //dont use gyrohalf if it is too old
@@ -242,17 +292,22 @@ void syncHeading(){
 			trueHeading = truncateDegree(gps.getCourse());
 		gpsHalfTime = millis()+(millis()-gpsTime)/2;*/
 	}
-	else if(stop) trueHeading = pathHeading;
+	else if(stop) 
+	{
+		trueHeading = pathHeading;
+	}
 }
 
-void checkPing(){
-	ping[pIter] = getPing(PingPin[pIter]);
+void checkPing()
+{
+        ping[pIter] = getPing(PingPin[pIter]);
 	pIter+=2;
 	pIter = pIter%5;
 	if(ping[pIter] < warn[pIter]) oTime = millis();
 }
 
-void extrapPosition(){
+void extrapPosition()
+{
 	float dT = millis()-nTime;
 	if(dT < 1000 && !gps.getWarning()){ //ignore irrational values
 		//3600000 = milliseconds per hour
@@ -263,30 +318,53 @@ void extrapPosition(){
 	positionChanged();
 }
 
-void positionChanged(){
+void positionChanged()
+{
 	nTime = millis();
-	if(manager.numWaypoints() <= 0) return;
+	if (manager.numWaypoints() <= 0) 
+		return;
 
 	distance = manager.getTargetWaypoint().distanceTo(location);
-	if(backWaypoint.radLongitude() == 0 || distance*5280.l < 25){
-		pathHeading = location.headingTo(manager.getTargetWaypoint());
-	} else {
-		double full  = backWaypoint.distanceTo(manager.getTargetWaypoint());
-		double AB    = backWaypoint.headingTo(manager.getTargetWaypoint());
-		double AL    = backWaypoint.headingTo(location);
-		double d     = cos(toRad(AL-AB)) * backWaypoint.distanceTo(location);
-		double D     = d + (full-d)*(1.l-lineGravity);
+	if (backWaypoint.radLongitude() == 0 || distance*5280.l < 25)
+	{
+		pathHeading = location.headingTo(manager.getTargetWaypoint());	
+	} 
+	else 
+	{
+		// find a point along path from backwaypoint to targetwaypoint in which to drive toward (pathHeading)
+		//  First we determine how much of our current vector "counts" toard the target (cos).
+		//  Whatever is left of distance along that original (optimal) vector is scalled by lineGravity.
+		//  LineGravity will scale the point to either heading directory orthogonal to original (optimal) vector or 
+		//  directly toward the target waypoint
+
+		//full distance from previous waypoint to target waypoint
+		float full  = backWaypoint.distanceTo(manager.getTargetWaypoint());
+		//heading (degrees) to the target waypoint from previous waypoint
+		float AB    = backWaypoint.headingTo(manager.getTargetWaypoint());
+		//heading from where we are at compared to previous waypoint
+		float AL    = backWaypoint.headingTo(location);
+		//percentage of our current vector. what amount of distance in in direction we should be going.
+		float d     = cos(toRad(AL-AB)) * backWaypoint.distanceTo(location);
+		//scale remaining distance by linegravity (0,1) then add the 'd' distance. 
+		float D     = d + (full-d)*(1.l-lineGravity);
+		//find waypoint for this new distance along the previous-to-target path
 		Waypoint target = backWaypoint.extrapolate(AB, D);
+		//Find the heading to get there from current location
 		pathHeading  = location.headingTo(target);
+
 	}
 }
 
-void readAccelerometer(){
+void readAccelerometer()
+{
 	Ax = mpu.acclX();
 	Ay = mpu.acclY();
 	Az = mpu.acclZ();
+	//atan2 gets angle of x and y vectors
 	pitch.update( atan2(sqrt(Ax*Ax+Az*Az), Ay) );
-	roll .update( atan2(sqrt(Ay*Ay+Az*Az),-Ax) );
+	//atan2 gets angle of y and z vectors
+	roll.update( atan2(sqrt(Ay*Ay+Az*Az),-Ax) );
+
 }
 
 void reportLocation(){

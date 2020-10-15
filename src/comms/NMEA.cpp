@@ -21,20 +21,27 @@ void NMEA::update(){
 		// Attempt to parse any NMEA string, parsing each value as it comes
 		// until the end of the string is reached or a value fails to parse
 
-		if(n == '$') {
+		if(n == '$') 
+		{
 			dataFrameIndex++;
 			seqPos = 0;
 			clearBuffer();
-		} else if (seqPos != -1) {
-			if((n != ',') && (n != '*')){
+		} 
+		else if (seqPos != -1) 
+		{
+			if((n != ',') && (n != '*'))
+			{
 				bool success = pushToBuffer(n);
 				if(!success) seqPos = -1; //buffer full
-			} else {
+			} 
+			else 
+			{
 				// two consective commas is not an error, just skip it
 				bool parseSuccess = (sectionBufPos==0)? true : handleSections();
 				seqPos = (parseSuccess)? seqPos+1 : -1; //reset parser on fail
 				clearBuffer();
-				if(seqPos >= NumSections) {
+				if(seqPos >= NumSections) 
+				{
 					// dataFrameIndex++; could be here to only advance the
 					// index when a full packed is completed, but the
 					// position hold algorithm was tested with it marking
@@ -42,6 +49,7 @@ void NMEA::update(){
 					// it is until enough testing of position hold can be done
 					// to validate its placement here
 					seqPos = -1; //done reading
+					updatedRMC = true;
 				}
 			}
 		}

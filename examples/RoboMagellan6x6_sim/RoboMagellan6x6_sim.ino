@@ -55,9 +55,37 @@ float   distance;
 boolean  stop = true;
 boolean  backDir;
 
+
+enum APM_STATES { 
+	APM_STATE_INIT = 0,
+	APM_STATE_SELF_TEST,
+	APM_STATE_DRIVE
+};
+
+enum DRIVE_STATES {
+	DRIVE_STATE_STOP = 0,
+	DRIVE_STATE_AUTO,
+	DRIVE_STATE_RADIO
+};
+
+enum AUTO_STATES {
+	AUTO_STATE_FULL=0,
+	AUTO_STATE_CAUTION,
+	AUTO_STATE_AVOID,
+	AUTO_STATE_APPROACH,
+	AUTO_STATE_STALLED,
+};
+
+//global state vars (maybe move to class at some point?)
+uint8_t apmState=APM_STATE_DRIVE;
+uint8_t driveState=DRIVE_STATE_STOP;
+uint8_t autoState=AUTO_STATE_FULL;
+
+
 void checkPing();
 void readAccelerometer();
 void reportLocation();
+void reportState();
 void extrapPosition();
 void updateSIM();
 
@@ -68,7 +96,8 @@ uint32_t scheduleDelay[][2] =
 	{22,22},
 	{22,44},
 	{22,66},
-	{500,88}
+	{22,88},
+	{500,100}
 };
 
 void (*schedule[])(void) = 
@@ -76,6 +105,7 @@ void (*schedule[])(void) =
 	extrapPosition,
 	readAccelerometer,
 	reportLocation,
+	reportState,
 	checkPing,
 	updateSIM,
 };
@@ -99,6 +129,9 @@ int		steerCenter;
 void dangerTimeCallback(float in){ dangerTime = coastTime+in; }
 inline float MPHtoRPM(float mph){ return (mph*MPHvRPM)/tireDiameter; }
 inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
+
+void stateStop();
+void stateStart();
 
 void setupSettings();
 
@@ -134,6 +167,10 @@ void setup() {
 	#ifdef ptest
 	manager.addWaypoint(47.626919, -117.642860, Units::DEGREES, 0);
 	#endif
+
+	//add state callbacks
+	manager.setStateStopCallback(stateStop);
+	manager.setStateStartCallback(stateStart);
 
 	//ba testing
 	pinMode(A5, OUTPUT);
@@ -197,139 +234,143 @@ void updateSIM()
 {
 	//find point on path that is along trueheading with length of mph converted to distance travel in 1/5 a second.
 	//todo Set some randomness to path?
-	
-	//extrapPosition basically does what we want.
+
+	//in sim always act like we are still getting gps updates
+	gps.setUpdatedRMC();	
+
 	float dT = millis()-simTime;
 
-	//Why less then 1second?  (from extrapPositions=)
-	//if (dT < 1000 )
-	//{ 
-		gps.setUpdatedRMC();
+
+	if (driveState != DRIVE_STATE_STOP)
+	{
+
 		//3600000 = milliseconds per hour
 		float dTraveled = gps.getGroundSpeed()*dT/3600000.f;
 		//float dTraveled = 5*dT/3600000.f;
 		//Serial.println(dTraveled,8);
 		//Serial.println(gps.getGroundSpeed(),8);
+	
 		//todo.  Add Some kind of randomness?
 		Waypoint newLocation = location.extrapolate(trueHeading, dTraveled);
-
+	
 		gps.setLatitude(newLocation.degLatitude());
 		//Serial.println(newLocation.degLatitude(),8);
 		gps.setLongitude(newLocation.degLongitude());
 		//Serial.println(newLocation.degLongitude(),8);
-	//}
-
+	}
+	
 	simTime=millis();
 }
 
 void navigate()
 {
-	if (oTime != 0) 
+	if (driveState != DRIVE_STATE_STOP)
 	{
-		//Back Up
-		if(sTime == 0)
+
+		if (oTime != 0) 
 		{
-			output(0, steerCenter);
-			sTime = millis();
-			backDir = ping[0]<ping[4];
+			//Back Up
+			if(sTime == 0)
+			{
+				output(0, steerCenter);
+				sTime = millis();
+				backDir = ping[0]<ping[4];
+			} 
+			else if(sTime+coastTime < millis())
+			{
+				if(backDir) 
+					output(revSpeed, steerCenter-revThrow);
+				else 		
+					output(revSpeed, steerCenter+revThrow);
+			}
+
+			if(oTime+dangerTime < millis())
+			{
+				sTime = 0;
+				oTime = 0;
+			}
 		} 
-		else if(sTime+coastTime < millis())
+		else 
 		{
-			if(backDir) 
-				output(revSpeed, steerCenter-revThrow);
-			else 		
-				output(revSpeed, steerCenter+revThrow);
-		}
+			//drive based on pathHeading and side ping sensors
+			float x,y;
+			//difference between pathheadgin (based on waypoints (previous and current))
+			//error can only be as much as 180 degrees off (opposite directions).
+			float angularError = truncateDegree(pathHeading - trueHeading);
 
-		if(oTime+dangerTime < millis())
-		{
-			sTime = 0;
-			oTime = 0;
-		}
-	} 
-	else 
-	{
-		//drive based on pathHeading and side ping sensors
-		float x,y;
-		//difference between pathheadgin (based on waypoints (previous and current))
-		//error can only be as much as 180 degrees off (opposite directions).
-		float angularError = truncateDegree(pathHeading - trueHeading);
+			float outputAngle;
+			switch(steerStyle){
+				case 0:
+					//not sure.  Ratio of opposite/adjacent multiplied by steering throw
+					//not sure why divided by PI.
+					outputAngle = atan( angularError*PI/180.l )*(2*steerThrow/PI);
+					break;
+				case 1:
+					//get squared of percentage of error from 180
+					outputAngle = ((angularError/180.l)*(angularError/180.l));
+					//above percentage of the full steerthrow (example: 45 degree*.01)
+					outputAngle *=(2.l*steerThrow);
+					//negative angle if left turning vs right turning ( or opposite?)
+					if(angularError < 0)
+						outputAngle *= -1;
+					break;
+				default:
+					//simplest. Percentage of error multipled by 2x the steerthow
+					// if angularError is 90 degrees off we max out the steering (left/right)
+					// this is constrained below
+					// at this point we could be 180 degress off and have output angle of 90
+					outputAngle = (angularError/180.l)*(2.l*steerThrow);
+					break;
+			}
 
-		float outputAngle;
-		switch(steerStyle){
-			case 0:
-				//not sure.  Ratio of opposite/adjacent multiplied by steering throw
-				//not sure why divided by PI.
-				outputAngle = atan( angularError*PI/180.l )*(2*steerThrow/PI);
-				break;
-			case 1:
-				//get squared of percentage of error from 180
-				outputAngle = ((angularError/180.l)*(angularError/180.l));
-				//above percentage of the full steerthrow (example: 45 degree*.01)
-				outputAngle *=(2.l*steerThrow);
-				//negative angle if left turning vs right turning ( or opposite?)
-				if(angularError < 0)
-					outputAngle *= -1;
-				break;
-			default:
-				//simplest. Percentage of error multipled by 2x the steerthow
-				// if angularError is 90 degrees off we max out the steering (left/right)
-				// this is constrained below
-				// at this point we could be 180 degress off and have output angle of 90
-				outputAngle = (angularError/180.l)*(2.l*steerThrow);
-				break;
-		}
+			//scale angle (default of 1, no change)
+			outputAngle *= steerFactor;
 
-		//scale angle (default of 1, no change)
-		outputAngle *= steerFactor;
+			//find x and y component of output angle
+			x = cos(toRad(outputAngle));
+			y = sin(toRad(outputAngle));
 
-		//find x and y component of output angle
-		x = cos(toRad(outputAngle));
-		y = sin(toRad(outputAngle));
+			//Not 100 sure:  Generally using pings sensor values to adjust output angle
+			//modify x and y based on what pings are seeing		
+			for(int i=0; i<5; i++)
+			{
+				//temp is some percentage (at ping of 1400 would mean tmp==1)
+				float tmp = ping[i]/pingWeight;
+				//value is squared?
+				tmp *= tmp;
+				//add to x,y based on set angle of sensor inverse scaled of percentage
+				x += cos(toRad(pAngle[i]))/tmp;
+				y += sin(toRad(pAngle[i]))/tmp;
+			}
 
-		//Not 100 sure:  Generally using pings sensor values to adjust output angle
-		//modify x and y based on what pings are seeing		
-		for(int i=0; i<5; i++)
-		{
-			//temp is some percentage (at ping of 1400 would mean tmp==1)
-			float tmp = ping[i]/pingWeight;
-			//value is squared?
-			tmp *= tmp;
-			//add to x,y based on set angle of sensor inverse scaled of percentage
-			x += cos(toRad(pAngle[i]))/tmp;
-			y += sin(toRad(pAngle[i]))/tmp;
-		}
-
-		//determine angle based on x,y then adjust from steering center ( 0 )
-		outputAngle = toDeg(atan2(y,x))+steerCenter;
-		//Can't steer more then throw
-		outputAngle = constrain(outputAngle,
-				  				double(steerCenter-steerThrow),
-			 	  				double(steerCenter+steerThrow));
+			//determine angle based on x,y then adjust from steering center ( 0 )
+			outputAngle = toDeg(atan2(y,x))+steerCenter;
+			//Can't steer more then throw
+			outputAngle = constrain(outputAngle,
+					  				double(steerCenter-steerThrow),
+				 	  				double(steerCenter+steerThrow));
 
 
-		//disp should with default values be [(-45)-45]?
-		//output angle is contrainted between -45 and +45. 
-		//90(default)-/+45 => [45-135]
-		//90 - [45-135] => [45-(-45)]
-		//why?
-		float disp  = steerThrow - abs(steerCenter-outputAngle);
-		//distance is in miles.  Not sure why we convert to feet?
-		float speed = (distance*5280.l);
+			//disp should with default values be [(-45)-45]?
+			//output angle is contrainted between -45 and +45. 
+			//90(default)-/+45 => [45-135]
+			//90 - [45-135] => [45-(-45)]
+			//why?
+			float disp  = steerThrow - abs(steerCenter-outputAngle);
+			//distance is in miles.  Not sure why we convert to feet?
+			float speed = (distance*5280.l);
 
-		//not sure why one would use disp vs speed?  Is this for turning distance?
-		//speed is even a distance.  if we get Less the x feet away and it is smaller 
-		//then approachSpeed and turning angle then we us it?
+			//not sure why one would use disp vs speed?  Is this for turning distance?
+			//speed is even a distance.  if we get Less the x feet away and it is smaller 
+			//then approachSpeed and turning angle then we us it?
 
-		speed = min(speed, disp)/6.f; //logical speed clamps
-		float approachSpeed = manager.getTargetWaypoint().getApproachSpeed();
-		speed = min(speed, approachSpeed); //put in target approach speed
-		speed = constrain(speed, minFwd, maxFwd);
-		
-		if(stop) 
-			output(0 , steerCenter);
-		else     
+			speed = min(speed, disp)/6.f; //logical speed clamps
+			float approachSpeed = manager.getTargetWaypoint().getApproachSpeed();
+			speed = min(speed, approachSpeed); //put in target approach speed
+			speed = constrain(speed, minFwd, maxFwd);
+			
 			output(speed, outputAngle);
+		}
 	}
 }
 
@@ -355,28 +396,31 @@ void updateGPS()
 
 void waypointUpdated()
 {
-	if(manager.numWaypoints() > 0 && !gps.getWarning())
+
+	if (driveState != DRIVE_STATE_STOP)
 	{
-		stop = false;
-
- 		distance = manager.getTargetWaypoint().distanceTo(location);
-
-		if(distance > PointRadius)  
-			return;
-
-		if(manager.getTargetIndex() < manager.numWaypoints()-1)
+		if (manager.numWaypoints() > 0 && !gps.getWarning())
 		{
-			backWaypoint = manager.getTargetWaypoint();
-			manager.advanceTargetIndex();
-		}
-		else if (manager.loopWaypoints())
-		{
-			backWaypoint = manager.getTargetWaypoint();
-			manager.setTargetIndex(0);
-		}
-		else
-		{
-			stop = true;
+
+	 		distance = manager.getTargetWaypoint().distanceTo(location);
+
+			if(distance > PointRadius)  
+				return;
+
+			if(manager.getTargetIndex() < manager.numWaypoints()-1)
+			{
+				backWaypoint = manager.getTargetWaypoint();
+				manager.advanceTargetIndex();
+			}
+			else if (manager.loopWaypoints())
+			{
+				backWaypoint = manager.getTargetWaypoint();
+				manager.setTargetIndex(0);
+			}
+			else
+			{
+				driveState = DRIVE_STATE_STOP;				
+			}
 		}
 	}
 }
@@ -430,63 +474,67 @@ void checkPing()
 
 void extrapPosition()
 {
-	float dTraveled;
-	digitalWrite(A7,HIGH);
+	if (driveState != DRIVE_STATE_STOP)
+	{
+		float dTraveled;
+		digitalWrite(A7,HIGH);
 
-	float dT = millis()-nTime;
-	if(dT < 1000 && !gps.getWarning()){ //ignore irrational values
-		//3600000 = milliseconds per hour
-		dTraveled = gps.getGroundSpeed()*dT/3600000.f;
-		dTraveled *= (2.l/3.l);//purposly undershoot
-		location = location.extrapolate(trueHeading, dTraveled);
+		float dT = millis()-nTime;
+		if(dT < 1000 && !gps.getWarning()){ //ignore irrational values
+			//3600000 = milliseconds per hour
+			dTraveled = gps.getGroundSpeed()*dT/3600000.f;
+			dTraveled *= (2.l/3.l);//purposly undershoot
+			location = location.extrapolate(trueHeading, dTraveled);
+		}
+		// Serial.println("/==================\\");
+		// Serial.println(dTraveled,8);
+		// Serial.println(location.degLatitude(),8);
+		// Serial.println(location.degLongitude(),8);
+		// Serial.println("\\==================\\");
+		positionChanged();
+		digitalWrite(A7,LOW);
 	}
-	// Serial.println("/==================\\");
-	// Serial.println(dTraveled,8);
-	// Serial.println(location.degLatitude(),8);
-	// Serial.println(location.degLongitude(),8);
-	// Serial.println("\\==================\\");
-	positionChanged();
-	digitalWrite(A7,LOW);
 }
 
 void positionChanged()
 {
-	nTime = millis();
-	if (manager.numWaypoints() <= 0) 
-		return;
-
-	distance = manager.getTargetWaypoint().distanceTo(location);
-	if (backWaypoint.radLongitude() == 0 || distance*5280.l < 25)
+	if (driveState != DRIVE_STATE_STOP)
 	{
-		pathHeading = location.headingTo(manager.getTargetWaypoint());	
-	} 
-	else 
-	{
-		// find a point along path from backwaypoint to targetwaypoint in which to drive toward (pathHeading)
-		//  First we determine how much of our current vector "counts" toard the target (cos).
-		//  Whatever is left of distance along that original (optimal) vector is scalled by lineGravity.
-		//  LineGravity will scale the point to either heading directory orthogonal to original (optimal) vector or 
-		//  directly toward the target waypoint
 
-		//full distance from previous waypoint to target waypoint
-		float full  = backWaypoint.distanceTo(manager.getTargetWaypoint());
-		//heading (degrees) to the target waypoint from previous waypoint
-		float AB    = backWaypoint.headingTo(manager.getTargetWaypoint());
-		//heading from where we are at compared to previous waypoint
-		float AL    = backWaypoint.headingTo(location);
-		//percentage of our current vector. what amount of distance in in direction we should be going.
-		float d     = cos(toRad(AL-AB)) * backWaypoint.distanceTo(location);
-		//scale remaining distance by linegravity (0,1) then add the 'd' distance. 
-		float D     = d + (full-d)*(1.l-lineGravity);
-		//find waypoint for this new distance along the previous-to-target path
-		Waypoint target = backWaypoint.extrapolate(AB, D);
-		//Find the heading to get there from current location
-		pathHeading  = location.headingTo(target);
 
+		distance = manager.getTargetWaypoint().distanceTo(location);
+		if (backWaypoint.radLongitude() == 0 || distance*5280.l < 25)
+		{
+			pathHeading = location.headingTo(manager.getTargetWaypoint());	
+		} 
+		else 
+		{
+			// find a point along path from backwaypoint to targetwaypoint in which to drive toward (pathHeading)
+			//  First we determine how much of our current vector "counts" toard the target (cos).
+			//  Whatever is left of distance along that original (optimal) vector is scalled by lineGravity.
+			//  LineGravity will scale the point to either heading directory orthogonal to original (optimal) vector or 
+			//  directly toward the target waypoint
+
+			//full distance from previous waypoint to target waypoint
+			float full  = backWaypoint.distanceTo(manager.getTargetWaypoint());
+			//heading (degrees) to the target waypoint from previous waypoint
+			float AB    = backWaypoint.headingTo(manager.getTargetWaypoint());
+			//heading from where we are at compared to previous waypoint
+			float AL    = backWaypoint.headingTo(location);
+			//percentage of our current vector. what amount of distance in in direction we should be going.
+			float d     = cos(toRad(AL-AB)) * backWaypoint.distanceTo(location);
+			//scale remaining distance by linegravity (0,1) then add the 'd' distance. 
+			float D     = d + (full-d)*(1.l-lineGravity);
+			//find waypoint for this new distance along the previous-to-target path
+			Waypoint target = backWaypoint.extrapolate(AB, D);
+			//Find the heading to get there from current location
+			pathHeading  = location.headingTo(target);
+
+		}
+
+		//update gps sim with heading
+		gps.setCourse(pathHeading);
 	}
-
-	//update gps sim with heading
-	gps.setCourse(pathHeading);
 }
 
 void readAccelerometer()
@@ -528,6 +576,19 @@ void reportLocation()
 
 	digitalWrite(45,LOW);
 }
+
+void reportState()
+{
+	digitalWrite(45,HIGH);
+	
+	manager.sendState(Protocol::stateType(APM_STATE),apmState);
+	manager.sendState(Protocol::stateType(DRIVE_STATE),driveState);
+	manager.sendState(Protocol::stateType(AUTO_STATE),autoState);
+
+
+	digitalWrite(45,LOW);
+}
+
 
 void calibrateGyro(){ //takes one second
 	float tmp = 0;
@@ -571,6 +632,16 @@ void newPIDparam(float x)
 	cruisePID = PIDparameters(settings.get(11),
                               settings.get(12),
                               settings.get(13), -90, 90 );
+}
+
+void stateStop()
+{
+	driveState=DRIVE_STATE_STOP;
+}
+
+void stateStart()
+{
+	driveState=DRIVE_STATE_AUTO;
 }
 
 

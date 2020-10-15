@@ -32,8 +32,11 @@ float Waypoint::distanceTo(const Waypoint& target) const {
     float chord  = sinlat*sinlat + sinlng*sinlng*cos(aRlat)*cos(bRlat);
     return 2. * Units::EARTH_RAD * atan2( sqrt(chord), sqrt(1.-chord) );
 }
-Waypoint
-Waypoint::extrapolate(float bearing, float distance) const {//degrees,miles
+
+//degrees,miles
+
+Waypoint Waypoint::extrapolate(float bearing, float distance) const 
+{
     // for small distances the error from earth's curvature is less than
     // the error in the floating point trig, so a quick rectilinear
     // approximation behaves better

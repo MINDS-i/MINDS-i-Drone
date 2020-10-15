@@ -33,14 +33,16 @@ namespace Protocol{
                           ALTER = 1, };
 
     enum dataSubtype{ TELEMETRY = 0,
-                      SETTING   = 1 };
+                      SETTING   = 1,
+                      SENSORS   = 2, };
 
     enum wordSubtype{ CONFIRMATION = 0,
                       SYNC         = 1,
-                      COMMAND      = 2 };
+                      COMMAND      = 2,
+                      STATE        = 3 };
 
     enum stringSubtype{ ERROR = 0,
-                        STATE = 1 };
+                        STR_STATE = 1 };
 
     enum telemetryType{ LATITUDE    = 0,
                         LONGITUDE   = 1,
@@ -59,12 +61,24 @@ namespace Protocol{
                         HOMELATITUDE = 14,
                         HOMELONGITUDE = 15,
                         HOMEALTITUDE = 16 };
+    enum sensorType
+    {
+        OBJDETECT = 0
+    };
 
     enum commandType{ ESTOP           = 0,
                       TARGET          = 1,
                       LOOPING         = 2,
                       CLEAR_WAYPOINTS = 3,
-                      DELETE_WAYPOINT = 4 };
+                      DELETE_WAYPOINT = 4,
+                      STATE_STOP      = 5,
+                      STATE_START     = 6 };
+
+    enum stateType { APM_STATE = 0,
+                     DRIVE_STATE = 1,
+                     AUTO_STATE = 2
+
+    };
 
     const uint8_t  MAX_WAYPOINTS    = 64;
     const uint8_t  MAX_SETTINGS     = NUM_STORED_RECORDS;//taken from eepromconfig
@@ -99,6 +113,7 @@ namespace Protocol{
     uint8_t buildMessageLabel(dataSubtype type);
     uint8_t buildMessageLabel(wordSubtype type);
     uint8_t buildMessageLabel(stringSubtype type);
+    
 }
 
 #endif
