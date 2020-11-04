@@ -76,7 +76,8 @@ namespace Protocol{
 
     enum stateType { APM_STATE = 0,
                      DRIVE_STATE = 1,
-                     AUTO_STATE = 2
+                     AUTO_STATE = 2,
+                     AUTO_FLAGS,
 
     };
 
