@@ -13,6 +13,7 @@
 
 #define useEncoder true
 
+#define extLogger true
 
 const uint8_t VoltagePin  = 67;
 const uint8_t LEDpin[]    = {25, 26, 27}; //blue, yellow, red
@@ -130,12 +131,12 @@ struct schedulerData
 //delay,last scheduled time,enabled
 struct schedulerData scheduler[] = 
 {
-	{extrapPosition,	40	,0		,1},
-	{readAccelerometer,	22	,22		,1},
-	{reportLocation,	22	,44		,1},
-	{reportState,		22	,66		,1},
-	{checkPing,			22	,88		,1},
-	{navigate,			22	,110	,1},
+	{extrapPosition,	110	,0		,1},
+	{readAccelerometer,	110	,22		,1},
+	{reportLocation,	110	,44		,1},
+	{reportState,		110	,110	,1},
+	{checkPing,			110	,88		,1},
+	{navigate,			22	,66		,1},
 	#ifdef simMode
 	{updateSIM,			500	,100	,1}
 	#endif
@@ -202,15 +203,20 @@ bool isSetAutoStateFlag(uint8_t flag)
 void setup() 
 {
 
+	//commSerial->begin(Protocol::BAUD_RATE);	
+	commSerial->begin(57600);
+
+	#ifdef extLogger
+	Serial2.begin(115200);
+	#endif
+
 	changeAPMState(APM_STATE_INIT);
 
 	setupSettings();
 
 	gps.begin();
 	mpu.begin();
-	//commSerial->begin(Protocol::BAUD_RATE);	
-	commSerial->begin(57600);
-
+	
 	for(int i=0; i<3; i++) 
 		pinMode(LEDpin[i], OUTPUT);
 	
@@ -241,8 +247,12 @@ void setup()
 
     pinMode(A7, OUTPUT);    
 	pinMode(A8, OUTPUT);
+	
 	pinMode(13, OUTPUT);
+	
+	#ifdef extLogger
 	pinMode(45, OUTPUT);
+	#endif
 
 	changeAPMState(APM_STATE_SELF_TEST);
 
@@ -400,13 +410,13 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
 					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
 					scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
+					
 					#ifdef simMode
 					scheduler[SCHD_FUNC_UPDATESIM].enabled 	= true;
-					#endif
-
-					#ifdef simMode
 					simTime=millis();
 					#endif
+
+
 					nTime = millis();
 
 					driveState=newState;
@@ -426,11 +436,11 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
 					#ifdef simMode
 					scheduler[SCHD_FUNC_UPDATESIM].enabled 	= true;
-					#endif
-
-					#ifdef simMode
 					simTime=millis();
 					#endif
+
+				
+
 					nTime = millis();
 
 					driveState=newState;
@@ -470,6 +480,7 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_UPDATESIM].enabled 	= true;
 					#endif simMode
 
+
 					driveState=newState;
 					break;
 				#ifndef simMode
@@ -505,6 +516,8 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_CHKPING].enabled 	= false;
 					scheduler[SCHD_FUNC_NAVIGATE].enabled	= false;
 			
+				
+
 					driveState=newState;
 					break;
 				case DRIVE_STATE_AUTO:
@@ -518,6 +531,7 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
 
 					nTime = millis();
+
 
 					driveState=newState;
 					break;
@@ -609,11 +623,12 @@ void changeAutoState(uint8_t newState)
 void updateSIM()
 {	
 	//todo Set some randomness to path?
+	float steering_error=0;
 
 	//in sim always act like we are still getting gps updates
 	gps.setUpdatedRMC();	
 
-	gps.setCourse(gps.getLocation().headingTo(manager.getTargetWaypoint()));
+	gps.setCourse(gps.getLocation().headingTo(manager.getTargetWaypoint())+steering_error);
 
 	//Only move if in auto mode
 	//Stalled is simulated but still handle
@@ -676,6 +691,11 @@ void navigate()
 		//error can only be as much as 180 degrees off (opposite directions).
 		float angularError = truncateDegree(pathHeading - trueHeading);
 
+		#ifdef extLogger
+		Serial2.print("angularError: ");
+		Serial2.println(angularError,6);
+		#endif
+
 		float outputAngle;
 		switch(steerStyle)
 		{
@@ -705,6 +725,11 @@ void navigate()
 		//scale angle (default of 1, no change)
 		outputAngle *= steerFactor;
 
+		#ifdef extLogger
+		Serial2.print("nav outputAngle post err correct: ");
+		Serial2.println(outputAngle,6);
+		#endif
+
 		//find x and y component of output angle
 		x = cos(toRad(outputAngle));
 		y = sin(toRad(outputAngle));
@@ -722,7 +747,15 @@ void navigate()
 			y += sin(toRad(pAngle[i]))/tmp;
 		}
 
-		//determine angle based on x,y then adjust from steering center ( 0 )
+		#ifdef extLogger
+		Serial2.print("nav ping X adjust: ");
+		Serial2.println(x,6);
+		Serial2.print("nav ping Y adjust: ");
+		Serial2.println(y,6);
+
+		#endif
+
+		//determine angle based on x,y then adjust from steering center ( 90 )
 		outputAngle = toDeg(atan2(y,x))+steerCenter;
 		//Can't steer more then throw
 		outputAngle = constrain(outputAngle,
@@ -779,6 +812,14 @@ void extrapPosition()
 		dTraveled = gps.getGroundSpeed()*dT/3600000.f;
 		dTraveled *= (2.l/3.l);//purposly undershoot
 		location = location.extrapolate(trueHeading, dTraveled);
+
+		#ifdef extLogger
+		Serial2.print("extrap lat:");
+		Serial2.println(location.degLatitude(),6);
+		Serial2.print("extrap long:");
+		Serial2.println(location.degLongitude(),6);
+		#endif
+
 	}
 
 	positionChanged();
@@ -800,6 +841,13 @@ void updateGPS()
 		gps.clearUpdatedRMC();
 		
 		location = gps.getLocation();
+
+		#ifdef extLogger
+		Serial2.print("GPS lat:");
+		Serial2.println(location.degLatitude(),6);
+		Serial2.print("GPS long:");
+		Serial2.println(location.degLongitude(),6);
+		#endif
 
 		if (driveState == DRIVE_STATE_AUTO)
 		{
@@ -850,6 +898,12 @@ void syncHeading()
 	if(!gps.getWarning() && gps.getCourse() != 0)
 	{
 		trueHeading = gps.getCourse();
+
+		#ifdef extLogger
+		Serial2.print("SH trueHeading: ");
+		Serial2.println(trueHeading,6);
+		#endif
+
 		/*
 		if(millis() - gpsTime < 1500) //dont use gyrohalf if it is too old
 			trueHeading = truncateDegree(gps.getCourse() + trueHeading - gyroHalf);
@@ -903,6 +957,11 @@ void positionChanged()
 		pathHeading  = location.headingTo(target);
 
 	}
+	#ifdef extLogger
+	Serial2.print("PC PathHeading:");
+	Serial2.println(pathHeading,6);
+	#endif
+
 }
 
 void checkPing()
@@ -939,6 +998,13 @@ void output(float mph, uint8_t steer)
 	#ifdef simMode
 	//set speed to gps simulator (simulator only)
 	gps.setGroundSpeed(mph);
+	#endif
+
+	#ifdef extLogger
+	Serial2.print("mph:");
+	Serial2.println(mph,6);
+	Serial2.print("steer:");
+	Serial2.println(steer,6);
 	#endif
 
 #if useEncoder

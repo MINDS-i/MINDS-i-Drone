@@ -13,6 +13,9 @@
 #include "storage/Storage.h"
 #include "util/byteConv.h"
 
+
+#define extLogger true
+
 using namespace Protocol;
 
 const uint8_t BUFF_LEN = 32;

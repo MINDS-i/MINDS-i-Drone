@@ -347,6 +347,14 @@ void CommManager::setTargetIndex(uint16_t index)
 	targetIndex = index;
 	cachedTarget = getWaypoint(index);
 	sendCommand(commandType(TARGET), targetIndex);
+
+	#ifdef extLogger
+	Serial2.print("target lat:");
+	Serial2.println(cachedTarget.degLatitude(),6);
+	Serial2.print("target long:");
+	Serial2.println(cachedTarget.degLongitude(),6);
+	#endif
+
 }
 
 void CommManager::advanceTargetIndex()
