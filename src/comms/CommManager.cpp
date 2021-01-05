@@ -448,16 +448,15 @@ void CommManager::sendState(uint8_t stateTypeId, uint8_t stateID)
 	Protocol::sendMessage(tmp,3,stream); 
 }
 
-void CommManager::sendSensor(uint8_t sensorTypeId, uint8_t sensorNum, float value)
+void CommManager::sendSensor(uint8_t sensorTypeId, uint8_t sensorNum, uint32_t value)
 {
 	byteConv data;
-	data.f = value;
-	byte tmp[7] = {	buildMessageLabel(dataSubtype(SENSORS)),
+	data.l = value;
+	byte tmp[5] = {	buildMessageLabel(dataSubtype(SENSORS)),
 					sensorTypeId,
 					sensorNum,
-					data.bytes[3], data.bytes[2],
-					data.bytes[1], data.bytes[0], };
-	Protocol::sendMessage(tmp, 7, stream);
+					data.bytes[1], data.bytes[0] };
+	Protocol::sendMessage(tmp, 5, stream);
 }
 
 

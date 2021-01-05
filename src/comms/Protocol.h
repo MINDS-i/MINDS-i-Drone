@@ -63,7 +63,7 @@ namespace Protocol{
                         HOMEALTITUDE = 16 };
     enum sensorType
     {
-        OBJDETECT = 0
+        OBJDETECT_SONIC = 0
     };
 
     enum commandType{ ESTOP           = 0,

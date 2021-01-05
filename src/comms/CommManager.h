@@ -75,6 +75,7 @@ public:
 	uint16_t numWaypoints();
 	void	 sendTelem(uint8_t id , float value);
 	void 	 sendState(uint8_t stateTypeId, uint8_t stateID);
+	void    sendSensor(uint8_t sensorTypeId, uint8_t sensorNum, uint32_t value);
 	void	 setConnectCallback(void (*call)(void));
 	void	 setEStopCallback(void (*call)(void));
 	void	 setStateStopCallback(void (*call)(void));
@@ -105,7 +106,7 @@ private:
 	void    inputSetting(uint8_t id, float input);
 	void    processMessage(uint8_t* msg, uint8_t length);
 	void    sendConfirm(uint16_t digest);
-	void    sendSensor(uint8_t sensorTypeId, uint8_t sensorNum, float value);
+	
 	void    sendSetting(uint8_t id, float value);
 	void    sendTargetIndex();
 	void    handleCommands(uint8_t a   , uint8_t b);

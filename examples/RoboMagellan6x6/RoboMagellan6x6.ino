@@ -9,7 +9,7 @@
 //Constants that should never change during driving and never/rarely tuned
 
 //turn on of sim mode compile
-#define simMode true
+//#define simMode true
 
 #define useEncoder true
 
@@ -26,7 +26,7 @@ const uint8_t EncoderPin[]= {2/*APM pin 7*/, 3 /*APM pin 6*/};
 //// //ping sensor vars
 const float  pAngle[5]   = { 79.27, 36.83, 0.0, -36.83, -79.27};
 const uint16_t blockLevel[]     = {1000, 1600, 3000, 1600, 1000};
-const uint16_t warn[]     = {1000, 1600, 3000, 1600, 1000};
+const uint16_t warn[]     = {1500, 2400, 4500, 2400, 1500};
 //in miles, margin for error in rover location
 const float PointRadius  = .001; 
 const float approachRadius = .003;
@@ -182,15 +182,51 @@ void stateStart();
 void setupSettings();
 
 
+#ifdef extLogger
+unsigned int extlogSeqNum=0;
+
+void extLog(const char type[], float val, int format=6)
+{
+	Serial2.print(extlogSeqNum++);
+	Serial2.print(" ");
+	Serial2.print(millis());
+	Serial2.print(" ");
+	Serial2.print(type);
+	Serial2.print(": ");
+	Serial2.println(val,format);	
+}
+void extLog(const char type[], char val[])
+{
+	Serial2.print(extlogSeqNum++);
+	Serial2.print(" ");
+	Serial2.print(millis());
+	Serial2.print(" ");
+	Serial2.print(type);
+	Serial2.print(": ");
+}
+
+//could make "empty" function version when not using extLogging
+#endif
+
 void setAutoStateFlag(uint8_t flag)
 {
-	manager.sendString(String("Setting Flag " + String(flag)).c_str());	
+	String msg("Setting Flag " + String(flag));
+	manager.sendString(msg.c_str());	
+	#ifdef extLogger
+	extLog("Setting Flag",flag);	
+	#endif						
+
 	autoStateFlags |= flag;
 }
 
 void clearAutoStateFlag(uint8_t flag)
 {
-	manager.sendString(String("Clearing Flag " + String(flag)).c_str());	
+	String msg("Clearing Flag " + String(flag));
+	manager.sendString(msg.c_str());	
+	#ifdef extLogger
+	extLog(msg.c_str(),flag);	
+	#endif						
+
 	autoStateFlags &= ~flag;
 }
 
@@ -326,7 +362,10 @@ void changeAPMState(uint8_t newState)
 			switch(newState)
 			{
 				case APM_STATE_INIT:
-					manager.sendString("APM State: Init");	
+					manager.sendString("APM State: Init");
+					#ifdef extLogger
+					extLog("APM State","Init");
+					#endif	
 					apmState=newState;				
 					break;
 				default:
@@ -340,6 +379,9 @@ void changeAPMState(uint8_t newState)
 			{
 				case APM_STATE_SELF_TEST:
 					manager.sendString("APM State: Self Test");
+					#ifdef extLogger					
+					extLog("APM State","Self Test");
+					#endif						
 					apmState=newState;
 					break;
 				default:
@@ -353,6 +395,9 @@ void changeAPMState(uint8_t newState)
 			{
 				case APM_STATE_DRIVE:
 					manager.sendString("APM State: Drive");
+					#ifdef extLogger
+					extLog("APM State","Drive");
+					#endif											
 					apmState=newState;
 					break;
 				default:
@@ -385,9 +430,15 @@ void changeDriveState(uint8_t newState)
 			switch(newState)
 			{
 				case DRIVE_STATE_STOP:
-					manager.sendString("Drive State: Stop");					
+					manager.sendString("Drive State: Stop");
+					#ifdef extLogger
+					extLog("Drive State","Stop");
+					#endif						
+
 					#ifdef simMode
 					gps.setGroundSpeed(0);
+					#else
+					output(0,steerCenter);
 					#endif
 
 					scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
@@ -404,6 +455,10 @@ void changeDriveState(uint8_t newState)
 					break;
 				case DRIVE_STATE_AUTO:
 					manager.sendString("Drive State: Auto");
+					#ifdef extLogger
+					extLog("Drive State","Auto");
+					#endif						
+
 					scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= true;
 					scheduler[SCHD_FUNC_RDACC].enabled 		= true;
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
@@ -428,6 +483,10 @@ void changeDriveState(uint8_t newState)
 			{
 				case DRIVE_STATE_AUTO:
 					manager.sendString("Drive State: Auto");
+					#ifdef extLogger
+					extLog("Drive State","Auto");
+					#endif						
+
 					scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= true;
 					scheduler[SCHD_FUNC_RDACC].enabled 		= true;
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
@@ -447,7 +506,11 @@ void changeDriveState(uint8_t newState)
 					break;
 				#ifndef simMode
 				case DRIVE_STATE_RADIO:	
-					manager.sendString("Drive State: Radio");				
+					manager.sendString("Drive State: Radio");
+					#ifdef extLogger
+					extLog("Drive State","Radio");
+					#endif						
+
 					scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
 					scheduler[SCHD_FUNC_RDACC].enabled 		= true;
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
@@ -465,9 +528,14 @@ void changeDriveState(uint8_t newState)
 			{
 				case DRIVE_STATE_STOP:
 					manager.sendString("Drive State: Stop");
-					
+					#ifdef extLogger
+					extLog("Drive State","Stop");
+					#endif						
+
 					#ifdef simMode
 					gps.setGroundSpeed(0);
+					#else
+					output(0,steerCenter);
 					#endif
 
 					scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
@@ -486,6 +554,10 @@ void changeDriveState(uint8_t newState)
 				#ifndef simMode
 				case DRIVE_STATE_RADIO:					
 					manager.sendString("Drive State: Radio");
+					#ifdef extLogger
+					extLog("Drive State","Radio");
+					#endif						
+
 					scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
 					scheduler[SCHD_FUNC_RDACC].enabled 		= true;
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
@@ -505,10 +577,16 @@ void changeDriveState(uint8_t newState)
 			{
 				case DRIVE_STATE_STOP:
 					manager.sendString("Drive State: Stop");
+					#ifdef extLogger
+					extLog("Drive State","Stop");
+					#endif						
 					
 					#ifdef simMode
 					gps.setGroundSpeed(0);
+					#else
+					output(0,steerCenter);
 					#endif
+
 					scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
 					scheduler[SCHD_FUNC_RDACC].enabled 		= true;
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
@@ -522,6 +600,9 @@ void changeDriveState(uint8_t newState)
 					break;
 				case DRIVE_STATE_AUTO:
 					manager.sendString("Drive State: Auto");
+					#ifdef extLogger
+					extLog("Drive State","Auto");
+					#endif						
 
 					scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= true;
 					scheduler[SCHD_FUNC_RDACC].enabled 		= true;
@@ -556,6 +637,10 @@ void changeAutoState(uint8_t newState)
 			{
 				case AUTO_STATE_FULL:
 					manager.sendString("Auto State: Full");
+					#ifdef extLogger
+					extLog("Auto State","Full");
+					#endif						
+
 					sTime = 0;
 					oTime = 0;
 
@@ -572,6 +657,9 @@ void changeAutoState(uint8_t newState)
 			{
 				case AUTO_STATE_AVOID:
 					manager.sendString("Auto State: Avoid");
+					#ifdef extLogger
+					extLog("Auto State","Avoid");
+					#endif						
 
 					//determine backup angle
 					output(0, steerCenter);
@@ -583,6 +671,10 @@ void changeAutoState(uint8_t newState)
 					break;				
 				case AUTO_STATE_STALLED:
 					manager.sendString("Auto State: Stalled");
+					#ifdef extLogger
+					extLog("Auto State","Stalled");
+					#endif						
+
 					//stop motors?
 					break;
 			}
@@ -593,6 +685,10 @@ void changeAutoState(uint8_t newState)
 			{
 				case AUTO_STATE_FULL:
 					manager.sendString("Auto State: Full");
+					#ifdef extLogger
+					extLog("Auto State","Full");
+					#endif						
+
 					sTime = 0;
 					oTime = 0;
 
@@ -600,6 +696,10 @@ void changeAutoState(uint8_t newState)
 					break;
 				case AUTO_STATE_STALLED:
 					manager.sendString("Auto State: Stalled");
+					#ifdef extLogger
+					extLog("Auto State","Stalled");
+					#endif						
+
 					//stop motors
 					break;
 			}
@@ -610,6 +710,10 @@ void changeAutoState(uint8_t newState)
 			{
 				case AUTO_STATE_FULL:
 					manager.sendString("Auto State: Full");
+					#ifdef extLogger
+					extLog("Auto State","Full");
+					#endif						
+
 					//change speed
 					break;
 			}
@@ -692,8 +796,7 @@ void navigate()
 		float angularError = truncateDegree(pathHeading - trueHeading);
 
 		#ifdef extLogger
-		Serial2.print("angularError: ");
-		Serial2.println(angularError,6);
+		extLog("angularError",angularError,6);
 		#endif
 
 		float outputAngle;
@@ -701,14 +804,14 @@ void navigate()
 		{
 			case 0:
 				//not sure.  Ratio of opposite/adjacent multiplied by steering throw
-				//not sure why divided by PI.
+				//convert from degrees to radians for use with atan
 				outputAngle = atan( angularError*PI/180.l )*(2*steerThrow/PI);
 				break;
 			case 1:
-				//get squared of percentage of error from 180
+				//get squared of percentage of error from 180.  x^2 function where 180=1.00
 				outputAngle = ((angularError/180.l)*(angularError/180.l));
-				//above percentage of the full steerthrow (example: 45 degree*.01)
-				outputAngle *=(2.l*steerThrow);
+				//above percentage of the full steerthrow 
+				outputAngle *=(4.l*steerThrow);
 				//negative angle if left turning vs right turning ( or opposite?)
 				if(angularError < 0)
 					outputAngle *= -1;
@@ -722,12 +825,12 @@ void navigate()
 				break;
 		}
 
+
 		//scale angle (default of 1, no change)
 		outputAngle *= steerFactor;
 
 		#ifdef extLogger
-		Serial2.print("nav outputAngle post err correct: ");
-		Serial2.println(outputAngle,6);
+		extLog("nav outputAngle post err correct",outputAngle);
 		#endif
 
 		//find x and y component of output angle
@@ -748,11 +851,9 @@ void navigate()
 		}
 
 		#ifdef extLogger
-		Serial2.print("nav ping X adjust: ");
-		Serial2.println(x,6);
-		Serial2.print("nav ping Y adjust: ");
-		Serial2.println(y,6);
-
+		extLog("nav ping X adjust",x,6);
+		extLog("nav ping Y adjust",y,6);
+		extLog("nav outputAngle ping",toDeg(atan2(y,x)),6);
 		#endif
 
 		//determine angle based on x,y then adjust from steering center ( 90 )
@@ -814,10 +915,8 @@ void extrapPosition()
 		location = location.extrapolate(trueHeading, dTraveled);
 
 		#ifdef extLogger
-		Serial2.print("extrap lat:");
-		Serial2.println(location.degLatitude(),6);
-		Serial2.print("extrap long:");
-		Serial2.println(location.degLongitude(),6);
+		extLog("extrap lat",location.degLatitude(),6);
+		extLog("extrap long",location.degLongitude(),6);
 		#endif
 
 	}
@@ -843,10 +942,8 @@ void updateGPS()
 		location = gps.getLocation();
 
 		#ifdef extLogger
-		Serial2.print("GPS lat:");
-		Serial2.println(location.degLatitude(),6);
-		Serial2.print("GPS long:");
-		Serial2.println(location.degLongitude(),6);
+		extLog("GPS lat",location.degLatitude(),6);
+		extLog("GPS long",location.degLongitude(),6);
 		#endif
 
 		if (driveState == DRIVE_STATE_AUTO)
@@ -865,6 +962,12 @@ void waypointUpdated()
 {
 
 	distance = manager.getTargetWaypoint().distanceTo(location);
+
+	#ifdef extLogger
+	extLog("Target lat", manager.getTargetWaypoint().degLatitude(),6);
+	extLog("Target long", manager.getTargetWaypoint().degLongitude(),6);
+	#endif
+
 
 	//approach flag gets locked in until we we move to another waypoint or stop.
 	if (distance < approachRadius && isSetAutoStateFlag(AUTO_STATE_FLAG_APPROACH) == false )
@@ -900,8 +1003,7 @@ void syncHeading()
 		trueHeading = gps.getCourse();
 
 		#ifdef extLogger
-		Serial2.print("SH trueHeading: ");
-		Serial2.println(trueHeading,6);
+		extLog("SH trueHeading", trueHeading,6);
 		#endif
 
 		/*
@@ -929,6 +1031,14 @@ void positionChanged()
 		return;
 
 	distance = manager.getTargetWaypoint().distanceTo(location);
+
+	#ifdef extLogger
+	extLog("PC distance",distance,6);
+	extLog("PC lat",location.degLatitude(),6);
+	extLog("PC long",location.degLongitude(),6);
+	#endif
+
+
 	if (backWaypoint.radLongitude() == 0 || distance*5280.l < 25)
 	{
 		pathHeading = location.headingTo(manager.getTargetWaypoint());	
@@ -958,8 +1068,7 @@ void positionChanged()
 
 	}
 	#ifdef extLogger
-	Serial2.print("PC PathHeading:");
-	Serial2.println(pathHeading,6);
+	extLog("PC PathHeading",pathHeading,6);
 	#endif
 
 }
@@ -971,6 +1080,12 @@ void checkPing()
 
 	#ifndef simMode
     ping[pIter] = getPing(PingPin[pIter]);
+	#else
+	pinMode(PingPin[pIter], INPUT);    
+	ping[pIter] = map(analogRead(PingPin[pIter]),0,1023,0,10000);
+
+	#endif
+
 	pIter+=2;
 	pIter = pIter%5;
 
@@ -988,7 +1103,6 @@ void checkPing()
 
 	}
 
-	#endif
 
 	//digitalWrite(A8,LOW);
 }
@@ -1001,10 +1115,8 @@ void output(float mph, uint8_t steer)
 	#endif
 
 	#ifdef extLogger
-	Serial2.print("mph:");
-	Serial2.println(mph,6);
-	Serial2.print("steer:");
-	Serial2.println(steer,6);
+	extLog("mph",mph,6);
+	extLog("steer",steer,6);
 	#endif
 
 #if useEncoder
@@ -1037,6 +1149,10 @@ void updateGyro()
 	//todo think about simulating the gyro?
 	#ifndef simMode	
 	trueHeading = truncateDegree(trueHeading + dt*(highFilter.get()));
+
+	#ifdef extLogger
+		extLog("UG trueHeading", trueHeading,6);
+	#endif
 
 	if(gpsHalfTime < millis() && gpsHalfTime!=0){
 		gyroHalf = trueHeading;
@@ -1087,11 +1203,11 @@ void reportLocation()
 	manager.sendTelem(Protocol::telemetryType(VOLTAGE+1),   amperage);
 
 	//TODO define num of ping sensors and loop?
-	// manager.sendTelem(Protocol::telemetryType(OBJDETECT), ping[0] );
-	// manager.sendTelem(Protocol::telemetryType(OBJDETECT+1), ping[1] );
-	// manager.sendTelem(Protocol::telemetryType(OBJDETECT+2), ping[2] );
-	// manager.sendTelem(Protocol::telemetryType(OBJDETECT+3), ping[3] );
-	// manager.sendTelem(Protocol::telemetryType(OBJDETECT+4), ping[4] );
+	// manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),0, ping[0] );
+	// manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),1, ping[1] );
+	// manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),2, ping[2] );
+	// manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),3, ping[3] );
+	// manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),4, ping[4] );
 
 	digitalWrite(45,LOW);
 }
