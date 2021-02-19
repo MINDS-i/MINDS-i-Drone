@@ -13,7 +13,7 @@
 
 #define useEncoder true
 
-#define extLogger true
+//#define extLogger true
 
 const uint8_t VoltagePin  = 67;
 const uint8_t LEDpin[]    = {25, 26, 27}; //blue, yellow, red
