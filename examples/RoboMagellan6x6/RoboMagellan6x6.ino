@@ -9,7 +9,7 @@
 //Constants that should never change during driving and never/rarely tuned
 
 //turn on of sim mode compile
-#define simMode true
+//#define simMode true
 
 #define useEncoder true
 
@@ -28,8 +28,8 @@ const float  pAngle[5]   = { 79.27, 36.83, 0.0, -36.83, -79.27};
 const uint16_t blockLevel[]     = {1000, 1600, 3000, 1600, 1000};
 const uint16_t warnLevel[]     = {1500, 2400, 4500, 2400, 1500};
 //in miles, margin for error in rover location
-const float PointRadius  = .001; 
-const float approachRadius = .003;
+const float PointRadius  = .0015; 
+const float approachRadius = .0038;
 //tire circ in miles per inch diameter * diff ratio
 const float MilesPerRev   = (((PI)/12.f)/5280.f) * (13.f/37.f);
 //hours per min      rev per mile
@@ -56,7 +56,7 @@ PIDparameters   cruisePID(0,0,0,-90,90);
 PIDcontroller   cruise(&cruisePID);
 ServoGenerator::Servo servo[3]; //drive, steer, backSteer
 		//scheduler, navigation, obstacle, stop times
-uint32_t uTime = 0, nTime = 0, oTime = 0, sTime = 0;
+uint32_t uTime = 0, nTime = 0, sTime = 0;
 #ifdef simMode
 uint32_t simTime = 0;
 #endif
@@ -167,12 +167,14 @@ float	minFwd, maxFwd;
 int		revThrow;
 float	revSpeed;
 float	pingWeight;
-int		coastTime, dangerTime; //danger should include coastTime
+int		avoidCoastTime, avoidStraightBack, avoidSteerBack; 
 float	tireDiameter;
 int		steerCenter;
 
 
-void dangerTimeCallback(float in){ dangerTime = coastTime+in; }
+void dangerTimeCallback(float in){ avoidStraightBack = avoidCoastTime+(in/2);
+									avoidSteerBack = avoidCoastTime+in;
+									 }
 inline float MPHtoRPM(float mph){ return (mph*MPHvRPM)/tireDiameter; }
 inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
 
@@ -573,216 +575,6 @@ void changeDriveState(uint8_t newState)
 
 
 
-///--- older way...for now
-	// switch (driveState)
-	// {
-	// 	case DRIVE_STATE_INVALID:
-	// 		switch(newState)
-	// 		{
-	// 			case DRIVE_STATE_STOP:
-	// 				manager.sendString("Drive State: Stop");
-	// 				#ifdef extLogger
-	// 				extLog("Drive State","Stop");
-	// 				#endif						
-
-	// 				#ifdef simMode
-	// 				gps.setGroundSpeed(0);
-	// 				#else
-	// 				output(0,steerCenter);
-	// 				#endif
-
-	// 				scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
-	// 				scheduler[SCHD_FUNC_RDACC].enabled 		= true;
-	// 				scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_CHKPING].enabled 	= false;
-	// 				scheduler[SCHD_FUNC_NAVIGATE].enabled	= false;
-	// 				#ifdef simMode
-	// 				scheduler[SCHD_FUNC_UPDATESIM].enabled 	= true;
-	// 				#endif
-
-	// 				driveState=newState;
-
-
-	// 				break;
-	// 			case DRIVE_STATE_AUTO:
-	// 				manager.sendString("Drive State: Auto");
-	// 				#ifdef extLogger
-	// 				extLog("Drive State","Auto");
-	// 				#endif						
-
-	// 				scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_RDACC].enabled 		= true;
-	// 				scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
-					
-	// 				#ifdef simMode
-	// 				scheduler[SCHD_FUNC_UPDATESIM].enabled 	= true;
-	// 				simTime=millis();
-	// 				#endif
-
-
-	// 				nTime = millis();
-
-	// 				driveState=newState;
-	// 				break;
-	// 		}
-	// 		break;
-	// 	case DRIVE_STATE_STOP:
-	// 		switch(newState)
-	// 		{
-	// 			case DRIVE_STATE_AUTO:
-	// 				manager.sendString("Drive State: Auto");
-	// 				#ifdef extLogger
-	// 				extLog("Drive State","Auto");
-	// 				#endif						
-
-	// 				scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_RDACC].enabled 		= true;
-	// 				scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
-	// 				#ifdef simMode
-	// 				scheduler[SCHD_FUNC_UPDATESIM].enabled 	= true;
-	// 				simTime=millis();
-	// 				#endif
-
-				
-
-	// 				nTime = millis();
-
-	// 				driveState=newState;
-	// 				break;
-	// 			#ifndef simMode
-	// 			case DRIVE_STATE_RADIO:	
-	// 				manager.sendString("Drive State: Radio");
-	// 				#ifdef extLogger
-	// 				extLog("Drive State","Radio");
-	// 				#endif						
-
-	// 				scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
-	// 				scheduler[SCHD_FUNC_RDACC].enabled 		= true;
-	// 				scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_CHKPING].enabled 	= false;
-	// 				scheduler[SCHD_FUNC_NAVIGATE].enabled	= false;
-
-	// 				driveState=newState;
-	// 				break;
-	// 			#endif
-	// 		}
-	// 		break;
-	// 	case DRIVE_STATE_AUTO:
-	// 		switch(newState)
-	// 		{
-	// 			case DRIVE_STATE_STOP:
-	// 				manager.sendString("Drive State: Stop");
-	// 				#ifdef extLogger
-	// 				extLog("Drive State","Stop");
-	// 				#endif						
-
-	// 				#ifdef simMode
-	// 				gps.setGroundSpeed(0);
-	// 				#else
-	// 				output(0,steerCenter);
-	// 				#endif
-
-	// 				scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
-	// 				scheduler[SCHD_FUNC_RDACC].enabled 		= true;
-	// 				scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_CHKPING].enabled 	= false;
-	// 				scheduler[SCHD_FUNC_NAVIGATE].enabled	= false;
-	// 				#ifdef simMode
-	// 				scheduler[SCHD_FUNC_UPDATESIM].enabled 	= true;
-	// 				#endif simMode
-
-	// 				driveState=newState;
-
-
-	// 				if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
-	// 					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
-
-	// 				break;
-	// 			#ifndef simMode
-	// 			case DRIVE_STATE_RADIO:					
-	// 				manager.sendString("Drive State: Radio");
-	// 				#ifdef extLogger
-	// 				extLog("Drive State","Radio");
-	// 				#endif						
-
-	// 				scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
-	// 				scheduler[SCHD_FUNC_RDACC].enabled 		= true;
-	// 				scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_CHKPING].enabled 	= false;
-	// 				scheduler[SCHD_FUNC_NAVIGATE].enabled	= false;
-
-	// 				driveState=newState;
-	// 				break;
-	// 			#endif
-
-	// 		}
-	// 		break;
-	// 	#ifndef simMode
-	// 	case DRIVE_STATE_RADIO:
-	// 		switch(newState)
-	// 		{
-	// 			case DRIVE_STATE_STOP:
-	// 				manager.sendString("Drive State: Stop");
-	// 				#ifdef extLogger
-	// 				extLog("Drive State","Stop");
-	// 				#endif						
-					
-	// 				#ifdef simMode
-	// 				gps.setGroundSpeed(0);
-	// 				#else
-	// 				output(0,steerCenter);
-	// 				#endif
-
-	// 				scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
-	// 				scheduler[SCHD_FUNC_RDACC].enabled 		= true;
-	// 				scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_CHKPING].enabled 	= false;
-	// 				scheduler[SCHD_FUNC_NAVIGATE].enabled	= false;
-			
-				
-	// 				driveState=newState;
-
-	// 				if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
-	// 					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
-
-	// 				break;
-	// 			case DRIVE_STATE_AUTO:
-	// 				manager.sendString("Drive State: Auto");
-	// 				#ifdef extLogger
-	// 				extLog("Drive State","Auto");
-	// 				#endif						
-
-	// 				scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_RDACC].enabled 		= true;
-	// 				scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
-	// 				scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
-
-	// 				nTime = millis();
-
-
-	// 				driveState=newState;
-	// 				break;
-	// 		}
-	// 		break;
-	// 	#endif
-	// }
-//
-//}
-
-
 void changeAutoState(uint8_t newState)
 {
 	//ignore if we are not changing state
@@ -807,7 +599,7 @@ void changeAutoState(uint8_t newState)
 					#endif						
 
 					sTime = 0;
-					oTime = 0;
+					
 
 					//change speed
 					autoState=newState;
@@ -836,9 +628,10 @@ void changeAutoState(uint8_t newState)
 					//determine backup angle
 					output(0, steerCenter);
 					sTime = millis();
-					oTime = millis();
 					backDir = ping[0]<ping[4];
 					//change speed 
+
+					autoState=newState;
 					break;
 				case AUTO_STATE_STALLED:
 					//don't transition from stalled
@@ -858,7 +651,7 @@ void changeAutoState(uint8_t newState)
 					#ifdef extLogger
 					extLog("Auto State","Stalled");
 					#endif						
-
+					autoState=newState;
 					//stop motors
 					break;
 				
@@ -869,104 +662,7 @@ void changeAutoState(uint8_t newState)
 
 }
 
-// 	switch (autoState)
-// 	{	
-// 		case AUTO_STATE_INVALID:
-// 			switch(newState)
-// 			{
-// 				case AUTO_STATE_FULL:
-// 					manager.sendString("Auto State: Full");
-// 					#ifdef extLogger
-// 					extLog("Auto State","Full");
-// 					#endif						
 
-// 					sTime = 0;
-// 					oTime = 0;
-
-// 					//change speed
-// 					autoState=newState;
-// 					break;
-// 				default:
-// 					autoState=AUTO_STATE_INVALID;
-// 					break;
-// 			}			
-// 			break;
-// 		case AUTO_STATE_FULL:
-// 			switch(newState)
-// 			{
-// 				case AUTO_STATE_AVOID:
-// 					manager.sendString("Auto State: Avoid");
-// 					#ifdef extLogger
-// 					extLog("Auto State","Avoid");
-// 					#endif						
-
-// 					//If we had set caution flag then entered avoid we need to clear
-// 					//might consider leaving in caution but for now...
-// 					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
-
-// 					//determine backup angle
-// 					output(0, steerCenter);
-// 					sTime = millis();
-// 					oTime = millis();
-// 					backDir = ping[0]<ping[4];
-// 					//change speed 
-
-// 					break;				
-// 				case AUTO_STATE_STALLED:
-// 					manager.sendString("Auto State: Stalled");
-// 					#ifdef extLogger
-// 					extLog("Auto State","Stalled");
-// 					#endif						
-
-// 					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
-
-// 					//stop motors?
-// 					break;
-// 			}
-// 			autoState=newState;
-// 			break;
-// 		case AUTO_STATE_AVOID:
-// 			switch(newState)
-// 			{
-// 				case AUTO_STATE_FULL:
-// 					manager.sendString("Auto State: Full");
-// 					#ifdef extLogger
-// 					extLog("Auto State","Full");
-// 					#endif						
-
-// 					sTime = 0;
-// 					oTime = 0;
-
-// 					//change speed
-// 					break;
-// 				case AUTO_STATE_STALLED:
-// 					manager.sendString("Auto State: Stalled");
-// 					#ifdef extLogger
-// 					extLog("Auto State","Stalled");
-// 					#endif						
-
-// 					//stop motors
-// 					break;
-// 			}
-// 			autoState=newState;
-// 			break;
-// 		case AUTO_STATE_STALLED:
-// 			switch(newState)
-// 			{
-// 				case AUTO_STATE_FULL:
-// 					manager.sendString("Auto State: Full");
-// 					#ifdef extLogger
-// 					extLog("Auto State","Full");
-// 					#endif						
-
-// 					//change speed
-// 					break;
-// 			}
-// 			autoState=newState;
-// 		break;
-
-// 	}	
-// }
 
 #ifdef simMode
 void updateSIM()
@@ -1016,23 +712,28 @@ void navigate()
 
 	if ( autoState == AUTO_STATE_AVOID)
 	{
-		//below assumes coastTime < dangerTime
 
-		//wait coastTime before backup up
-		if(sTime+coastTime < millis())
+		//The below is in a specific order to accommodate the flow
+		//of time.  The first check is the furthest in time and working
+		//toward the closest.		
+
+		
+		if ( millis() > sTime+avoidSteerBack)
+		{
+			changeAutoState(AUTO_STATE_FULL);
+		}		
+		else if ( millis() > sTime+avoidStraightBack )
 		{
 			if(backDir) 
 				output(revSpeed, steerCenter-revThrow);
 			else 		
 				output(revSpeed, steerCenter+revThrow);
+		}		
+		else if( millis() > sTime+avoidCoastTime )
+		{			
+			output(revSpeed, steerCenter);
 		}
 
-		//once the time of (dangerTime-coastTime) then we 
-		//leave this state
-		if(oTime+dangerTime < millis())
-		{
-			changeAutoState(AUTO_STATE_FULL);
-		}
 	} 	
 	else if (autoState == AUTO_STATE_FULL)
 	{
@@ -1146,14 +847,12 @@ void navigate()
 		approachSpeed = manager.getTargetWaypoint().getApproachSpeed();
 		speed = min(speed, approachSpeed); //put in target approach speed
 
+		speed = constrain(speed, minFwd, maxFwd);
+
 		//deal with speed reduction for caution and approach
-		if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
+		if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION) || isSetAutoStateFlag(AUTO_STATE_FLAG_APPROACH))
 		{
 			speed = speed/2;
-		}
-		else
-		{
-			speed = constrain(speed, minFwd, maxFwd);
 		}
 		
 		output(speed, outputAngle);
@@ -1486,11 +1185,11 @@ void reportLocation()
 	manager.sendTelem(Protocol::telemetryType(VOLTAGE+1),   amperage);
 
 	//TODO define num of ping sensors and loop?
-	// manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),0, ping[0] );
-	// manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),1, ping[1] );
-	// manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),2, ping[2] );
-	// manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),3, ping[3] );
-	// manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),4, ping[4] );
+	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),0, ping[0] );
+	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),1, ping[1] );
+	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),2, ping[2] );
+	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),3, ping[3] );
+	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),4, ping[4] );
 
 	digitalWrite(45,LOW);
 }
@@ -1597,7 +1296,7 @@ void setupSettings()
 	/*GROUNDSETTING index="9" name="coast time" min="0" max="+inf" def="1500"
 	 *Time in milliseconds to coast before reversing when an obstacle is encountered
 	 */
-	settings.attach(9, 1500, callback<int, &coastTime>);
+	settings.attach(9, 1500, callback<int, &avoidCoastTime>);
 
 	/*GROUNDSETTING index="10" name="min rev time" min="0" max="+inf" def="800"
 	 *minimum time in milliseconds to reverse away from an obstacle
