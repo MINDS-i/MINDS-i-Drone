@@ -25,11 +25,12 @@ const uint8_t EncoderPin[]= {2/*APM pin 7*/, 3 /*APM pin 6*/};
 
 //// //ping sensor vars
 const float  pAngle[5]   = { 79.27, 36.83, 0.0, -36.83, -79.27};
-const uint16_t blockLevel[]     = {1000, 1600, 3000, 1600, 1000};
-const uint16_t warnLevel[]     = {1500, 2400, 4500, 2400, 1500};
+//about 500 us per inch
+int blockLevel[]     = {1000, 1600, 3000, 1600, 1000};
+int warnLevel[]     = {2000, 3200, 6000, 3200, 2000};
 //in miles, margin for error in rover location
-const float PointRadius  = .0015; 
-const float approachRadius = .0038;
+float PointRadius  = .0015; 
+float approachRadius = .0038;
 //tire circ in miles per inch diameter * diff ratio
 const float MilesPerRev   = (((PI)/12.f)/5280.f) * (13.f/37.f);
 //hours per min      rev per mile
@@ -62,7 +63,13 @@ uint32_t simTime = 0;
 #endif
 uint32_t gpsHalfTime = 0, gpsTime = 0;
  int32_t Ax,Ay,Az; //used in accelerometer calculations
-uint16_t ping[5] = {20000,20000,20000,20000,20000};
+
+enum PING_HIST {
+	PING_CUR = 0,
+	PING_LAST,
+};
+
+uint16_t ping[5][2] = {20000,20000,20000,20000,20000};
 uint8_t  sIter,pIter; //iterators for scheduler and ping
 double   pathHeading; //All Headings are Clockwise+, -179 to 180, 0=north
 double   trueHeading;
@@ -172,11 +179,35 @@ float	tireDiameter;
 int		steerCenter;
 
 
-void dangerTimeCallback(float in){ avoidStraightBack = avoidCoastTime+(in/2);
-									avoidSteerBack = avoidCoastTime+in;
-									 }
+void dangerTimeCallback(float in){ 
+	avoidStraightBack = avoidCoastTime+(in/2);
+	avoidSteerBack = avoidCoastTime+in; 
+}
+
+void pingBlockLevelEdgesCallback(float in){
+	blockLevel[0] = blockLevel[4] = (int)in;
+}
+void pingBlockLevelMiddlesCallback(float in){
+	blockLevel[1] = blockLevel[3] = (int)in;
+}
+void pingBlockLevelCenterCallback(float in){
+	blockLevel[2] = (int)in;
+}
+void pingWarnLevelEdgesCallback(float in){
+	warnLevel[0] = warnLevel[4] = (int)in;
+}
+void pingWarnLevelMiddlesCallback(float in){
+	warnLevel[1] = warnLevel[3] = (int)in;
+}
+void pingWarnLevelCenterCallback(float in){
+	warnLevel[2] = (int)in;
+}
+
+
 inline float MPHtoRPM(float mph){ return (mph*MPHvRPM)/tireDiameter; }
 inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
+
+
 
 void stateStop();
 void stateStart();
@@ -497,7 +528,7 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_RDACC].enabled 		= true;
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
-					scheduler[SCHD_FUNC_CHKPING].enabled 	= false;
+					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
 					scheduler[SCHD_FUNC_NAVIGATE].enabled	= false;
 					#ifdef simMode
 					scheduler[SCHD_FUNC_UPDATESIM].enabled 	= true;
@@ -561,7 +592,7 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_RDACC].enabled 		= true;
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
-					scheduler[SCHD_FUNC_CHKPING].enabled 	= false;
+					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
 					scheduler[SCHD_FUNC_NAVIGATE].enabled	= false;
 
 					driveState=newState;
@@ -628,7 +659,9 @@ void changeAutoState(uint8_t newState)
 					//determine backup angle
 					output(0, steerCenter);
 					sTime = millis();
-					backDir = ping[0]<ping[4];
+
+					//Maybe find weight of left vs right (rather then just edge)
+					backDir = ping[0][PING_CUR]<ping[4][PING_CUR];
 					//change speed 
 
 					autoState=newState;
@@ -797,7 +830,7 @@ void navigate()
 		for(int i=0; i<5; i++)
 		{
 			//temp is some percentage (at ping of 1400 would mean tmp==1)
-			float tmp = ping[i]/pingWeight;
+			float tmp = ping[i][PING_CUR]/pingWeight;
 			//value is squared?
 			tmp *= tmp;
 			//add to x,y based on set angle of sensor inverse scaled of percentage
@@ -1039,30 +1072,33 @@ void checkPing()
 
 	//digitalWrite(A8,HIGH);
 
+	//copy cur value into last
+	ping[pIter][PING_LAST] = ping[pIter][PING_CUR];
+
 	#ifndef simMode
-    ping[pIter] = getPing(PingPin[pIter]);
+    ping[pIter][PING_CUR] = getPing(PingPin[pIter]);
 	#else
 	pinMode(PingPin[pIter], INPUT);    
-	ping[pIter] = map(analogRead(PingPin[pIter]),0,1023,0,10000);
+	ping[pIter][PING_CUR] = map(analogRead(PingPin[pIter]),0,1023,0,10000);
 
 	#endif
 
+	//iteration goes 0 2 4 1 3 <repeats>
 	pIter+=2;
 	pIter = pIter%5;
 
 	
-
-	if ( autoState == AUTO_STATE_FULL)
+	if ( driveState == DRIVE_STATE_AUTO && autoState == AUTO_STATE_FULL)
 	{	
 
-		if(ping[pIter] < blockLevel[pIter]) 
+		if(ping[pIter][PING_CUR] < blockLevel[pIter] && ping[pIter][PING_LAST] < blockLevel[pIter]) 
 		{
 			changeAutoState(AUTO_STATE_AVOID);
 		}
 		else
 		{
 			
-			if (ping[pIter] < warnLevel[pIter])
+			if (ping[pIter][PING_CUR] < warnLevel[pIter] && ping[pIter][PING_LAST] < warnLevel[pIter])
 			{
 				if ( !isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
 				{
@@ -1076,6 +1112,7 @@ void checkPing()
 			{		
 				if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
 				{
+
 					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
 					//#ifdef extLogger
 					//extLog("Caution flag: ","0");
@@ -1185,11 +1222,11 @@ void reportLocation()
 	manager.sendTelem(Protocol::telemetryType(VOLTAGE+1),   amperage);
 
 	//TODO define num of ping sensors and loop?
-	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),0, ping[0] );
-	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),1, ping[1] );
-	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),2, ping[2] );
-	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),3, ping[3] );
-	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),4, ping[4] );
+	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),0, ping[0][PING_CUR] );
+	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),1, ping[1][PING_CUR] );
+	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),2, ping[2][PING_CUR] );
+	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),3, ping[3][PING_CUR] );
+	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),4, ping[4][PING_CUR] );
 
 	digitalWrite(45,LOW);
 }
@@ -1327,5 +1364,55 @@ void setupSettings()
 	 *Center point in degrees corresponding to driving straight
 	 */
 	settings.attach(15, 90, callback<int, &steerCenter>);
+
+//Target radi settings
+
+
+	/*GROUNDSETTING index="16" name="Waypoint acheived radius in miles" min="0" max=".003" def=".0015"
+	 * Radius centered at waypoint where target is determined to be meet
+	 */
+	settings.attach(16, .0015, callback<float,&PointRadius>);
+
+	/*GROUNDSETTING index="17" name="Approach radius" min="0" max=".0076" def=".0038"
+	 * Radius cneter at waypoint where the approach flag is set
+	 */
+	settings.attach(17, .0038, callback<float,&approachRadius>);
+
+
+//ping 
+
+	/*GROUNDSETTING index="58" name="Avoid Ping value Edges" min="500" max="10000" def="1000"
+	 *
+	 */
+	settings.attach(58, 1000, &pingBlockLevelEdgesCallback);
+
+	/*GROUNDSETTING index="59" name="Avoid Ping value Middles" min="500" max="10000" def="1600"
+	 *
+	 */
+	settings.attach(59, 1600, &pingBlockLevelMiddlesCallback);
+
+	/*GROUNDSETTING index="60" name="Avoid Ping value center" min="500" max="10000" def="3000"
+	 *
+	 */
+	settings.attach(60, 3000, &pingBlockLevelCenterCallback);
+
+	/*GROUNDSETTING index="61" name="Warn Ping value Edges" min="500" max="10000" def="2000"
+	 *
+	 */
+	settings.attach(61, 2000, &pingWarnLevelEdgesCallback);
+
+	/*GROUNDSETTING index="62" name="Warn Ping value Middles" min="500" max="10000" def="3200"
+	 *
+	 */
+	settings.attach(62, 3200, &pingWarnLevelMiddlesCallback);
+
+	/*GROUNDSETTING index="63" name="Warn Ping value center" min="500" max="10000" def="6000"
+	 *
+	 */
+	settings.attach(63, 6000, &pingWarnLevelCenterCallback);
+
+
+	
+
 }
 
