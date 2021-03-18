@@ -34,7 +34,8 @@ namespace Protocol{
 
     enum dataSubtype{ TELEMETRY = 0,
                       SETTING   = 1,
-                      SENSORS   = 2, };
+                      SENSORS   = 2,
+                      INFO = 3 };
 
     enum wordSubtype{ CONFIRMATION = 0,
                       SYNC         = 1,
@@ -65,6 +66,9 @@ namespace Protocol{
     {
         OBJDETECT_SONIC = 0
     };
+
+    enum infoType { APM_VERSION = 0,
+                  };
 
     enum commandType{ ESTOP           = 0,
                       TARGET          = 1,

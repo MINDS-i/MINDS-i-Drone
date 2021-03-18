@@ -13,6 +13,9 @@ using namespace Protocol;
 		waypointsLooped(false),
 		connectCallback(NULL),
 		eStopCallback(NULL),
+		stateStopCallback(NULL),
+		stateStartCallback(NULL),
+		versionCallback(NULL),
 		chksumFailureCount(0),
 		pktMismatchCount(0),
 		pktFormatErrorCount(0),
@@ -230,15 +233,30 @@ inline void CommManager::handleData(uint8_t* msg, uint8_t length)
 	uint8_t subtype = getSubtype(msg[0]);
 	uint8_t index = msg[1];
 	byteConv conv;
-	for(int i=0; i<4; i++) conv.bytes[3-i] = msg[2+i];
-	switch(subtype){
+	for(int i=0; i<4; i++) 
+	{
+		conv.bytes[3-i] = msg[2+i];
+	}
+
+	switch(subtype)
+	{
 		case TELEMETRY:
 			//arduino doesn't keep track of received telemetry
 			break;
 		case SETTING:
 			setSetting(index, conv.f);
 			break;
+		case INFO:
+			switch (msg[1])
+			{
+				case (APM_VERSION):
+					if (versionCallback != NULL)
+						versionCallback();
+				break;
+			}
+			break;
 	}
+
 }
 
 inline void CommManager::handleWord(uint8_t* msg, uint8_t length)
@@ -418,6 +436,10 @@ void CommManager::setStateStartCallback(void (*call)(void))
 	stateStartCallback = call;
 }
 
+void CommManager::setVersionCallback(void (*call)(void))
+{
+	versionCallback = call;
+}
 
 
 void CommManager::onConnect()
@@ -459,6 +481,18 @@ void CommManager::sendSensor(uint8_t sensorTypeId, uint8_t sensorNum, uint32_t v
 	Protocol::sendMessage(tmp, 5, stream);
 }
 
+void CommManager::sendVersion(uint8_t version_major, uint8_t version_minor, uint8_t version_rev)
+{
+	byteConv data;
+	//data.l = value;
+	byte tmp[5] = {	buildMessageLabel(dataSubtype(INFO)),
+					APM_VERSION,
+					version_major,
+					version_minor,
+					version_rev
+				};
+	Protocol::sendMessage(tmp, 5, stream);
+}
 
 
 void CommManager::sendSetting(uint8_t id, float value)

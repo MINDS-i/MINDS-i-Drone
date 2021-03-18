@@ -49,7 +49,7 @@ public:
     void setCourse(float course)      {  m_course = course;     }
     float getDateOfFix()              {  return m_dateOfFix;    }
     float getGroundSpeed()            {  return m_groundSpeed;  }
-    setGroundSpeed(float speed)       {  m_groundSpeed=speed;   }
+    void setGroundSpeed(float speed)   {  m_groundSpeed=speed;   }
     double getLatitude()               {  return m_latitude;     }
     void setLatitude(double lat)      {  m_latitude = lat;      }
     double getLongitude()              {  return m_longitude;    }

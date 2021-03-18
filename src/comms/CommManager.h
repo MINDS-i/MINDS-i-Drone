@@ -66,6 +66,7 @@ class CommManager
 	void (*eStopCallback)(void);
 	void (*stateStopCallback)(void);
 	void (*stateStartCallback)(void);
+	void (*versionCallback)(void);
 
 public:
 	CommManager(HardwareSerial *inStream, Storage<float> *settings);
@@ -75,11 +76,15 @@ public:
 	uint16_t numWaypoints();
 	void	 sendTelem(uint8_t id , float value);
 	void 	 sendState(uint8_t stateTypeId, uint8_t stateID);
-	void    sendSensor(uint8_t sensorTypeId, uint8_t sensorNum, uint32_t value);
+	void     sendSensor(uint8_t sensorTypeId, uint8_t sensorNum, uint32_t value);
+	void 	 sendVersion(uint8_t version_major, uint8_t version_minor, uint8_t version_rev);
+
 	void	 setConnectCallback(void (*call)(void));
 	void	 setEStopCallback(void (*call)(void));
 	void	 setStateStopCallback(void (*call)(void));
 	void	 setStateStartCallback(void (*call)(void));	
+	void 	 setVersionCallback(void (*call)(void));
+
 	void 	 clearWaypointList();
 	void  	 requestResync();
 	void  	 update();
