@@ -12,7 +12,7 @@
 //=============================================//
 
 // == Sim mode ==
-#define simMode true
+//#define simMode true
 
 //== encoder ==
 #define useEncoder true
@@ -150,6 +150,7 @@ enum AUTO_STATE_FLAGS {
 //global state vars (maybe move to class at some point?)
 uint8_t apmState=APM_STATE_INVALID;
 uint8_t driveState=DRIVE_STATE_INVALID;
+uint8_t prevDriveState=DRIVE_STATE_INVALID;
 uint8_t autoState=AUTO_STATE_INVALID;
 uint8_t autoStateFlags=AUTO_STATE_FLAGS_NONE;
 
@@ -195,7 +196,7 @@ struct schedulerData scheduler[] =
 	{reportLocation,	110	,44		,1},
 	{reportState,		110	,110	,1},
 	{checkPing,			22	,88		,1},
-	{navigate,			22	,66		,1},
+	{navigate,			0	,66		,1},
 	#ifdef simMode
 	{updateSIM,			500	,100	,1}
 	#endif
@@ -519,6 +520,8 @@ void loop()
 
 	}
 
+
+
 	digitalWrite(A5,LOW);
 }
 
@@ -628,11 +631,11 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
 					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
-					scheduler[SCHD_FUNC_NAVIGATE].enabled	= false;
+					scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
 					#ifdef simMode
 					scheduler[SCHD_FUNC_UPDATESIM].enabled 	= true;
 					#endif 
-
+					
 					driveState=newState;
 
 
@@ -669,6 +672,7 @@ void changeDriveState(uint8_t newState)
 
 					nTime = millis();
 
+					
 					driveState=newState;
 
 					break;
@@ -692,8 +696,11 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
 					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
-					scheduler[SCHD_FUNC_NAVIGATE].enabled	= false;
+					scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
 
+					//Only radio state sets previous drivestate
+					//so it knows what to revert back to
+					prevDriveState=driveState;
 					driveState=newState;
 					break;
 
@@ -839,169 +846,189 @@ void updateSIM()
 
 void navigate()
 {
-
-	if ( autoState == AUTO_STATE_AVOID)
-	{
-
-		//The below is in a specific order to accommodate the flow
-		//of time.  The first check is the furthest in time and working
-		//toward the closest.		
+	float   mph = ((APMRadio::get(RadioPin[1])-90) / 90.f)*maxFwd;
+	uint8_t steer = APMRadio::get(RadioPin[2]);
 
 		
-		if ( millis() > sTime+avoidSteerBack)
-		{
-			changeAutoState(AUTO_STATE_FULL);
-		}		
-		else if ( millis() > sTime+avoidStraightBack )
-		{
-			if(backDir) 
-				output(revSpeed, steerCenter-revThrow);
-			else 		
-				output(revSpeed, steerCenter+revThrow);
-		}		
-		else if( millis() > sTime+avoidCoastTime )
-		{			
-			output(revSpeed, steerCenter);
-		}
+	if (abs(steer-steerCenter) > 5 || fabs(mph)>0.8f ) 
+	{						
+		changeDriveState(DRIVE_STATE_RADIO);
 
-	} 	
-	else if (autoState == AUTO_STATE_FULL)
-	{
-		//drive based on pathHeading and side ping sensors
-
-		float x,y;
-		float approachSpeed;
-		float angularError;
-		float outputAngle;
-
-		//####################//
-		// Angle calculations //
-		//####################//
-
-
-		//difference between pathheading (based on waypoints (previous and current))
-		//error can only be as much as 180 degrees off (opposite directions).
-		angularError = truncateDegree(pathHeading - trueHeading);
-
-		extLog("angularError",angularError,6);
-
-		//angularCorrection = (lastAngularError - angularError) - lastOutputAngle - lastAngularCorrection;
-		
-		switch(steerStyle)
-		{
-			case 0:
-				//not sure.  Ratio of opposite/adjacent multiplied by steering throw
-				//convert from degrees to radians for use with atan
-				outputAngle = atan( angularError*PI/180.l )*(2*steerThrow/PI);
-				break;
-			case 1:
-				//get squared of percentage of error from 180.  x^2 function where 180=1.00
-				outputAngle = ((angularError/180.l)*(angularError/180.l));
-
-				//above percentage of the full steerthrow 
-				if (isSetAutoStateFlag(AUTO_STATE_FLAG_APPROACH) == false )
-					outputAngle *=(2.l*steerThrow);
-				else
-					outputAngle *=(6.l*steerThrow);
-
-				//negative angle if left turning vs right turning ( or opposite?)
-				if(angularError < 0)
-					outputAngle *= -1;
-				break;
-			default:
-				//simplest. Percentage of error multipled by 2x the steerthow
-				// if angularError is 90 degrees off we max out the steering (left/right)
-				// this is constrained below
-				// at this point we could be 180 degress off and have output angle of 90
-				outputAngle = (angularError/180.l)*(2.l*steerThrow);
-				break;
-		}
-
-
-		//scale angle (default of 1.5) This is to account for the 45 deg steer really is 30 deg
-		outputAngle *= steerFactor;
-
-		//possible correction in steering (pulling left or right)
-		outputAngle += steerSkew;
-
-		extLog("nav outputAngle post err correct",outputAngle);
-
-		//find x and y component of output angle
-		x = cos(toRad(outputAngle));
-		y = sin(toRad(outputAngle));
-
-		//Not 100 sure:  Generally using pings sensor values to adjust output angle
-		//modify x and y based on what pings are seeing		
-		for(int i=0; i<5; i++)
-		{
-			//temp is some percentage (at ping of 1400 would mean tmp==1)
-			float tmp = ping[i][PING_CUR]/pingWeight;
-			//value is squared?
-			tmp *= tmp;
-			//add to x,y based on set angle of sensor inverse scaled of percentage
-			x += cos(toRad(pAngle[i]))/tmp;
-			y += sin(toRad(pAngle[i]))/tmp;
-		}
-
-
-		extLog("nav ping X adjust",x,6);
-		extLog("nav ping Y adjust",y,6);
-		extLog("nav outputAngle ping",toDeg(atan2(y,x)),6);
-
-
-		//determine angle based on x,y then adjust from steering center ( 90 )
-		outputAngle = toDeg(atan2(y,x))+steerCenter;
-		//Can't steer more then throw
-		outputAngle = constrain(outputAngle,
-				  				double(steerCenter-steerThrow),
-			 	  				double(steerCenter+steerThrow));
-
-		//outputAngle is [45,135] steerCenter == 90 and steerThrow == 45
-
-		//####################//
-		// Speed calculations //
-		//####################//
-
-		//90-45 => 45
-		//90-135 => 45
-		//45 - [0,45]
-		//disp is between 45 and 0
-		//disp is largest the closest to steerCenter
-		//If we are turning hard with disp of 43,44 that could be low enough
-		//to set speed to less the maxFwd (assuming defaults)
-		//why?  Basically if we turn too much or get within a few feet or target
-		//the speed is reduced.
-		//turn hard (45) means disp is close to 0 
-		//get within a couple of feet from target the speed is reduced
-
-		float disp  = steerThrow - abs(steerCenter-outputAngle);
-		//distance is in miles.  Not sure why we convert to feet?
-		//this isn't really speed
-		//get slower and slower once we are less then maxfwd away?
-		float speed = (distance*5280.l);
-
-		//not sure why one would use disp vs speed?  Is this for turning distance?
-		//speed is even a distance.  if we get Less the x feet away and it is smaller 
-		//then approachSpeed and turning angle then we us it?
-
-		speed = min(speed, disp)/6.f; //logical speed clamps
-		approachSpeed = manager.getTargetWaypoint().getApproachSpeed();
-		speed = min(speed, approachSpeed); //put in target approach speed
-
-		speed = constrain(speed, minFwd, maxFwd);
-
-		//deal with speed reduction for caution and approach
-		if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION) || isSetAutoStateFlag(AUTO_STATE_FLAG_APPROACH))
-		{
-			speed = speed/2;
-		}
-		
-		output(speed, outputAngle);
-
-		lastOutputAngle=outputAngle;
-		lastAngularError=angularError;
+		output(mph, steer);
+	}
+	else
+	{	
+		if (prevDriveState != DRIVE_STATE_RADIO)
+			changeDriveState(prevDriveState);
 	}
 
+
+	if (driveState == DRIVE_STATE_AUTO)
+	{
+
+
+		if ( autoState == AUTO_STATE_AVOID)
+		{
+
+			//The below is in a specific order to accommodate the flow
+			//of time.  The first check is the furthest in time and working
+			//toward the closest.		
+
+			
+			if ( millis() > sTime+avoidSteerBack)
+			{
+				changeAutoState(AUTO_STATE_FULL);
+			}		
+			else if ( millis() > sTime+avoidStraightBack )
+			{
+				if(backDir) 
+					output(revSpeed, steerCenter-revThrow);
+				else 		
+					output(revSpeed, steerCenter+revThrow);
+			}		
+			else if( millis() > sTime+avoidCoastTime )
+			{			
+				output(revSpeed, steerCenter);
+			}
+
+		} 	
+		else if (autoState == AUTO_STATE_FULL)
+		{
+			//drive based on pathHeading and side ping sensors
+
+			float x,y;
+			float approachSpeed;
+			float angularError;
+			float outputAngle;
+
+			//####################//
+			// Angle calculations //
+			//####################//
+
+
+			//difference between pathheading (based on waypoints (previous and current))
+			//error can only be as much as 180 degrees off (opposite directions).
+			angularError = truncateDegree(pathHeading - trueHeading);
+
+			extLog("angularError",angularError,6);
+
+			//angularCorrection = (lastAngularError - angularError) - lastOutputAngle - lastAngularCorrection;
+			
+			switch(steerStyle)
+			{
+				case 0:
+					//not sure.  Ratio of opposite/adjacent multiplied by steering throw
+					//convert from degrees to radians for use with atan
+					outputAngle = atan( angularError*PI/180.l )*(2*steerThrow/PI);
+					break;
+				case 1:
+					//get squared of percentage of error from 180.  x^2 function where 180=1.00
+					outputAngle = ((angularError/180.l)*(angularError/180.l));
+
+					//above percentage of the full steerthrow 
+					if (isSetAutoStateFlag(AUTO_STATE_FLAG_APPROACH) == false )
+						outputAngle *=(2.l*steerThrow);
+					else
+						outputAngle *=(6.l*steerThrow);
+
+					//negative angle if left turning vs right turning ( or opposite?)
+					if(angularError < 0)
+						outputAngle *= -1;
+					break;
+				default:
+					//simplest. Percentage of error multipled by 2x the steerthow
+					// if angularError is 90 degrees off we max out the steering (left/right)
+					// this is constrained below
+					// at this point we could be 180 degress off and have output angle of 90
+					outputAngle = (angularError/180.l)*(2.l*steerThrow);
+					break;
+			}
+
+
+			//scale angle (default of 1.5) This is to account for the 45 deg steer really is 30 deg
+			outputAngle *= steerFactor;
+
+			//possible correction in steering (pulling left or right)
+			outputAngle += steerSkew;
+
+			extLog("nav outputAngle post err correct",outputAngle);
+
+			//find x and y component of output angle
+			x = cos(toRad(outputAngle));
+			y = sin(toRad(outputAngle));
+
+			//Not 100 sure:  Generally using pings sensor values to adjust output angle
+			//modify x and y based on what pings are seeing		
+			for(int i=0; i<5; i++)
+			{
+				//temp is some percentage (at ping of 1400 would mean tmp==1)
+				float tmp = ping[i][PING_CUR]/pingWeight;
+				//value is squared?
+				tmp *= tmp;
+				//add to x,y based on set angle of sensor inverse scaled of percentage
+				x += cos(toRad(pAngle[i]))/tmp;
+				y += sin(toRad(pAngle[i]))/tmp;
+			}
+
+
+			extLog("nav ping X adjust",x,6);
+			extLog("nav ping Y adjust",y,6);
+			extLog("nav outputAngle ping",toDeg(atan2(y,x)),6);
+
+
+			//determine angle based on x,y then adjust from steering center ( 90 )
+			outputAngle = toDeg(atan2(y,x))+steerCenter;
+			//Can't steer more then throw
+			outputAngle = constrain(outputAngle,
+					  				double(steerCenter-steerThrow),
+				 	  				double(steerCenter+steerThrow));
+
+			//outputAngle is [45,135] steerCenter == 90 and steerThrow == 45
+
+			//####################//
+			// Speed calculations //
+			//####################//
+
+			//90-45 => 45
+			//90-135 => 45
+			//45 - [0,45]
+			//disp is between 45 and 0
+			//disp is largest the closest to steerCenter
+			//If we are turning hard with disp of 43,44 that could be low enough
+			//to set speed to less the maxFwd (assuming defaults)
+			//why?  Basically if we turn too much or get within a few feet or target
+			//the speed is reduced.
+			//turn hard (45) means disp is close to 0 
+			//get within a couple of feet from target the speed is reduced
+
+			float disp  = steerThrow - abs(steerCenter-outputAngle);
+			//distance is in miles.  Not sure why we convert to feet?
+			//this isn't really speed
+			//get slower and slower once we are less then maxfwd away?
+			float speed = (distance*5280.l);
+
+			//not sure why one would use disp vs speed?  Is this for turning distance?
+			//speed is even a distance.  if we get Less the x feet away and it is smaller 
+			//then approachSpeed and turning angle then we us it?
+
+			speed = min(speed, disp)/6.f; //logical speed clamps
+			approachSpeed = manager.getTargetWaypoint().getApproachSpeed();
+			speed = min(speed, approachSpeed); //put in target approach speed
+
+			speed = constrain(speed, minFwd, maxFwd);
+
+			//deal with speed reduction for caution and approach
+			if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION) || isSetAutoStateFlag(AUTO_STATE_FLAG_APPROACH))
+			{
+				speed = speed/2;
+			}
+			
+			output(speed, outputAngle);
+
+			lastOutputAngle=outputAngle;
+			lastAngularError=angularError;
+		}
+	}//end drive state auto check
 
 }
 
@@ -1174,7 +1201,6 @@ void checkPing()
 	#else
 	pinMode(PingPin[pIter], INPUT);    
 	ping[pIter][PING_CUR] = map(analogRead(PingPin[pIter]),0,1023,0,10000);
-
 	#endif
 
 	//iteration goes 0 2 4 1 3 <repeats>
