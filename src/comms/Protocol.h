@@ -78,10 +78,11 @@ namespace Protocol{
                       STATE_STOP      = 5,
                       STATE_START     = 6 };
 
-    enum stateType { APM_STATE = 0,
+    enum stateType { APM_STATE   = 0,
                      DRIVE_STATE = 1,
-                     AUTO_STATE = 2,
-                     AUTO_FLAGS,
+                     AUTO_STATE  = 2,
+                     AUTO_FLAGS  = 3,
+                     GPS_STATE   = 4
 
     };
 

@@ -3,6 +3,6 @@
 
 uint8_t	 version_major = 0;
 uint8_t	 version_minor = 1;
-uint8_t	 version_rev = 1;
+uint8_t	 version_rev = 3;
 
 #endif

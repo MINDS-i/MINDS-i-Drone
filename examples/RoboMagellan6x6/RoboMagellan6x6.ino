@@ -858,7 +858,7 @@ void navigate()
 	}
 	else
 	{	
-		if (prevDriveState != DRIVE_STATE_RADIO)
+		if (driveState == DRIVE_STATE_RADIO )
 			changeDriveState(prevDriveState);
 	}
 
@@ -1359,6 +1359,7 @@ void reportState()
 	manager.sendState(Protocol::stateType(DRIVE_STATE),driveState);
 	manager.sendState(Protocol::stateType(AUTO_STATE),autoState);
 	manager.sendState(Protocol::stateType(AUTO_FLAGS),autoStateFlags);
+	manager.sendState(Protocol::stateType(GPS_STATE),gps.getWarning());
 
 
 	digitalWrite(45,LOW);
