@@ -1405,91 +1405,90 @@ void version()
 
 void setupSettings()
 {
-	/*GROUNDSETTING index="0" name="line gravity" def="0.50"
+	/*GROUNDSETTING index="0" name="Line Gravity" min="0" max="1" def="0.50"
 	 *Defines how strongly the rover should attempt to return to the original
 	 *course between waypoints, verses the direct path from its current location
 	 * to the target<br>
 	 */
 	settings.attach(0, .50, callback<float, &lineGravity>);
 
-	/*GROUNDSETTING index="1" name="steer throw" def="45"
+	/*GROUNDSETTING index="1" name="Steer Throw" min="0" max="90" def="45"
 	 *The number of degrees that rover will turn its wheels when it needs to
 	 *to turn its most extreme amount
 	 */
 	settings.attach(1, 45, callback<int, &steerThrow>);
 
-	/*GROUNDSETTING index="2" name="steer style" def="1"
-	 *switches between arctangent of error steering (0) <br>
+	/*GROUNDSETTING index="2" name="Steer Style" min="0" max="2" def="1"
+	 *Switches between arctangent of error steering (0) <br>
 	 *square of error steering (1) <br>
 	 *and proportional to error steering (2)
 	 */
 	settings.attach(2, 1, callback<int, &steerStyle>);
 
-	/*GROUNDSETTING index="3" name="steer scalar" def="1.5"
+	/*GROUNDSETTING index="3" name="Steer Scalar" min="0" max"8" def="1.5"
 	 *Multiplier that determines how aggressively to steer
 	 */
 	settings.attach(3, 1.5, callback<float, &steerFactor>);
 
 
-	/*GROUNDSETTING index="4" name="min fwd speed" def="1.5"
-	 *minimum forward driving speed in MPH
+	/*GROUNDSETTING index="4" name="Min Fwd Speed" min="1" max="3" def="1.5"
+	 *Minimum forward driving speed in MPH
 	 */
 	settings.attach(4, 1.5, callback<float, &minFwd>);
 
-	/*GROUNDSETTING index="5" name="max fwd speed" def="2.0"
-	 *maximum forward driving speed in MPH
+	/*GROUNDSETTING index="5" name="Max Fwd Speed" min="1.5" max="3" def="2.0"
+	 *Maximum forward driving speed in MPH
 	 */
 	settings.attach(5, 2.0, callback<float, &maxFwd>);
 
-	/*GROUNDSETTING index="6" name="rev str throw" def="20"
+	/*GROUNDSETTING index="6" name="Rev Str Throw" min="0" max="90" def="20"
 	 *How far to turn the wheels when backing away from an obstacle
 	 */
 	settings.attach(6, 20, callback<int, &revThrow>);
 
-	/*GROUNDSETTING index="7" name="reverse speed" def="-2.0"
-	 *speed in MPH to drive in reverse
+	/*GROUNDSETTING index="7" name="Reverse Speed" min="-4" max="-1" def="-2.0"
+	 *Speed in MPH to drive in reverse
 	 */
 	settings.attach(7, -2.0, callback<float, &revSpeed>);
 
-
-	/*GROUNDSETTING index="8" name="ping factor" def="1400"
+	/*GROUNDSETTING index="8" name="Ping Factor" min="1" max="20000" def="1400"
 	 *Factor to determine how strongly obstacles effect the rover's course <br>
 	 *Larger numbers correspond to larger effects from obstacles
 	 */
 	settings.attach(8, 1400, callback<float, &pingWeight>);
 
-	/*GROUNDSETTING index="9" name="coast time" def="1500"
+	/*GROUNDSETTING index="9" name="Coast Time" min="0" max="4000" def="1500"
 	 *Time in milliseconds to coast before reversing when an obstacle is encountered
 	 */
 	settings.attach(9, 1500, callback<int, &avoidCoastTime>);
 
-	/*GROUNDSETTING index="10" name="min rev time" def="800"
-	 *minimum time in milliseconds to reverse away from an obstacle
+	/*GROUNDSETTING index="10" name="Min Rev Time" min="0" max="4000" def="800"
+	 *Minimum time in milliseconds to reverse away from an obstacle
 	 */
 	settings.attach(10, 800, &dangerTimeCallback);
 
-	/*GROUNDSETTING index="11" name="Cruise P" def="0.05"
+	/*GROUNDSETTING index="11" name="Cruise P" min="0" max="10" def="0.05"
 	 *P term in cruise control PID loop
 	 */
 	settings.attach(11, 0.05, &newPIDparam);
 
-	/*GROUNDSETTING index="12" name="Cruise I" def="0.1"
+	/*GROUNDSETTING index="12" name="Cruise I" min="0" max="10" def="0.1"
 	 *I term in cruise control PID loop
 	 */
 	settings.attach(12, 0.1, &newPIDparam);
 
-	/*GROUNDSETTING index="13" name="Cruise D" def="0.0"
+	/*GROUNDSETTING index="13" name="Cruise D" min="0" max="10" def="0.0"
 	 *D term in cruise control PID loop
 	 */
 	settings.attach(13, 0.0, &newPIDparam);
 
 
-	/*GROUNDSETTING index="14" name="Tire Diameter" def="5.85"
+	/*GROUNDSETTING index="14" name="Tire Diameter" min="0" max="12" def="5.85"
 	 *Tire Diameter in inches, used to calculate MPH
 	 */
 	settings.attach(14, 5.85, callback<float, &tireDiameter>);
 
-	/*GROUNDSETTING index="15" name="Steer Center" def="90"
+	/*GROUNDSETTING index="15" name="Steer Center" min="0" max="180" def="90"
 	 *Center point in degrees corresponding to driving straight
 	 */
 	settings.attach(15, 90, callback<int, &steerCenter>);
@@ -1497,12 +1496,12 @@ void setupSettings()
 //Target radi settings
 
 
-	/*GROUNDSETTING index="16" name="Waypoint acheived radius in miles" def=".0015"
+	/*GROUNDSETTING index="16" name="Waypoint acheived radius in miles" min="0" max=".003" def=".0015"
 	 * Radius centered at waypoint where target is determined to be meet
 	 */
 	settings.attach(16, .0015, callback<float,&PointRadius>);
 
-	/*GROUNDSETTING index="17" name="Approach radius" def=".0038"
+	/*GROUNDSETTING index="17" name="Approach radius" min="0" max=".0076" def=".0038"
 	 * Radius cneter at waypoint where the approach flag is set
 	 */
 	settings.attach(17, .0038, callback<float,&approachRadius>);
@@ -1510,24 +1509,24 @@ void setupSettings()
 
 //skew
 
-	/*GROUNDSETTING index="57" name="steer skew" def="0"
+	/*GROUNDSETTING index="57" name="Steer Skew" min="-45" max="45" def="0"
 	 *
 	 */
 	settings.attach(57, 0, callback<float,&steerSkew>);
 
 //ping 
 
-	/*GROUNDSETTING index="58" name="Avoid Ping value Edges" def="1000"
+	/*GROUNDSETTING index="58" name="Avoid Ping value Edges" min="500" max="10000" def="1000"
 	 *
 	 */
 	settings.attach(58, 1000, &pingBlockLevelEdgesCallback);
 
-	/*GROUNDSETTING index="59" name="Avoid Ping value Middles" def="1600"
+	/*GROUNDSETTING index="59" name="Avoid Ping value Middles" min="500" max="10000" def="1600"
 	 *
 	 */
 	settings.attach(59, 1600, &pingBlockLevelMiddlesCallback);
 
-	/*GROUNDSETTING index="60" name="Avoid Ping value center" def="3000"
+	/*GROUNDSETTING index="60" name="Avoid Ping value center" min="500" max="10000" def="3000"
 	 *
 	 */
 	settings.attach(60, 3000, &pingBlockLevelCenterCallback);
@@ -1535,17 +1534,17 @@ void setupSettings()
 
 
 
-	/*GROUNDSETTING index="61" name="Warn Ping value Edges" def="2000"
+	/*GROUNDSETTING index="61" name="Warn Ping value Edges" min="500" max="10000" def="2000"
 	 *
 	 */
 	settings.attach(61, 2000, &pingWarnLevelEdgesCallback);
 
-	/*GROUNDSETTING index="62" name="Warn Ping value Middles" def="3200"
+	/*GROUNDSETTING index="62" name="Warn Ping value Middles" min="500" max="10000" def="3200"
 	 *
 	 */
 	settings.attach(62, 3200, &pingWarnLevelMiddlesCallback);
 
-	/*GROUNDSETTING index="63" name="Warn Ping value center" def="6000"
+	/*GROUNDSETTING index="63" name="Warn Ping value center" min="500" max="10000" def="6000"
 	 *
 	 */
 	settings.attach(63, 6000, &pingWarnLevelCenterCallback);
