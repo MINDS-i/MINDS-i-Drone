@@ -63,6 +63,7 @@ Copyright 2015 MINDS-i Inc.
 #include "input/APM/LEA6H_sim.h"
 
 #include "input/APM/MPU6000.h"
+#include "input/APM/MPU6000_HW.h"
 #include "input/APM/MS5611.h"
 #include "input/APM/Power.h"
 #include "input/AxisTranslator.h"
