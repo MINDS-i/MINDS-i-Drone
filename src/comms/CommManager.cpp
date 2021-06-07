@@ -199,13 +199,25 @@ inline void CommManager::handleWaypoint(uint8_t* msg, uint8_t length)
 	switch(subtype)
 	{
 		case ADD:
+			#ifdef extLogger
+			Serial2.print("Adding waypoint ");
+			Serial2.print(index);
+			Serial2.println(": ");
+			#endif
 			if(index > waypoints->size()) 
 			{
 				requestResync();
+				#ifdef extLogger
+				Serial2.println("Failed, Out of range");
+				#endif
+
 				return;
 			}
-			//todo fix. Now we assume index is ok?
-			//add would returns error but ignored
+
+			#ifdef extLogger
+			Serial2.println("Adding");
+			#endif
+
 			waypoints->add(index, data);
 			if(index <= getTargetIndex()) 
 				advanceTargetIndex();
@@ -213,11 +225,22 @@ inline void CommManager::handleWaypoint(uint8_t* msg, uint8_t length)
 				cachedTarget = getWaypoint(index);
 			break;
 		case ALTER:
+			Serial2.print("Alter waypoint ");
+			Serial2.print(index);
+			Serial2.println(": ");
+
 			if(index >= waypoints->size()) 
 			{
 				requestResync();
+				#ifdef extLogger
+				Serial2.println("Failed, Out of range");
+				#endif				
 				return;
 			}
+			#ifdef extLogger
+			Serial2.println("Altering");
+			#endif
+
 			waypoints->set(index, data);
 			if(index == getTargetIndex()) 
 				cachedTarget = getWaypoint(index);
@@ -290,17 +313,38 @@ inline void CommManager::handleCommands(uint8_t a, uint8_t b)
 			break;
 		case LOOPING:
 			waypointsLooped = (b!=0);
+			#ifdef extLogger
+			Serial2.print("Looping: ");
+			Serial2.println(b!=0);
+			#endif
 			break;
 		case CLEAR_WAYPOINTS:
 			sendString("Cleared Waypoints");
+			#ifdef extLogger
+			Serial2.print("Cleared Waypoints");
+			#endif
 			waypoints->clear();
 			break;
 		case DELETE_WAYPOINT:
+			#ifdef extLogger
+			Serial2.print("Delete Waypoint ");
+			Serial2.print(b);
+			Serial2.print(": ");
+			#endif
+
 			if(b < 0 || b >= waypoints->size())
 			{
 				requestResync();
+				#ifdef extLogger
+				Serial2.println("failed, Index out of bounds");
+				#endif
+
 				return;
 			}
+			#ifdef extLogger
+			Serial2.println("Removed");			
+			#endif
+
 			waypoints->remove(b);
 			if(b <= getTargetIndex()) 
 				retardTargetIndex();

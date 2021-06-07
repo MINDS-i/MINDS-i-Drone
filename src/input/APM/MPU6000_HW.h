@@ -7,7 +7,7 @@
 //This arduino library is based on the following
 //https://storage.ning.com/topology/rest/1.0/file/get/3691047852?profile=original
 
-//Which accourding to the source is based on:
+//Which according to the source is based on:
 
 //This sketch is largely based on the excellent (but complicated) sketch from Jeff Rowberg, version
 // 6/21/2012, Copyright (c) 2012 J. Rowberg
@@ -81,7 +81,7 @@ protected:
 	float m_euler_y = 0;
 	float m_euler_z = 0;
 
-
+	uint32_t m_lastUpdateTime=0;
 
 public:
 	MPU6000_DMP() { };
@@ -99,6 +99,9 @@ public:
 
     uint16_t irqCount();
     uint16_t irqCountClear();
+
+    uint32_t lastUpdateTime() { return m_lastUpdateTime; }
+    void setLastUpdateTime(uint32_t time) { m_lastUpdateTime = time; }
 
 
     void update();

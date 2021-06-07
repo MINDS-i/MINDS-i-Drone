@@ -28,7 +28,7 @@ uint16_t MPU6000_DMP::irqCountClear()
 void MPU6000_DMP::update()
 {
 	//if we have data ready (interrupt) or if there is data in fifo
-	if (1) //( mpuInterrupt == true || m_fifoCount >= m_packetSize )
+	if ( mpuInterrupt == true || m_fifoCount >= m_packetSize )
 	{
 		//todo: *fix?* it is possible that interrupt maybe fire between above and now.
 		
@@ -65,7 +65,7 @@ void MPU6000_DMP::update()
 
     		if (m_fifoCount >= m_packetSize)
     		{
-				// read a packet from FIFO
+  				// read a packet from FIFO
     			SPIreadBytes(0x74, m_packetSize, m_fifoBuffer, m_chipSelect);
 
     			// track FIFO count here in case there is more than one packet (each of 42 bytes) available
@@ -73,33 +73,34 @@ void MPU6000_DMP::update()
     			//todo: Might be easier to just read packet size directly at beginning of function
     			m_fifoCount = m_fifoCount - m_packetSize;
 
-				m_raw_q_w = ((m_fifoBuffer[0] << 8)  + m_fifoBuffer[1]);  // W
-				m_raw_q_x = ((m_fifoBuffer[4] << 8)  + m_fifoBuffer[5]);  // X
-				m_raw_q_y = ((m_fifoBuffer[8] << 8)  + m_fifoBuffer[9]);  // Y
-				m_raw_q_z = ((m_fifoBuffer[12] << 8) + m_fifoBuffer[13]); // Z
-				m_q_w = m_raw_q_w / 16384.0f;
-				m_q_x = m_raw_q_x / 16384.0f;
-				m_q_y = m_raw_q_y / 16384.0f;
-				m_q_z = m_raw_q_z / 16384.0f;
-				m_AcceX = ((m_fifoBuffer[28] << 8) + m_fifoBuffer[29]);
-				m_AcceY = ((m_fifoBuffer[32] << 8) + m_fifoBuffer[33]);
-				m_AcceZ = ((m_fifoBuffer[36] << 8) + m_fifoBuffer[37]);
-				m_Ax = m_AcceX / 8192.0f; // calculate g-value
-				m_Ay = m_AcceY / 8192.0f; // calculate g-value
-				m_Az = m_AcceZ / 8192.0f; // calculate g-value
-				m_GyroX = ((m_fifoBuffer[16] << 8) + m_fifoBuffer[17]);
-				m_GyroY = ((m_fifoBuffer[20] << 8) + m_fifoBuffer[21]);
-				m_GyroZ = ((m_fifoBuffer[24] << 8) + m_fifoBuffer[25]);
+					m_raw_q_w = ((m_fifoBuffer[0] << 8)  + m_fifoBuffer[1]);  // W
+					m_raw_q_x = ((m_fifoBuffer[4] << 8)  + m_fifoBuffer[5]);  // X
+					m_raw_q_y = ((m_fifoBuffer[8] << 8)  + m_fifoBuffer[9]);  // Y
+					m_raw_q_z = ((m_fifoBuffer[12] << 8) + m_fifoBuffer[13]); // Z
+					m_q_w = m_raw_q_w / 16384.0f;
+					m_q_x = m_raw_q_x / 16384.0f;
+					m_q_y = m_raw_q_y / 16384.0f;
+					m_q_z = m_raw_q_z / 16384.0f;
+					m_AcceX = ((m_fifoBuffer[28] << 8) + m_fifoBuffer[29]);
+					m_AcceY = ((m_fifoBuffer[32] << 8) + m_fifoBuffer[33]);
+					m_AcceZ = ((m_fifoBuffer[36] << 8) + m_fifoBuffer[37]);
+					m_Ax = m_AcceX / 8192.0f; // calculate g-value
+					m_Ay = m_AcceY / 8192.0f; // calculate g-value
+					m_Az = m_AcceZ / 8192.0f; // calculate g-value
+					m_GyroX = ((m_fifoBuffer[16] << 8) + m_fifoBuffer[17]);
+					m_GyroY = ((m_fifoBuffer[20] << 8) + m_fifoBuffer[21]);
+					m_GyroZ = ((m_fifoBuffer[24] << 8) + m_fifoBuffer[25]);
 
 
- 				m_euler_x = atan2((2 * m_q_y * m_q_z) - (2 * m_q_w * m_q_x), (2 * m_q_w * m_q_w) + (2 * m_q_z * m_q_z) - 1); // phi
+	 				m_euler_x = atan2((2 * m_q_y * m_q_z) - (2 * m_q_w * m_q_x), (2 * m_q_w * m_q_w) + (2 * m_q_z * m_q_z) - 1); // phi
 			    m_euler_y = -asin((2 * m_q_x * m_q_z) + (2 * m_q_w * m_q_y));                                        // theta
 			    m_euler_z = atan2((2 * m_q_x * m_q_y) - (2 * m_q_w * m_q_z), (2 * m_q_w * m_q_w) + (2 * m_q_x * m_q_x) - 1); // psi
 			    // m_euler_x = m_euler_x * 180/M_PI; // angle in degrees -180 to +180
 			    // m_euler_y = m_euler_y * 180/M_PI; // angle in degrees
 			    // m_euler_z = m_euler_z * 180/M_PI; // angle in degrees -180 to +180
 
-				m_updateReady=true;
+				  m_updateReady=true;
+				  m_lastUpdateTime=millis();
 
     		}
     		else
