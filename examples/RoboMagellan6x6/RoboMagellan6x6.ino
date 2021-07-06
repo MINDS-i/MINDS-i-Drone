@@ -404,7 +404,7 @@ void clearAutoStateFlag(uint8_t flag)
 
 bool isSetAutoStateFlag(uint8_t flag)
 {
-	return ( autoStateFlags & flag ) > 0 ? true : false;
+	return ( (autoStateFlags) & flag ) > 0 ? true : false;
 }
 
 
@@ -1238,7 +1238,11 @@ void navigate()
 			//deal with speed reduction for caution and approach
 			if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION) || isSetAutoStateFlag(AUTO_STATE_FLAG_APPROACH))
 			{
-				speed = speed/2;
+				float old_speed = speed;
+				speed = speed/2.0;
+				String msg("Approach Speed set to " + String(speed) + " from " + String(old_speed));
+				manager.sendString(msg.c_str());	
+
 			}
 			
 			output(speed, outputAngle);
