@@ -1697,6 +1697,10 @@ void reportLocation()
 	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),3, ping[3][PING_CUR] );
 	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),4, ping[4][PING_CUR] );
 
+	//extra gps info
+	manager.sendTelem(Protocol::telemetryType(GPSNUMSAT), gps.getNumSat());
+	manager.sendTelem(Protocol::telemetryType(GPSHDOP), gps.getHDOP());
+
 	digitalWrite(45,LOW);
 }
 

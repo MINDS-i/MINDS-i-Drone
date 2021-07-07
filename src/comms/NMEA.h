@@ -12,7 +12,9 @@ class NMEA;
  *   on success
  * return weather or not the parse succeeded
  */
-typedef bool (*SectionHandler)(NMEA&);
+typedef bool (*sectionHandler)(NMEA&);
+
+
 
 class NMEA{
 public:
@@ -45,6 +47,10 @@ public:
 	/** Latitude/Longitude location as a Waypoint, CCW positive */
 	Waypoint getLocation(){ return Waypoint(latitude,longitude);	}
 
+	uint16_t getNumSat(){ return numSV; }
+	float getHDOP(){ return hdop; }
+
+
 	bool getUpdatedRMC()
 	{
 		return updatedRMC;
@@ -63,6 +69,8 @@ private:
 	float groundSpeed = 0;
 	float course = 0;
 	float magVar = 0;
+	unsigned int numSV=0;
+	float hdop = 0.0;
 	uint16_t dataFrameIndex = 0;
 
 	bool updatedRMC = false;
@@ -70,6 +78,7 @@ private:
 	//holds a section between commas in a GPRMC string
 	char sectionBuf[16];
 	int sectionBufPos = 0;
+	int nmeaMsgType = -1;
 	const int sizeSectionBuf = sizeof(sectionBuf)/sizeof(sectionBuf[0]);
 	void clearBuffer(){ //here for inlining
 		sectionBufPos = 0;
@@ -86,13 +95,18 @@ private:
      * on failure, return false and leave `store` alone
 	 */
 	bool readFloat(float& store);
+	//same as readFloat but with unsigned int type
+	bool readUInt(unsigned int& store);
 	//holds the parsers sequence position in the $GPRMC string, -1 otherwise
 	int seqPos = -1;
 	//holds a temporary latitude or longitude value that has not been fully read
 	float tmpLatLon;
 	//an array of section handlers, coresponding to sections of a GPRMC string
-	static const SectionHandler sectionHandlers[];
-	static const int NumSections;
+	static const sectionHandler sectionHandlersGPRMC[];
+	static const sectionHandler sectionHandlersGPGNS[];
+	static const int numSectionsGPRMC;
+	static const int numSectionsGPGNS;
+	int numSections=0;
 
 	bool handleSections();
 };

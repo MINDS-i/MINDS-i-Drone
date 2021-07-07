@@ -13,16 +13,28 @@ namespace{
 	}
 }
 
+
+enum NMEA_MSG_TYPE_ENUM 
+{
+	NMEA_MSG_TYPE_UNKNOWN = 0,
+	NMEA_MSG_TYPE_GPRMC,
+	NMEA_MSG_TYPE_GPGNS,
+};
+
 void NMEA::update(){
-	while(inStream.available()){
+	while(inStream.available())
+	{
 		char n = inStream.read();
 
 		// NMEA strings always begin with a '$', followed by comma sep. values
 		// Attempt to parse any NMEA string, parsing each value as it comes
 		// until the end of the string is reached or a value fails to parse
 
+		//Serial.print(n);
+
 		if(n == '$') 
 		{
+			//Serial.println(n);
 			dataFrameIndex++;
 			seqPos = 0;
 			clearBuffer();
@@ -36,11 +48,27 @@ void NMEA::update(){
 			} 
 			else 
 			{
+				bool parseSuccess=false;
+
 				// two consective commas is not an error, just skip it
-				bool parseSuccess = (sectionBufPos==0)? true : handleSections();
-				seqPos = (parseSuccess)? seqPos+1 : -1; //reset parser on fail
+				if (sectionBufPos==0)
+				{
+					parseSuccess=true;
+				}
+				else
+				{				
+					parseSuccess = handleSections();
+				}
+
+				if (!parseSuccess)
+					seqPos=-1;
+				else
+					seqPos+=1;
+
+
 				clearBuffer();
-				if(seqPos >= NumSections) 
+
+				if(seqPos >= numSections) 
 				{
 					// dataFrameIndex++; could be here to only advance the
 					// index when a full packed is completed, but the
@@ -50,9 +78,11 @@ void NMEA::update(){
 					// to validate its placement here
 					seqPos = -1; //done reading
 					updatedRMC = true;
+					nmeaMsgType = NMEA_MSG_TYPE_UNKNOWN;
 				}
 			}
 		}
+
 	}
 }
 
@@ -64,10 +94,73 @@ bool NMEA::readFloat(float& store){
 	return true;
 }
 
+bool NMEA::readUInt(unsigned int& store){
+	char* endptr;
+	unsigned int tmp = (unsigned int)strtoul(sectionBuf, &endptr,10);
+	if(endptr == sectionBuf) return false;
+	store = tmp;
+	return true;
+}
 
-bool NMEA::handleSections(){
+bool NMEA::handleSections()
+{
+	bool retval = 0;
 	sectionBuf[sectionBufPos] = '\0';
-	return sectionHandlers[seqPos](*this);
+
+	//The first seqPos is used to determine the nmeaMsgType
+	if (seqPos == 0)
+	{
+		//first section handler should not modify anything in class just return true/false
+		if (sectionHandlersGPRMC[0](*this))
+		{
+			nmeaMsgType = NMEA_MSG_TYPE_GPRMC;
+			numSections = numSectionsGPRMC;
+			retval = 1;
+			//debug
+			//Serial.println("Found gprmc");
+		}
+		else if (sectionHandlersGPGNS[0](*this))
+		{
+			nmeaMsgType = NMEA_MSG_TYPE_GPGNS;
+			numSections = numSectionsGPGNS;
+			retval = 1;
+			//Serial.println("Found gpgns");
+		}
+		else
+		{
+			//invalid message
+			nmeaMsgType = NMEA_MSG_TYPE_UNKNOWN;
+			numSections = 0;
+			retval = 0;
+			//Serial.println("Found unhandled message");
+		}
+	}
+	else
+	{
+		//Serial.println(seqPos);
+		switch (nmeaMsgType)
+		{
+			case NMEA_MSG_TYPE_GPRMC:
+				retval = sectionHandlersGPRMC[seqPos](*this);
+				//if (!retval)
+				//	Serial.println("===Error parsinng gprmc==");
+			break;
+			case NMEA_MSG_TYPE_GPGNS:
+				retval = sectionHandlersGPGNS[seqPos](*this);
+				//if (!retval)
+				//	Serial.println("===Error parsinng gprmc==");				
+			break;
+			default:
+				//Do nothing or return error?
+				retval = 0;
+			break;	
+			//Serial.println("");		
+		}
+
+	}
+
+	return retval;
+
 }
 
 /* using an array of lambdas:
@@ -75,9 +168,10 @@ bool NMEA::handleSections(){
 	automatically determines number of sections
 	is slightly faster than a switch statement
 */
-const SectionHandler NMEA::sectionHandlers[] {
+const sectionHandler NMEA::sectionHandlersGPRMC[] {
 	//GPRMC
 	[](NMEA& nmea) -> bool {
+		//Serial.println(nmea.sectionBuf);
 		return strcmp("GPRMC", nmea.sectionBuf) == 0
 				|| strcmp("GNRMC", nmea.sectionBuf) == 0;
 	},
@@ -131,6 +225,48 @@ const SectionHandler NMEA::sectionHandlers[] {
 	[](NMEA& nmea) -> bool {
 		if(nmea.sectionBuf[0] == 'E') nmea.magVar *= -1;
 		return true;
-	},
+	}
 };
-const int NMEA::NumSections =sizeof(sectionHandlers)/sizeof(sectionHandlers[0]);
+
+
+const sectionHandler NMEA::sectionHandlersGPGNS[] {
+	//GPRMC
+	[](NMEA& nmea) -> bool {
+		return strcmp("GPGNS", nmea.sectionBuf) == 0
+				|| strcmp("GNGNS", nmea.sectionBuf) == 0;
+	},
+	//utc time
+	[](NMEA& nmea) -> bool { return 1; },
+	//lat
+	[](NMEA& nmea) -> bool { return 1; },
+	//lat n/s
+	[](NMEA& nmea) -> bool { return 1; },
+	//long
+	[](NMEA& nmea) -> bool { return 1; },	
+	//long e/w
+	[](NMEA& nmea) -> bool { return 1; },	
+	//posMode (status for gps,glonass,galileo,Beidou)
+	[](NMEA& nmea) -> bool { return 1; },
+	//NumSV
+	[](NMEA& nmea) -> bool {
+		bool success = nmea.readUInt(nmea.numSV);		
+		return success;
+	},
+	//HDOP
+	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.hdop); },
+	//alt
+	[](NMEA& nmea) -> bool { return 1; },
+	//sep
+	[](NMEA& nmea) -> bool { return 1; },
+	//diffAge
+	[](NMEA& nmea) -> bool { return 1; },
+	//difstation
+	[](NMEA& nmea) -> bool { return 1; },
+	//nav status
+	[](NMEA& nmea) -> bool { return 1; },
+
+
+};
+
+const int NMEA::numSectionsGPRMC =sizeof(sectionHandlersGPRMC)/sizeof(sectionHandlersGPRMC[0]);
+const int NMEA::numSectionsGPGNS =sizeof(sectionHandlersGPGNS)/sizeof(sectionHandlersGPGNS[0]);

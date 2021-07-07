@@ -61,7 +61,10 @@ namespace Protocol{
                         RDGEAR      = 13,
                         HOMELATITUDE = 14,
                         HOMELONGITUDE = 15,
-                        HOMEALTITUDE = 16 };
+                        HOMEALTITUDE = 16,
+                        DELTAALTITUDE = 17,
+                        GPSNUMSAT = 18,
+                        GPSHDOP = 19,  };
     enum sensorType
     {
         OBJDETECT_SONIC = 0
