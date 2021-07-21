@@ -7,6 +7,7 @@
 #include "version.h"
 
 
+
 //=============================================//
 //  Defines used to control compile options
 //=============================================//
@@ -77,6 +78,9 @@ LEA6H			gps;
 //MPU6000			mpu;
 MPU6000_DMP		mpudmp;
 
+
+bumper bumperSensor;
+
 CommManager		manager(commSerial, storage);
 Settings		settings(storage);
 Waypoint		location(0,0);
@@ -91,7 +95,7 @@ ServoGenerator::Servo servo[3]; //drive, steer, backSteer
 
 //== scheduler, navigation, obstacle, stop times ==
 
-uint32_t uTime = 0, nTime = 0, sTime = 0;
+uint32_t uTime = 0, nTime = 0, sTime = 0, pTime;
 #ifdef simMode
 uint32_t simTime = 0;
 #endif
@@ -119,7 +123,7 @@ float cur_euler_z=0;
 double   gyroHalf; //Store Gyro Heading halfway between gps points
 double   distance;
 boolean  stop = true;
-boolean  backDir;
+uint8_t  backDir;
 
 //todo testing
 float lastOutputAngle=0;
@@ -173,6 +177,7 @@ uint8_t autoStateFlags=AUTO_STATE_FLAGS_NONE;
 //==================================
 
 void checkPing();
+void checkBumperSensor();
 void readAccelerometer();
 void reportLocation();
 void reportState();
@@ -209,6 +214,7 @@ struct schedulerData scheduler[] =
 	{reportLocation,	110	,44		,1},
 	{reportState,		110	,110	,1},
 	{checkPing,			22	,88		,1},
+	{checkBumperSensor, 80	,55		,1},
 	//{navigate,			0	,66		,1},
 	{compass_sync,		500	,1000	,0},
 	#ifdef simMode
@@ -223,6 +229,7 @@ enum SCHEDULED_FUNCTIONS
 	SCHD_FUNC_RPRTLOC,
 	SCHD_FUNC_RPRTSTATE,
 	SCHD_FUNC_CHKPING,
+	SCHD_FUNC_BUMPSENSOR,
 	//SCHD_FUNC_NAVIGATE,
 	SCHD_FUNC_COMPASS_SYNC,
 	#ifdef simMode	
@@ -251,6 +258,7 @@ int		revThrow;
 float	revSpeed;
 float	pingWeight;
 int		avoidCoastTime, avoidStraightBack, avoidSteerBack; 
+int     cautionTime=1000;
 float	tireDiameter;
 int		steerCenter;
 //in miles, margin for error in rover location
@@ -433,8 +441,6 @@ void setup()
 	#endif
 
 	changeAPMState(APM_STATE_INIT);
-
-
 	setupSettings();
 
 	//initialize vars with sane values
@@ -469,6 +475,7 @@ void setup()
 
 	gps.begin();
 
+	bumperSensor.begin(A6,A5);
 
 	//mpu.begin();
 	
@@ -507,18 +514,16 @@ void setup()
 	manager.setStateStartCallback(stateStart);
 	manager.setVersionCallback(version);
 
-	//===   ba testing ===//
-	pinMode(A5, OUTPUT);
-    pinMode(A6, OUTPUT);
+	// //===   ba testing ===//
 
-    pinMode(A7, OUTPUT);    
-	pinMode(A8, OUTPUT);
+    // pinMode(A7, OUTPUT);    
+	// pinMode(A8, OUTPUT);
 	
-	pinMode(13, OUTPUT);
+	// pinMode(13, OUTPUT);
 	
-	#ifdef extLogger
-	pinMode(45, OUTPUT);
-	#endif
+	// #ifdef extLogger
+	// pinMode(45, OUTPUT);
+	// #endif
 
 	//=== end ba testing ===//
 
@@ -570,23 +575,16 @@ void loop()
 	
 
 
-	digitalWrite(A5, HIGH);
 
 	//======================================================
 	//Functions that don't directely affect the rover.
 	//======================================================
 
-	digitalWrite(A6, HIGH);
 	manager.update();
-	digitalWrite(A6, LOW);
 
-	digitalWrite(A6, HIGH);
 	updateGPS();
-	digitalWrite(A6, LOW);
-
-	digitalWrite(A6, HIGH);
 	updateGyro();
-	digitalWrite(A6, LOW);
+	bumperSensor.update();
 
 	//======================================================
 	//Functions that are run in various states and at 
@@ -618,7 +616,6 @@ void loop()
 		{
 			scheduler[i].lastTime = scheduler[i].delay+millis();
 			scheduler[i].function();			
-			////digitalWrite(A5, LOW);
 
 			//ba- think over.  Issue is that the same *faster* tasks may run without
 			//letting others *slower* tasks run 
@@ -735,7 +732,6 @@ void loop()
 
 
 
-	digitalWrite(A5,LOW);
 }
 
 
@@ -844,6 +840,8 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
 					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
+					scheduler[SCHD_FUNC_BUMPSENSOR].enabled 	= true;
+					
 					//scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
 					#ifdef simMode
 					scheduler[SCHD_FUNC_UPDATESIM].enabled 	= true;
@@ -877,6 +875,7 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
 					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
+					scheduler[SCHD_FUNC_BUMPSENSOR].enabled 	= true;
 					//scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
 					
 					#ifdef simMode
@@ -911,6 +910,7 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
 					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
+					scheduler[SCHD_FUNC_BUMPSENSOR].enabled 	= true;
 					//scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
 
 					//Only radio state sets previous drivestate
@@ -980,13 +980,62 @@ void changeAutoState(uint8_t newState)
 					//might consider leaving in caution but for now...
 					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
 
-					//determine backup angle
+					
 					output(0, steerCenter);
 					sTime = millis();
+					
 
+					//determine backup angle. -1 left, 0 center, 1 right
 					//Maybe find weight of left vs right (rather then just edge)
-					backDir = ping[0][PING_CUR]<ping[4][PING_CUR];
-					//change speed 
+					int8_t pingBackDir;
+					if (ping[0][PING_CUR]==ping[4][PING_CUR])
+						pingBackDir = 0;
+					else if (ping[0][PING_CUR] < ping[4][PING_CUR])
+						pingBackDir = -1;
+					else
+						pingBackDir = 1;
+
+					int8_t bumperBackDir;
+					if (bumperSensor.leftButtonState()==bumperSensor.rightButtonState())
+						pingBackDir = 0;
+					else if (bumperSensor.leftButtonState() < bumperSensor.rightButtonState())
+						pingBackDir = -1;
+					else
+						pingBackDir = 1;
+
+					// Avoid: back direction mapping
+					//
+					//	  | -1 |  0 |  1 |
+					// -------------------
+					// -1 | x  | y  |  w |
+					// -------------------
+					// 0  | z  | x  |  z |
+					// -------------------
+					// 1  |	w  | y  |  x |
+					// -------------------
+					//
+					// x == direction match
+					// y and z == one sensor is 'straight back' use other one
+					// w == sensor are opposite so just go straight back
+
+					if (pingBackDir == bumperBackDir)
+					{
+						backDir = pingBackDir;
+					}
+					else if (pingBackDir == 0)
+					{
+						backDir = bumperBackDir;
+					}
+					else if (bumperBackDir == 0)
+					{
+						backDir = pingBackDir;
+					}
+					else
+					{
+						//both sensor say to go opposite direction. So go straight?
+						backDir=0;
+					}
+
 
 					autoState=newState;
 					break;
@@ -1099,10 +1148,16 @@ void navigate()
 			}		
 			else if ( millis() > sTime+avoidStraightBack )
 			{
-				if(backDir) 
+				//todo:  Driving straight back might cause issues.
+				//        We may need to still drive left or right. Random?
+
+				if(backDir == 0)					
+					output(revSpeed, steerCenter);
+				else if (backDir < 0) 
 					output(revSpeed, steerCenter-revThrow);
 				else 		
 					output(revSpeed, steerCenter+revThrow);
+
 			}		
 			else if( millis() > sTime+avoidCoastTime )
 			{			
@@ -1416,6 +1471,33 @@ void positionChanged()
 
 }
 
+void checkBumperSensor()
+{
+	if ( driveState == DRIVE_STATE_AUTO && autoState == AUTO_STATE_FULL)
+	{	
+		uint8_t leftButtonEvent=bumperSensor.leftButtonEvent();
+		uint8_t rightButtonEvent=bumperSensor.rightButtonEvent();
+
+		if (leftButtonEvent || rightButtonEvent)
+		{			
+			uint8_t leftButtonState=bumperSensor.leftButtonState();
+			uint8_t rightButtonState=bumperSensor.rightButtonState();
+
+			String msg("Left: " + String(leftButtonEvent) + " Right: " + String(rightButtonEvent));
+			manager.sendString(msg.c_str());	
+
+			if (leftButtonState || rightButtonState)
+			{		
+				String msg("Left: " + String(leftButtonState) + " Right: " + String(rightButtonState));
+				manager.sendString(msg.c_str());
+
+				changeAutoState(AUTO_STATE_AVOID);	
+			}
+		}
+
+	}	
+}
+
 void checkPing()
 {
 
@@ -1451,7 +1533,8 @@ void checkPing()
 				if ( !isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
 				{
 					setAutoStateFlag(AUTO_STATE_FLAG_CAUTION);	
-
+					//set current time
+					pTime=millis();
 					//extLog("Caution flag: ","1");
 
 				}
@@ -1460,8 +1543,11 @@ void checkPing()
 			{		
 				if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
 				{
-
-					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
+					//check if enough time has passed to clear
+					if (pTime + cautionTime < millis())
+					{
+						clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
+					}
 
 					//extLog("Caution flag: ","0");
 
@@ -1470,8 +1556,6 @@ void checkPing()
 		}
 	}
 
-
-	//digitalWrite(A8,LOW);
 }
 
 void output(float mph, uint8_t steer)
@@ -1696,6 +1780,9 @@ void reportLocation()
 	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),2, ping[2][PING_CUR] );
 	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),3, ping[3][PING_CUR] );
 	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),4, ping[4][PING_CUR] );
+
+	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_BUMPER),BUMPER_BUTTON_LEFT, bumperSensor.leftButtonState());
+	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_BUMPER),BUMPER_BUTTON_RIGHT, bumperSensor.rightButtonState());
 
 	digitalWrite(45,LOW);
 }

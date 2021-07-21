@@ -64,7 +64,8 @@ namespace Protocol{
                         HOMEALTITUDE = 16 };
     enum sensorType
     {
-        OBJDETECT_SONIC = 0
+        OBJDETECT_SONIC = 0,
+        OBJDETECT_BUMPER = 1,
     };
 
     enum infoType { APM_VERSION = 0,

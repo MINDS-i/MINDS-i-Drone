@@ -71,6 +71,8 @@ Copyright 2015 MINDS-i Inc.
 //#include "input/Sensor.h"
 #include "input/SPIcontroller.h"
 #include "input/UM7.h"
+#include "input/Bumper.h"
+
 
 #include "math/Algebra.h"
 #include "math/Quaternion.h"
