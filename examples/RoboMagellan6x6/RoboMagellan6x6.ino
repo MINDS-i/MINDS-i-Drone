@@ -156,6 +156,7 @@ enum AUTO_STATE_FLAGS {
 	AUTO_STATE_FLAGS_NONE=0,
 	AUTO_STATE_FLAG_CAUTION=1,
 	AUTO_STATE_FLAG_APPROACH=2,
+	AUTO_STATE_FLAG_TURNAROUND=3,
 };
 
 
@@ -1131,7 +1132,37 @@ void navigate()
 			extLog("angularError",angularError,6);
 
 			//angularCorrection = (lastAngularError - angularError) - lastOutputAngle - lastAngularCorrection;
-			
+
+
+
+			if (!isSetAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND))
+			{
+				//turn around if next waypoint is behind the rover
+				if (angularError > 65)
+				{				
+					setAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND);
+					turnAroundDir=1;
+				}
+				else if (angularError < -65)
+				{
+					setAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND);
+					turnAroundDir=-1;
+				}			
+			}
+			else
+			{
+				//stop turning around when we are close to the right
+				//direction
+				if (angularError <= 35 ||  angularError <= -35)
+				{
+						clearAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND);
+						turnAroundDir=0;
+				}
+			}
+
+
+
+
 			switch(steerStyle)
 			{
 				case 0:
@@ -1160,6 +1191,18 @@ void navigate()
 					// at this point we could be 180 degress off and have output angle of 90
 					outputAngle = (angularError/180.l)*(2.l*steerThrow);
 					break;
+			}
+
+
+			if (isSetAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND))
+			{
+				//If the sign is swapped it is because the rover crossed over center line
+				//which means angularError is not 100% correct (i.e. 182 vs 178) but is close enough I think that
+				//it doesn't really need to be coded as in a few updates it will be correct.
+				if (turnAroundDir == 1)
+					angularError += angularError > 0 ? (180-angularError) : -1.0;
+				else
+					angularError += angularError < 0 ? -1.0 : 1.0;
 			}
 
 
