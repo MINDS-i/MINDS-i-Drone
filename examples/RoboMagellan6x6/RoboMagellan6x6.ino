@@ -1473,28 +1473,19 @@ void positionChanged()
 
 void checkBumperSensor()
 {
+	uint8_t leftButtonState=bumperSensor.leftButtonState();
+	uint8_t rightButtonState=bumperSensor.rightButtonState();
+
+	//String msg("Left: " + String(leftButtonState) + " Right: " + String(rightButtonState));
+	//	manager.sendString(msg.c_str());
+
 	if ( driveState == DRIVE_STATE_AUTO && autoState == AUTO_STATE_FULL)
-	{	
-		uint8_t leftButtonEvent=bumperSensor.leftButtonEvent();
-		uint8_t rightButtonEvent=bumperSensor.rightButtonEvent();
-
-		if (leftButtonEvent || rightButtonEvent)
-		{			
-			uint8_t leftButtonState=bumperSensor.leftButtonState();
-			uint8_t rightButtonState=bumperSensor.rightButtonState();
-
-			String msg("Left: " + String(leftButtonEvent) + " Right: " + String(rightButtonEvent));
-			manager.sendString(msg.c_str());	
-
-			if (leftButtonState || rightButtonState)
-			{		
-				String msg("Left: " + String(leftButtonState) + " Right: " + String(rightButtonState));
-				manager.sendString(msg.c_str());
-
-				changeAutoState(AUTO_STATE_AVOID);	
-			}
+	{
+		if (leftButtonState || rightButtonState)
+		{		
+	
+			changeAutoState(AUTO_STATE_AVOID);	
 		}
-
 	}	
 }
 
