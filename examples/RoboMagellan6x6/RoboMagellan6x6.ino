@@ -1197,12 +1197,16 @@ void navigate()
 			if (isSetAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND))
 			{
 				//If the sign is swapped it is because the rover crossed over center line
-				//which means angularError is not 100% correct (i.e. 182 vs 178) but is close enough I think that
-				//it doesn't really need to be coded as in a few updates it will be correct.
-				if (turnAroundDir == 1)
-					angularError += angularError > 0 ? (180-angularError) : -1.0;
-				else
-					angularError += angularError < 0 ? -1.0 : 1.0;
+				//which means angularError is not 100% correct (i.e. 182 vs 178) but is close enough 
+				//given that the outputAngle will be reduced to steerThrow
+
+				//if we are forcing right turn but calculations says left; Force right.
+				//else if we are forcing left turn but calculations says right; Force left.
+				//else do nothing as we are turning in correct direction.
+				if (turnAroundDir == 1 && angularError < 0)
+					outputAngle *= -1.0;
+				else if (turnAroundDir == -1 && angularError > 0)
+					outputAngle *= -1.0;
 			}
 
 
