@@ -61,6 +61,8 @@ double   trueHeading;
 //test for correcting mechanically caused drift left-right
 float steerSkew = 0;
 
+uint8_t turnAroundDir=0;
+
 //== hardware related ==
 
 HardwareSerial *commSerial	= &Serial;
@@ -153,10 +155,10 @@ enum AUTO_STATES {
 
 //warning assign as flags. Unique bits 1,2,4,8,etc
 enum AUTO_STATE_FLAGS {
-	AUTO_STATE_FLAGS_NONE=0,
-	AUTO_STATE_FLAG_CAUTION=1,
-	AUTO_STATE_FLAG_APPROACH=2,
-	AUTO_STATE_FLAG_TURNAROUND=3,
+	AUTO_STATE_FLAGS_NONE		=0x00,
+	AUTO_STATE_FLAG_CAUTION		=0x01,
+	AUTO_STATE_FLAG_APPROACH	=0x02,
+	AUTO_STATE_FLAG_TURNAROUND	=0x04,
 };
 
 
