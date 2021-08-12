@@ -64,6 +64,24 @@ bool NMEA::readFloat(float& store){
 	return true;
 }
 
+// bool NMEA::readGPSCoordFloat(GPS_COORD coord,uint type)
+// {
+// 	if (type == LATITUDE_TYPE)
+// 	{
+// 		get_latitude(sectionBuf, &gps_start.latitude);
+// 		return true;
+// 	}
+// 	else if (type == LONGITUDE_TYPE)
+// 	{
+// 		get_logitude(sectionBuf, &gps_start.latitude);
+// 		return true;
+// 	}
+// 	else
+// 	{
+// 		return false;
+// 	}
+// }
+
 
 bool NMEA::handleSections(){
 	sectionBuf[sectionBufPos] = '\0';
@@ -92,27 +110,53 @@ const SectionHandler NMEA::sectionHandlers[] {
 		return true;
 	},
 	//Latitude
-	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.tmpLatLon); },
+	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.tmpLatLon) && !get_latitude(nmea.sectionBuf, &nmea.curGPSCoord.latitude); },
 	//Latitude Hemisphere
 	[](NMEA& nmea) -> bool {
-		if(nmea.sectionBufPos != 1) return false;
+		if(nmea.sectionBufPos != 1) 
+		{
+			return false;
+		}
 		else if(nmea.sectionBuf[0] == 'N')
+		{
 			nmea.latitude =  toDecDegrees(nmea.tmpLatLon);
+			gps_angle_apply_sign(&nmea.curGPSCoord.latitude,'N');
+		}
 		else if(nmea.sectionBuf[0] == 'S')
+		{
 			nmea.latitude = -toDecDegrees(nmea.tmpLatLon);
-		else return false;
+			gps_angle_apply_sign(&nmea.curGPSCoord.latitude,'S');
+		}
+		else
+		{ 
+			return false;
+		}
+
 		return true;
 	},
 	//Longitude
-	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.tmpLatLon); },
+	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.tmpLatLon) && !get_longitude(nmea.sectionBuf, &nmea.curGPSCoord.longitude); },
 	//Longitude Hemisphere
 	[](NMEA& nmea) -> bool {
-		if(nmea.sectionBufPos != 1) return false;
+		if(nmea.sectionBufPos != 1)
+		{
+			return false;
+		}
 		else if(nmea.sectionBuf[0] == 'E')
+		{
 			nmea.longitude =  toDecDegrees(nmea.tmpLatLon);
+			gps_angle_apply_sign(&nmea.curGPSCoord.longitude,'E');
+		}
 		else if(nmea.sectionBuf[0] == 'W')
+		{
 			nmea.longitude = -toDecDegrees(nmea.tmpLatLon);
-		else return false;
+			gps_angle_apply_sign(&nmea.curGPSCoord.longitude,'W');
+		}
+		else
+		{ 
+			return false;
+		}
+
 		return true;
 	},
 	//Ground Speed

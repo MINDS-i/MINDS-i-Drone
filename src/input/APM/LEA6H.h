@@ -6,6 +6,7 @@
 #include "comms/NMEA.h"
 #include "input/Sensor.h"
 #include "input/GPS.h"
+#include "math/floatgps.h"
 
 class LEA6H : public Sensor, public GPS {
 protected:
@@ -40,8 +41,12 @@ public:
     float getCourse()       { update(); return parser.getCourse();      }
     float getDateOfFix()    { update(); return parser.getDateOfFix();   }
     float getGroundSpeed()  { update(); return parser.getGroundSpeed(); }
+
+    GPS_COORD getGPS_COORD() { update(); return parser.getGPS_COORD();  }
+
     float getLatitude()     { update(); return parser.getLatitude();    }
     float getLongitude()    { update(); return parser.getLongitude();   }
+
     float getMagVar()       { update(); return parser.getMagVar();      }
     float getTimeOfFix()    { update(); return parser.getTimeOfFix();   }
     #ifdef WAYPOINT_H

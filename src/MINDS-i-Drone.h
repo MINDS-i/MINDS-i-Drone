@@ -78,6 +78,11 @@ Copyright 2015 MINDS-i Inc.
 #include "math/Vec3.h"
 #include "math/Waypoint.h"
 
+#include "math/gps_angle.h"
+#include "math/floatgps.h"
+#include "math/gps_print.h"
+#include "math/ftoa.h"
+
 #include "output/AfroESC.h"
 #include "output/EMaxESC.h"
 #include "output/FlightStrategy.h"
