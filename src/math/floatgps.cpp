@@ -42,8 +42,8 @@ float fearth_radius(float latitude)
 FUNCTION: new_gps_float()
 Calculate new  longitude using float precision
 *****************************************************************************/
-int new_gps_float(GPS_COORD* gps_start, // [in] starting GPS coordinates
-                  LOCAL_COORD* local, // [in] distance and heading
+int new_gps_float(const GPS_COORD* gps_start, // [in] starting GPS coordinates
+                  const LOCAL_COORD* local, // [in] distance and heading
                   GPS_COORD* gps_end) // [out] end GPS coordinates
 {
     int err = 0;
@@ -90,8 +90,8 @@ This assumes that the difference is small and can be represented as a
 float.  This picks the shortest distance.
 These differences are in range -180 < delta <= 180
 ******************************************************************************/
-int calc_delta_gps(GPS_COORD* gps1, // starting GPS
-              GPS_COORD* gps2, // ending GPS
+int calc_delta_gps(const GPS_COORD* gps1, // starting GPS
+              const GPS_COORD* gps2, // ending GPS
               DELTA_GPS* delta_gps) // difference in degrees (float)
 
 {
@@ -108,8 +108,8 @@ Calculate the distance and heading from two GPS coordinates using the Haversine
 method
 This uses the small angle approximation for delta phi and delta lambda
 ******************************************************************************/
-int calc_haversine(GPS_COORD* gps_start, // starting GPS (degrees)
-                   GPS_COORD* gps_end,   // ending GPS (degrees)
+int calc_haversine(const GPS_COORD* gps_start, // starting GPS (degrees)
+                   const GPS_COORD* gps_end,   // ending GPS (degrees)
                    LOCAL_COORD* local)   // [out] local coordinates relative to start
 {
     int err = 0;
@@ -153,7 +153,8 @@ int calc_haversine(GPS_COORD* gps_start, // starting GPS (degrees)
     }
     
     local->heading = theta_deg;
-    
+    local->x = x;
+    local->y = y;
 
     return err;
 } // end calc_haversine

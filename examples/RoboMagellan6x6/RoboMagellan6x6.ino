@@ -641,6 +641,7 @@ void loop()
 	#ifdef extLogger
 	if (Serial2.available())
 	{
+
 		Serial2.println();
 		switch( Serial2.read() )
 		{
@@ -674,9 +675,13 @@ void loop()
 				Serial2.println(lastAngularError);
 
 				Serial2.print(F("Target Waypoint: "));
-				Serial2.print(manager.getTargetWaypoint().degLatitude(),6);
-				Serial2.print(F(" "));
-				Serial2.println(manager.getTargetWaypoint().degLongitude(),6);
+				char str[32];
+				GPS_COORD tempGPSCoord = manager.getTargetWaypoint().m_gpsCoord;
+		        gps_coord_to_str(&tempGPSCoord,str,32,9,"DD");
+		        Serial2.println(str);
+				// Serial2.print(manager.getTargetWaypoint().degLatitude(),6);
+				// Serial2.print(F(" "));
+				// Serial2.println(manager.getTargetWaypoint().degLongitude(),6);
 
 				break;
 			case 'm':
@@ -1256,15 +1261,20 @@ void extrapPosition()
 	//digitalWrite(A7,HIGH);
 
 	float dT = millis()-nTime;
-	if(dT < 1000 && !gps.getWarning()){ //ignore irrational values
+	//ignore irrational values
+	if(dT < 1000 && !gps.getWarning())
+	{ 
 		//3600000 = milliseconds per hour
 		dTraveled = gps.getGroundSpeed()*dT/3600000.f;
 		dTraveled *= (2.l/3.l);//purposly undershoot
 		location = location.extrapolate(trueHeading, dTraveled);
 
-
-		extLog("extrap lat",location.degLatitude(),6);
-		extLog("extrap long",location.degLongitude(),6);
+		char str[32];
+		GPS_COORD tempGPSCoord = location.m_gpsCoord;
+		gps_coord_to_str(&tempGPSCoord,str,32,9,"DD");
+		extLog("Extrap coord",str);
+		//extLog("extrap lat",location.degLatitude(),6);
+		//extLog("extrap long",location.degLongitude(),6);
 
 
 	}
@@ -1292,8 +1302,12 @@ void updateGPS()
 		#ifdef extLogger
 		if (extLogger_gps)
 		{
-		  extLog("GPS lat",location.degLatitude(),6);
-		  extLog("GPS long",location.degLongitude(),6);
+			char str[32];
+			GPS_COORD tempGPSCoord = location.m_gpsCoord;
+			gps_coord_to_str(&tempGPSCoord,str,32,9,"DD");
+			extLog("GPS coord",str);
+			// extLog("GPS lat",location.degLatitude(),6);
+			// extLog("GPS long",location.degLongitude(),6);
 		}
 		#endif
 
@@ -1385,7 +1399,8 @@ void positionChanged()
 
 	if (backWaypoint.radLongitude() == 0 || distance*5280.l < 25)
 	{
-		pathHeading = location.headingTo(manager.getTargetWaypoint());	
+		pathHeading = location.headingTo(manager.getTargetWaypoint());
+
 	} 
 	else 
 	{

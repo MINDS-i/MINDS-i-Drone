@@ -98,7 +98,7 @@ public:
 	Waypoint getTargetWaypoint();
 	Waypoint getWaypoint(uint16_t index);
 
-	void CommManager::addWaypoint(float lat, float lng, uint8_t index, uint16_t alt );
+	void addWaypoint(float lat, float lng, uint8_t index, uint16_t alt );
 
 private:
 	CommManager(const CommManager& copy); //intentionally not implemented
