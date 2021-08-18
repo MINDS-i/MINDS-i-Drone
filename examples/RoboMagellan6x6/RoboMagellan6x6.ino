@@ -155,6 +155,14 @@ enum AUTO_STATES {
 	AUTO_STATE_STALLED,
 };
 
+enum AVOID_STATES {
+	AVOID_STATE_ENTER = 0,
+	AVOID_STATE_COAST,
+	AVOID_STATE_STRAIGHTBACK,
+	AVOID_STATE_STEER,
+	AVOID_STATE_DONE,
+};
+
 //warning assign as flags. Unique bits 1,2,4,8,etc
 enum AUTO_STATE_FLAGS {
 	AUTO_STATE_FLAGS_NONE=0,
@@ -169,6 +177,7 @@ uint8_t driveState=DRIVE_STATE_INVALID;
 uint8_t prevDriveState=DRIVE_STATE_INVALID;
 uint8_t autoState=AUTO_STATE_INVALID;
 uint8_t autoStateFlags=AUTO_STATE_FLAGS_NONE;
+uint8_t avoidState=AVOID_STATE_DONE;
 
 
 
@@ -274,9 +283,11 @@ float compassOffset = M_PI;
 //  Settings callbacks
 //===========================
 
-void dangerTimeCallback(float in){ 
-	avoidStraightBack = avoidCoastTime+(in/2);
-	avoidSteerBack = avoidCoastTime+in; 
+void dangerTimeCallback(float in){
+	//half of danger time goes into straight back
+	//and half into steering backup. 
+	avoidStraightBack = in/2;
+	avoidSteerBack = in/2; 
 }
 
 void pingBlockLevelEdgesCallback(float in){
@@ -611,7 +622,7 @@ void loop()
 
 	for (i=0;i<sizeof(scheduler)/sizeof(*scheduler);i++)
 	{
-		digitalWrite(A6,HIGH);
+		digitalWrite(A7,HIGH);
 		if(scheduler[i].enabled && scheduler[i].lastTime <= millis())
 		{
 			scheduler[i].lastTime = scheduler[i].delay+millis();
@@ -624,7 +635,7 @@ void loop()
 			//break;
 
 		}
-		digitalWrite(A6,LOW);
+		digitalWrite(A7,LOW);
 
 	}
 	//run navigate all the time
@@ -981,9 +992,7 @@ void changeAutoState(uint8_t newState)
 					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
 
 					
-					output(0, steerCenter);
-					sTime = millis();
-					
+					avoidState=AVOID_STATE_ENTER;
 
 					//determine backup angle. -1 left, 0 center, 1 right
 					//Maybe find weight of left vs right (rather then just edge)
@@ -997,11 +1006,11 @@ void changeAutoState(uint8_t newState)
 
 					int8_t bumperBackDir;
 					if (bumperSensor.leftButtonState()==bumperSensor.rightButtonState())
-						pingBackDir = 0;
+						bumperBackDir = 0;
 					else if (bumperSensor.leftButtonState() < bumperSensor.rightButtonState())
-						pingBackDir = -1;
+						bumperBackDir = -1;
 					else
-						pingBackDir = 1;
+						bumperBackDir = 1;
 
 					// Avoid: back direction mapping
 					//
@@ -1137,32 +1146,85 @@ void navigate()
 		if ( autoState == AUTO_STATE_AVOID)
 		{
 
-			//The below is in a specific order to accommodate the flow
-			//of time.  The first check is the furthest in time and working
-			//toward the closest.		
+			switch (avoidState)
+			{
+				case AVOID_STATE_ENTER:
+					//set timer
+					sTime=millis();
+					//setup for next state
+					avoidState=AVOID_STATE_COAST;
+					//revSpeed or 0?
+					output(0, steerCenter);
+					break;
+				case AVOID_STATE_COAST:				
+					if (millis() > sTime+avoidCoastTime)
+					{
+						//reset timer
+						sTime=millis();
+						//setup for next state
+						avoidState=AVOID_STATE_STRAIGHTBACK;
+						output(revSpeed, steerCenter);
+					}
+					break;
+				case AVOID_STATE_STRAIGHTBACK:
+					if (millis() > sTime+avoidStraightBack)
+					{
+						//reset timer
+						sTime=millis();
+						//setup for next state
+						avoidState=AVOID_STATE_STEER;
+
+						if(backDir == 0)
+							output(revSpeed, steerCenter);
+						else if (backDir < 0) 
+							output(revSpeed, steerCenter-revThrow);
+						else 		
+							output(revSpeed, steerCenter+revThrow);
+
+					}
+					break;
+				case AVOID_STATE_STEER:
+					if (millis() > sTime+avoidSteerBack)
+					{
+						//done backup up reset states
+						avoidState=AVOID_STATE_DONE;
+						changeAutoState(AUTO_STATE_FULL);
+					}
+					break;
+
+			}
+
+			// if (avoidState == AVOID_STATE_ENTER)
+			// {
+			// 	sTime=millis();
+
+			// }
+			// //The below is in a specific order to accommodate the flow
+			// //of time.  The first check is the furthest in time and working
+			// //toward the closest.		
 
 			
-			if ( millis() > sTime+avoidSteerBack)
-			{
-				changeAutoState(AUTO_STATE_FULL);
-			}		
-			else if ( millis() > sTime+avoidStraightBack )
-			{
-				//todo:  Driving straight back might cause issues.
-				//        We may need to still drive left or right. Random?
+			// if ( millis() > sTime+avoidSteerBack)
+			// {
+			// 
+			// }		
+			// else if ( millis() > sTime+avoidStraightBack )
+			// {
+			// 	//todo:  Driving straight back might cause issues.
+			// 	//        We may need to still drive left or right. Random?
 
-				if(backDir == 0)					
-					output(revSpeed, steerCenter);
-				else if (backDir < 0) 
-					output(revSpeed, steerCenter-revThrow);
-				else 		
-					output(revSpeed, steerCenter+revThrow);
+			// 	if(backDir == 0)					
+			// 		output(revSpeed, steerCenter);
+			// 	else if (backDir < 0) 
+			// 		output(revSpeed, steerCenter-revThrow);
+			// 	else 		
+			// 		output(revSpeed, steerCenter+revThrow);
 
-			}		
-			else if( millis() > sTime+avoidCoastTime )
-			{			
-				output(revSpeed, steerCenter);
-			}
+			// }		
+			// else if( millis() > sTime+avoidCoastTime )
+			// {			
+			// 	output(revSpeed, steerCenter);
+			// }
 
 		} 	
 		else if (autoState == AUTO_STATE_FULL)
