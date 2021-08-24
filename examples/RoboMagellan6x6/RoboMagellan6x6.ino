@@ -123,7 +123,7 @@ float cur_euler_z=0;
 double   gyroHalf; //Store Gyro Heading halfway between gps points
 double   distance;
 boolean  stop = true;
-uint8_t  backDir;
+int8_t  backDir;
 
 //todo testing
 float lastOutputAngle=0;
@@ -157,10 +157,24 @@ enum AUTO_STATES {
 
 enum AVOID_STATES {
 	AVOID_STATE_ENTER = 0,
-	AVOID_STATE_COAST,
+	AVOID_STATE_BRAKE,
+	AVOID_STATE_DISENGAGE_BRAKE,
 	AVOID_STATE_STRAIGHTBACK,
 	AVOID_STATE_STEER,
+	AVOID_STATE_COAST,
 	AVOID_STATE_DONE,
+	AVOID_STATE_NUM_STATES
+};
+
+const char AVOID_STATES_STRING[AVOID_STATE_NUM_STATES][32] = 
+{
+	"Avoid State Enter",
+	"Avoid State Brake",
+	"Avoid State Disengage_brake",
+	"Avoid State Straightback",
+	"Avoid State Steer",
+	"Avoid State Coast",
+	"Avoid State Done"
 };
 
 //warning assign as flags. Unique bits 1,2,4,8,etc
@@ -284,10 +298,8 @@ float compassOffset = M_PI;
 //===========================
 
 void dangerTimeCallback(float in){
-	//half of danger time goes into straight back
-	//and half into steering backup. 
-	avoidStraightBack = in/2;
-	avoidSteerBack = in/2; 
+	avoidStraightBack = in;
+	avoidSteerBack = in; 
 }
 
 void pingBlockLevelEdgesCallback(float in){
@@ -994,56 +1006,36 @@ void changeAutoState(uint8_t newState)
 					
 					avoidState=AVOID_STATE_ENTER;
 
-					//determine backup angle. -1 left, 0 center, 1 right
-					//Maybe find weight of left vs right (rather then just edge)
-					int8_t pingBackDir;
-					if (ping[0][PING_CUR]==ping[4][PING_CUR])
-						pingBackDir = 0;
-					else if (ping[0][PING_CUR] < ping[4][PING_CUR])
-						pingBackDir = -1;
-					else
-						pingBackDir = 1;
-
 					int8_t bumperBackDir;
+
 					if (bumperSensor.leftButtonState()==bumperSensor.rightButtonState())
-						bumperBackDir = 0;
+					{
+						//Caution bumperBackDir of 0 doesn't mean bumper sensor wasn't triggered
+						//It is either both sensors or triggered or neither
+						bumperBackDir = 0;						
+					}
 					else if (bumperSensor.leftButtonState() < bumperSensor.rightButtonState())
-						bumperBackDir = -1;
-					else
 						bumperBackDir = 1;
+					else
+						bumperBackDir = -1;
 
-					// Avoid: back direction mapping
-					//
-					//	  | -1 |  0 |  1 |
-					// -------------------
-					// -1 | x  | y  |  w |
-					// -------------------
-					// 0  | z  | x  |  z |
-					// -------------------
-					// 1  |	w  | y  |  x |
-					// -------------------
-					//
-					// x == direction match
-					// y and z == one sensor is 'straight back' use other one
-					// w == sensor are opposite so just go straight back
 
-					if (pingBackDir == bumperBackDir)
-					{
-						backDir = pingBackDir;
-					}
-					else if (pingBackDir == 0)
-					{
-						backDir = bumperBackDir;
-					}
-					else if (bumperBackDir == 0)
-					{
-						backDir = pingBackDir;
+					//bumper always takes precidence over ultrasonic
+					//except when both bumper sensors are triggered.  Then use altrasonic to decide
+					if (bumperBackDir!=0)
+					{						
+						backDir=bumperBackDir;
 					}
 					else
 					{
-						//both sensor say to go opposite direction. So go straight?
-						backDir=0;
+						//if bumper isn't set (or both were triggered) then use ultrasonic to decide
+						if (ping[0][PING_CUR] < ping[4][PING_CUR])
+							backDir = -1;
+						else
+							backDir = 1;
+
 					}
+
 
 
 					autoState=newState;
@@ -1120,6 +1112,23 @@ void updateSIM()
 }
 #endif
 
+
+void handleAvoidState(uint8_t speed, int8_t steer, uint8_t nextState, uint32_t timeout)
+{
+	servo[0].write(speed);
+	servo[1].write(steer);
+	servo[2].write(180-steer);
+	if (millis() > sTime+timeout)
+	{
+		//reset timer
+		sTime=millis();
+		//setup for next state
+		avoidState=nextState;
+		manager.sendString(AVOID_STATES_STRING[nextState]);
+
+	}
+}
+
 void navigate()
 {
 	float   mph = ((APMRadio::get(RadioPin[1])-90) / 90.f)*maxFwd;
@@ -1145,86 +1154,52 @@ void navigate()
 
 		if ( autoState == AUTO_STATE_AVOID)
 		{
-
+			//TODO: could be simplified into function calls
+			//inputs: speed,steer,nextstate,timeout
 			switch (avoidState)
 			{
-				case AVOID_STATE_ENTER:
+				case AVOID_STATE_ENTER:					
 					//set timer
 					sTime=millis();
 					//setup for next state
-					avoidState=AVOID_STATE_COAST;
-					//revSpeed or 0?
-					output(0, steerCenter);
+					avoidState=AVOID_STATE_BRAKE;
+					
 					break;
-				case AVOID_STATE_COAST:				
-					if (millis() > sTime+avoidCoastTime)
-					{
-						//reset timer
-						sTime=millis();
-						//setup for next state
-						avoidState=AVOID_STATE_STRAIGHTBACK;
-						output(revSpeed, steerCenter);
-					}
+				case AVOID_STATE_BRAKE:
+					handleAvoidState(45,steerCenter,AVOID_STATE_DISENGAGE_BRAKE,avoidCoastTime);
+					break;	
+				case AVOID_STATE_DISENGAGE_BRAKE:
+					//100ms for brake disengage seem correct
+					handleAvoidState(90,steerCenter,AVOID_STATE_STRAIGHTBACK,100);
 					break;
 				case AVOID_STATE_STRAIGHTBACK:
-					if (millis() > sTime+avoidStraightBack)
-					{
-						//reset timer
-						sTime=millis();
-						//setup for next state
-						avoidState=AVOID_STATE_STEER;
-
-						if(backDir == 0)
-							output(revSpeed, steerCenter);
-						else if (backDir < 0) 
-							output(revSpeed, steerCenter-revThrow);
-						else 		
-							output(revSpeed, steerCenter+revThrow);
-
-					}
+					handleAvoidState(80,steerCenter,AVOID_STATE_STEER,avoidStraightBack);
 					break;
 				case AVOID_STATE_STEER:
-					if (millis() > sTime+avoidSteerBack)
+					int8_t temp_steer;
+					if(backDir == 0)
 					{
-						//done backup up reset states
-						avoidState=AVOID_STATE_DONE;
-						changeAutoState(AUTO_STATE_FULL);
+						temp_steer=steerCenter;
 					}
+					else if (backDir < 0) 
+					{
+						temp_steer=revThrow;
+					}
+					else
+					{
+						temp_steer=-revThrow;						
+					}
+					handleAvoidState(80,temp_steer,AVOID_STATE_COAST,avoidSteerBack);
+					break;
+				case AVOID_STATE_COAST:					
+					handleAvoidState(90,steerCenter,AVOID_STATE_DONE,avoidCoastTime);
+					break;
+				case AVOID_STATE_DONE:
+					changeAutoState(AUTO_STATE_FULL);
 					break;
 
 			}
 
-			// if (avoidState == AVOID_STATE_ENTER)
-			// {
-			// 	sTime=millis();
-
-			// }
-			// //The below is in a specific order to accommodate the flow
-			// //of time.  The first check is the furthest in time and working
-			// //toward the closest.		
-
-			
-			// if ( millis() > sTime+avoidSteerBack)
-			// {
-			// 
-			// }		
-			// else if ( millis() > sTime+avoidStraightBack )
-			// {
-			// 	//todo:  Driving straight back might cause issues.
-			// 	//        We may need to still drive left or right. Random?
-
-			// 	if(backDir == 0)					
-			// 		output(revSpeed, steerCenter);
-			// 	else if (backDir < 0) 
-			// 		output(revSpeed, steerCenter-revThrow);
-			// 	else 		
-			// 		output(revSpeed, steerCenter+revThrow);
-
-			// }		
-			// else if( millis() > sTime+avoidCoastTime )
-			// {			
-			// 	output(revSpeed, steerCenter);
-			// }
 
 		} 	
 		else if (autoState == AUTO_STATE_FULL)
@@ -1610,6 +1585,7 @@ void checkPing()
 	}
 
 }
+
 
 void output(float mph, uint8_t steer)
 {
