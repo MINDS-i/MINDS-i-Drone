@@ -1030,9 +1030,9 @@ void changeAutoState(uint8_t newState)
 					{
 						//if bumper isn't set (or both were triggered) then use ultrasonic to decide
 						if (ping[0][PING_CUR] < ping[4][PING_CUR])
-							backDir = -1;
-						else
 							backDir = 1;
+						else
+							backDir = -1;
 
 					}
 
