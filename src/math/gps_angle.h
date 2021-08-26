@@ -21,18 +21,18 @@ typedef struct
 } GPS_ANGLE;
 
 int get_lonlat(char* str, GPS_ANGLE* lonlat); // convert string to GPS_ANGLE 
-int lonlat_to_str(GPS_ANGLE* lonlat, // [in] angle to convert
+int lonlat_to_str(const GPS_ANGLE* lonlat, // [in] angle to convert
                   char* str, // [in] buffer to place string
                   int len,  // [in] length of buffer including null
                   int num_dec, // [in] number of digits after decimal place
-                  char* fmt);   // [in] one of "DD", "DMM", or "DMS"
+                  const char* fmt);   // [in] one of "DD", "DMM", or "DMS"
 int get_longitude(char* str, GPS_ANGLE* longitude); // convert string longitude to GPS_ANGLE
 int get_latitude(char* str, GPS_ANGLE* latitude); // convert string latitude to GPS_ANGLE
 
-float gps_angle_to_float(GPS_ANGLE* angle); // angle in degrees, loses some precision
+float gps_angle_to_float(const GPS_ANGLE* angle); // angle in degrees, loses some precision
 void float_to_gps_angle(float degrees, GPS_ANGLE* gps); // loses precision
-float gps_angle_diff(GPS_ANGLE* gps1, GPS_ANGLE* gps2);  // difference in degrees (gps2 - gps1)
-int gps_angle_add_increment(GPS_ANGLE* gps, // [in] input gps coordinate
+float gps_angle_diff(const GPS_ANGLE* gps1, const GPS_ANGLE* gps2);  // difference in degrees (gps2 - gps1)
+int gps_angle_add_increment(const GPS_ANGLE* gps, // [in] input gps coordinate
                               float inc, // [in] small increment in degrees
                               GPS_ANGLE* result);  // [out] gps + increment
 void gps_angle_normalize(GPS_ANGLE* angle);  // adjust frac and minutes so -1.f < frac < 1.f

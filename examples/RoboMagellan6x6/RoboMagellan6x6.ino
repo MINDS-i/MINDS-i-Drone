@@ -650,6 +650,7 @@ void loop()
 				euler_z_offset = mpudmp.getEulerZ();
 				break;
 			case 's':
+			{
 				Serial2.print(F("Current euler z: "));
 				Serial2.println(cur_euler_z);
 				Serial2.print(F("Last euler z: "));
@@ -684,6 +685,7 @@ void loop()
 				// Serial2.println(manager.getTargetWaypoint().degLongitude(),6);
 
 				break;
+			}
 			case 'm':
 				Serial2.print(F("APM State:"));
 				Serial2.println(apmState);

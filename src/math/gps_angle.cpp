@@ -22,7 +22,7 @@ Converts GPS_ANGLE value to float degrees
 Loses some precision
 Used to calculate sin and cos when precision is not critical
 ******************************************************************************/
-float gps_angle_to_float(GPS_ANGLE* angle)
+float gps_angle_to_float(const GPS_ANGLE* angle)
 {
     float result;
     result = (float)angle->minutes + angle->frac;
@@ -141,7 +141,7 @@ if the difference is greater than 180 degrees, then go the other way.
 2160 is number of minutes in 360 degrees
 This uses the type of the first angle.  Assumes both are the same
 ******************************************************************************/
-float gps_angle_diff(GPS_ANGLE* gps1, GPS_ANGLE* gps2)
+float gps_angle_diff(const GPS_ANGLE* gps1, const GPS_ANGLE* gps2)
 {
     float result;
     GPS_ANGLE diff;
@@ -159,7 +159,7 @@ FUNCTION:  gps_angle_add_increment
 Adds a float in degrees to GPS_ANGLE
 returns error if |lat| >= 90
 ******************************************************************************/
-int gps_angle_add_increment(GPS_ANGLE* gps,      // [in] gps coordinate
+int gps_angle_add_increment(const GPS_ANGLE* gps,      // [in] gps coordinate
                               float diff,         // [in] small increment in degrees
                               GPS_ANGLE* result)  // [out] gps + increment
 {
@@ -261,11 +261,11 @@ DD = decimal degrees DD.DDDDDDDD (signed)
 DMM = decimal degrees and decimal minutes DD MM.MMMMMMMM (space between, DD has sign)
 DMS = degrees, minutes, and seconds direction, space betwen lat and long
 ******************************************************************************/
-int lonlat_to_str(GPS_ANGLE* lonlat, // [in] angle to convert
+int lonlat_to_str(const GPS_ANGLE* lonlat, // [in] angle to convert
                   char* str, // [in] buffer to place string
                   int len,  // [in] length of buffer including null
                   int num_dec, // [in] number of digits after decimal place
-                  char* fmt)   // [in] one of "DD", "DMM", or "DMS"
+                  const char* fmt)   // [in] one of "DD", "DMM", or "DMS"
 {
     int err = 0;
     if (lonlat->type != LONGITUDE_TYPE && lonlat->type != LATITUDE_TYPE)

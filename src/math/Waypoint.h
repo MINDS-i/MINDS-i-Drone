@@ -55,10 +55,14 @@ public:
 		m_gpsCoord = gpsCoord;	
 	}
 
-	//float radLatitude() const  { return toRad(lat); }
-	//float radLongitude() const { return toRad(lng); }
-	//float degLatitude() const  { return lat; }
-	//float degLongitude() const { return lng; }
+	//*warning* this will return loss of percision.
+	// These should be removed at some point when no longer used
+	float radLatitude() const  { return toRad(degLatitude()); }
+	float radLongitude() const { return toRad(degLongitude()); }
+	float degLatitude() const  { return gps_angle_to_float(&m_gpsCoord.latitude); }
+	float degLongitude() const { return gps_angle_to_float(&m_gpsCoord.longitude); }
+    
+
     struct Components{ float y, x; };
 
 	/**

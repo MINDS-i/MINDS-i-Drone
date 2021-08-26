@@ -9,7 +9,7 @@ Functions for debug printing
 #include "gps_angle.h"
 
 // some debugging functions
-void print_gps(HardwareSerial *outputSerial, char* title, GPS_COORD* gps)
+void print_gps(HardwareSerial *outputSerial, const char* title, GPS_COORD* gps)
 {
     outputSerial->print("GPS: ");
     outputSerial->println(title);

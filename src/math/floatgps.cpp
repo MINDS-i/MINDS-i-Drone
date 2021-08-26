@@ -167,7 +167,7 @@ int gps_coord_to_str(GPS_COORD* gps,  // coordinates to convert
                      char* str, // place to put string
                      int len,   // length of string
                      int num_dec, // number of digits after decimal place
-                     char* fmt)  // one of "DD", "DMM", or "DMS"
+                     const char* fmt)  // one of "DD", "DMM", or "DMS"
 {
     int err = 0;
     int elat = 0;
