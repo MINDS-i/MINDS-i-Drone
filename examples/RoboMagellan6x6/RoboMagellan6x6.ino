@@ -1005,6 +1005,11 @@ void changeAutoState(uint8_t newState)
 
 					
 					avoidState=AVOID_STATE_ENTER;
+					//clear out cruise control as we are taking manual control
+					//during backup.  Not sure if this makes a difference.
+					cruise.stop();
+					cruise.update(0);
+
 
 					int8_t bumperBackDir;
 
@@ -1166,11 +1171,12 @@ void navigate()
 					
 					break;
 				case AVOID_STATE_BRAKE:
+					//avoidCoastTime also used for breaking
 					handleAvoidState(45,steerCenter,AVOID_STATE_DISENGAGE_BRAKE,avoidCoastTime);
 					break;	
 				case AVOID_STATE_DISENGAGE_BRAKE:
-					//100ms for brake disengage seem correct
-					handleAvoidState(90,steerCenter,AVOID_STATE_STRAIGHTBACK,100);
+					//200ms for brake disengage seem correct
+					handleAvoidState(90,steerCenter,AVOID_STATE_STRAIGHTBACK,200);
 					break;
 				case AVOID_STATE_STRAIGHTBACK:
 					handleAvoidState(80,steerCenter,AVOID_STATE_STEER,avoidStraightBack);
@@ -1574,6 +1580,7 @@ void checkPing()
 					//check if enough time has passed to clear
 					if (pTime + cautionTime < millis())
 					{
+						//todo maybe check if any sensor is in caution then don't clear
 						clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
 					}
 
@@ -1922,15 +1929,15 @@ void setupSettings()
 	 */
 	settings.attach(8, 1400, callback<float, &pingWeight>);
 
-	/*GROUNDSETTING index="9" name="Coast Time" min="0" max="4000" def="1500"
+	/*GROUNDSETTING index="9" name="Coast Time" min="2000" max="8000" def="2000"
 	 *Time in milliseconds to coast before reversing when an obstacle is encountered
 	 */
-	settings.attach(9, 1500, callback<int, &avoidCoastTime>);
+	settings.attach(9, 2000, callback<int, &avoidCoastTime>);
 
-	/*GROUNDSETTING index="10" name="Min Rev Time" min="0" max="4000" def="800"
-	 *Minimum time in milliseconds to reverse away from an obstacle
+	/*GROUNDSETTING index="10" name="Min Rev Time" min="2000" max="8000" def="3000"
+	 *Minimum time in seconds to reverse away from an obstacle
 	 */
-	settings.attach(10, 800, &dangerTimeCallback);
+	settings.attach(10, 3000, &dangerTimeCallback);
 
 	/*GROUNDSETTING index="11" name="Cruise P" min="0" max="10" def="0.05"
 	 *P term in cruise control PID loop
