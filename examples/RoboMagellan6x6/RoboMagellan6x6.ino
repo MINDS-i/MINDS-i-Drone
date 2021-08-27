@@ -61,7 +61,7 @@ double   trueHeading;
 //test for correcting mechanically caused drift left-right
 float steerSkew = 0;
 
-uint8_t turnAroundDir=0;
+int8_t turnAroundDir=0;
 
 //== hardware related ==
 
@@ -1154,8 +1154,8 @@ void navigate()
 			else
 			{
 				//stop turning around when we are close to the right
-				//direction
-				if (angularError <= 35 ||  angularError <= -35)
+				//direction				
+				if (angularError <= 35 && angularError >= -35)
 				{
 						clearAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND);
 						turnAroundDir=0;
@@ -1214,6 +1214,10 @@ void navigate()
 
 			//scale angle (default of 1.5) This is to account for the 45 deg steer really is 30 deg
 			outputAngle *= steerFactor;
+
+			//Keep angle somewhat sensable to avoid issues with values getting larger the +/-180
+			//arbitrarily using +/- 90 as it still give some "room" while still clamping.
+			outputAngle = constrain(outputAngle,double(-90.0),double(90.0));
 
 			//possible correction in steering (pulling left or right)
 			//outputAngle += steerSkew;
