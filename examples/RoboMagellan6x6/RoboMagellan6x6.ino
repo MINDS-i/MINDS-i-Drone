@@ -25,6 +25,9 @@
 bool extLogger_gps = false;
 bool extLogger_gen = true;
 
+//==== Peripheral HW vars ====/
+bool isBumperEnabled = true;
+
 //=============================================//
 //Constants that should never change during 
 // driving and never/rarely tuned
@@ -213,6 +216,8 @@ void updateSIM();
 
 void stateStop();
 void stateStart();
+void bumperDisable();
+void bumperEnable();
 void version();
 
 void setupSettings();
@@ -535,6 +540,8 @@ void setup()
 	//add state callbacks
 	manager.setStateStopCallback(stateStop);
 	manager.setStateStartCallback(stateStart);
+  manager.setBumperDisableCallback(bumperDisable);
+  manager.setBumperEnableCallback(bumperEnable);
 	manager.setVersionCallback(version);
 
 	// //===   ba testing ===//
@@ -1516,6 +1523,9 @@ void positionChanged()
 
 void checkBumperSensor()
 {
+  //If bumper is disabled, do nothing.
+  if(!isBumperEnabled) return;
+  
 	uint8_t leftButtonState=bumperSensor.leftButtonState();
 	uint8_t rightButtonState=bumperSensor.rightButtonState();
 
@@ -1867,6 +1877,16 @@ void stateStop()
 void stateStart()
 {
 	changeDriveState(DRIVE_STATE_AUTO);
+}
+
+void bumperEnable() 
+{
+  isBumperEnabled = true;
+}
+
+void bumperDisable()
+{
+  isBumperEnabled = false;
 }
 
 void version()
