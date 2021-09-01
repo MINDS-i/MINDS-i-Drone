@@ -61,6 +61,8 @@ double   trueHeading;
 //test for correcting mechanically caused drift left-right
 float steerSkew = 0;
 
+int8_t turnAroundDir=0;
+
 //== hardware related ==
 
 HardwareSerial *commSerial	= &Serial;
@@ -153,9 +155,10 @@ enum AUTO_STATES {
 
 //warning assign as flags. Unique bits 1,2,4,8,etc
 enum AUTO_STATE_FLAGS {
-	AUTO_STATE_FLAGS_NONE=0,
-	AUTO_STATE_FLAG_CAUTION=1,
-	AUTO_STATE_FLAG_APPROACH=2,
+	AUTO_STATE_FLAGS_NONE		=0x00,
+	AUTO_STATE_FLAG_CAUTION		=0x01,
+	AUTO_STATE_FLAG_APPROACH	=0x02,
+	AUTO_STATE_FLAG_TURNAROUND	=0x04,
 };
 
 
@@ -1131,7 +1134,37 @@ void navigate()
 			extLog("angularError",angularError,6);
 
 			//angularCorrection = (lastAngularError - angularError) - lastOutputAngle - lastAngularCorrection;
-			
+
+
+
+			if (!isSetAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND))
+			{
+				//turn around if next waypoint is behind the rover
+				if (angularError > 65)
+				{				
+					setAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND);
+					turnAroundDir=1;
+				}
+				else if (angularError < -65)
+				{
+					setAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND);
+					turnAroundDir=-1;
+				}			
+			}
+			else
+			{
+				//stop turning around when we are close to the right
+				//direction				
+				if (angularError <= 35 && angularError >= -35)
+				{
+						clearAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND);
+						turnAroundDir=0;
+				}
+			}
+
+
+
+
 			switch(steerStyle)
 			{
 				case 0:
@@ -1163,8 +1196,28 @@ void navigate()
 			}
 
 
+			if (isSetAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND))
+			{
+				//If the sign is swapped it is because the rover crossed over center line
+				//which means angularError is not 100% correct (i.e. 182 vs 178) but is close enough 
+				//given that the outputAngle will be reduced to steerThrow
+
+				//if we are forcing right turn but calculations says left; Force right.
+				//else if we are forcing left turn but calculations says right; Force left.
+				//else do nothing as we are turning in correct direction.
+				if (turnAroundDir == 1 && angularError < 0)
+					outputAngle *= -1.0;
+				else if (turnAroundDir == -1 && angularError > 0)
+					outputAngle *= -1.0;
+			}
+
+
 			//scale angle (default of 1.5) This is to account for the 45 deg steer really is 30 deg
 			outputAngle *= steerFactor;
+
+			//Keep angle somewhat sensable to avoid issues with values getting larger the +/-180
+			//arbitrarily using +/- 90 as it still give some "room" while still clamping.
+			outputAngle = constrain(outputAngle,double(-90.0),double(90.0));
 
 			//possible correction in steering (pulling left or right)
 			//outputAngle += steerSkew;
