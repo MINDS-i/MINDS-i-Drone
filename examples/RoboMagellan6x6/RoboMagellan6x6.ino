@@ -261,7 +261,6 @@ float PointRadius  = .0015;
 float approachRadius = .0038;
 
 
-float compassUIOffset = 90;
 float compassOffset = M_PI;
 
 
@@ -1723,12 +1722,7 @@ void reportLocation()
 	manager.sendTelem(Protocol::telemetryType(LATITUDE),    location.degLatitude());
 	manager.sendTelem(Protocol::telemetryType(LONGITUDE),   location.degLongitude());
 	
-	#ifdef simMode
-	//ba add -90 just to make display correct.  No idea why this works
-	manager.sendTelem(Protocol::telemetryType(HEADING),     trueHeading);	
-	#else	
-	manager.sendTelem(Protocol::telemetryType(HEADING),     trueHeading-compassUIOffset);
-	#endif
+  manager.sendTelem(Protocol::telemetryType(HEADING),     trueHeading);  
 
 	//manager.sendTelem(Protocol::telemetryType(PITCH),       toDeg(pitch.get())-90);
 	//manager.sendTelem(Protocol::telemetryType(ROLL),        toDeg(roll.get())-90);
@@ -1964,7 +1958,6 @@ void setupSettings()
 
 
 	settings.attach(27, compassOffset, callback<float,&compassOffset>);
-	settings.attach(28, compassUIOffset, callback<float,&compassUIOffset>);
 
 }
 
