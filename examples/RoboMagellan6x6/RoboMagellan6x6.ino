@@ -873,6 +873,7 @@ void changeDriveState(uint8_t newState)
 
 					extLog("Drive State","Auto");
 
+					backWaypoint = location;
 
 					scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= true;
 					scheduler[SCHD_FUNC_RDACC].enabled 		= true;
