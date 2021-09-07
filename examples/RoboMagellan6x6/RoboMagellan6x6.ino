@@ -501,7 +501,8 @@ void setup()
 	#endif
 	manager.requestResync();
 
-	uTime = millis();
+	//not used currently. Remove?
+	//uTime = millis();
 
 	
 	//add state callbacks
@@ -643,6 +644,7 @@ void loop()
 	#ifdef extLogger
 	if (Serial2.available())
 	{
+
 		Serial2.println();
 		switch( Serial2.read() )
 		{
@@ -651,6 +653,7 @@ void loop()
 				euler_z_offset = mpudmp.getEulerZ();
 				break;
 			case 's':
+			{
 				Serial2.print(F("Current euler z: "));
 				Serial2.println(cur_euler_z);
 				Serial2.print(F("Last euler z: "));
@@ -676,11 +679,16 @@ void loop()
 				Serial2.println(lastAngularError);
 
 				Serial2.print(F("Target Waypoint: "));
-				Serial2.print(manager.getTargetWaypoint().degLatitude(),6);
-				Serial2.print(F(" "));
-				Serial2.println(manager.getTargetWaypoint().degLongitude(),6);
+				char str[32];
+				GPS_COORD tempGPSCoord = manager.getTargetWaypoint().m_gpsCoord;
+		        gps_coord_to_str(&tempGPSCoord,str,32,9,"DD");
+		        Serial2.println(str);
+				// Serial2.print(manager.getTargetWaypoint().degLatitude(),6);
+				// Serial2.print(F(" "));
+				// Serial2.println(manager.getTargetWaypoint().degLongitude(),6);
 
 				break;
+			}
 			case 'm':
 				Serial2.print(F("APM State:"));
 				Serial2.println(apmState);
@@ -1039,6 +1047,10 @@ void updateSIM()
 
 	gps.setCourse(gps.getLocation().headingTo(manager.getTargetWaypoint())+steering_error);
 
+	String msg("SetCourseSim " + String(gps.getCourse()));
+	manager.sendString(msg.c_str());	
+
+
 	//Only move if in auto mode
 	//Stalled is simulated but still handle
 	if (driveState == DRIVE_STATE_AUTO && autoState != AUTO_STATE_STALLED)
@@ -1047,15 +1059,30 @@ void updateSIM()
 
 		//3600000 = milliseconds per hour
 		float dTraveled = gps.getGroundSpeed()*dT/3600000.f;
+
+
+	String msg("sim ground speed " + String(gps.getGroundSpeed()));
+	manager.sendString(msg.c_str());
+
+
+	char fbuff[32];
+	char sbuff[32];
+	dtostrf(dTraveled, 6, 6, fbuff);	
+	sprintf(sbuff,"%s %s\n","Distance traveled",fbuff);
+
+	//String msg1("sim traveled " + String(dTraveled));
+	manager.sendString(sbuff);
 		
 	
 		//todo.  Add Some kind of randomness?
 		Waypoint newLocation = location.extrapolate(gps.getCourse(), dTraveled);
+
+		gps.setLocation(newLocation);
 	
-		gps.setLatitude(newLocation.degLatitude());
-		//Serial.println(newLocation.degLatitude(),8);
-		gps.setLongitude(newLocation.degLongitude());
-		//Serial.println(newLocation.degLongitude(),8);
+		//gps.setLatitude(newLocation.degLatitude());
+		////Serial.println(newLocation.degLatitude(),8);
+		//gps.setLongitude(newLocation.degLongitude());
+		////Serial.println(newLocation.degLongitude(),8);
 
 		simTime=millis();
 		
@@ -1309,15 +1336,20 @@ void extrapPosition()
 	//digitalWrite(A7,HIGH);
 
 	float dT = millis()-nTime;
-	if(dT < 1000 && !gps.getWarning()){ //ignore irrational values
+	//ignore irrational values
+	if(dT < 1000 && !gps.getWarning())
+	{ 
 		//3600000 = milliseconds per hour
 		dTraveled = gps.getGroundSpeed()*dT/3600000.f;
 		dTraveled *= (2.l/3.l);//purposly undershoot
 		location = location.extrapolate(trueHeading, dTraveled);
 
-
-		extLog("extrap lat",location.degLatitude(),6);
-		extLog("extrap long",location.degLongitude(),6);
+		char str[32];
+		GPS_COORD tempGPSCoord = location.m_gpsCoord;
+		gps_coord_to_str(&tempGPSCoord,str,32,9,"DD");
+		extLog("Extrap coord",str);
+		//extLog("extrap lat",location.degLatitude(),6);
+		//extLog("extrap long",location.degLongitude(),6);
 
 
 	}
@@ -1345,8 +1377,12 @@ void updateGPS()
 		#ifdef extLogger
 		if (extLogger_gps)
 		{
-		  extLog("GPS lat",location.degLatitude(),6);
-		  extLog("GPS long",location.degLongitude(),6);
+			char str[32];
+			GPS_COORD tempGPSCoord = location.m_gpsCoord;
+			gps_coord_to_str(&tempGPSCoord,str,32,9,"DD");
+			extLog("GPS coord",str);
+			// extLog("GPS lat",location.degLatitude(),6);
+			// extLog("GPS long",location.degLongitude(),6);
 		}
 		#endif
 
@@ -1366,6 +1402,9 @@ void waypointUpdated()
 {
 
 	distance = manager.getTargetWaypoint().distanceTo(location);
+
+String msg1("Waypoint update " + String(distance));
+manager.sendString(msg1.c_str());
 
 	extLog("Target lat", manager.getTargetWaypoint().degLatitude(),6);
 	extLog("Target long", manager.getTargetWaypoint().degLongitude(),6);
@@ -1438,7 +1477,8 @@ void positionChanged()
 
 	if (backWaypoint.radLongitude() == 0 || distance*5280.l < 25)
 	{
-		pathHeading = location.headingTo(manager.getTargetWaypoint());	
+		pathHeading = location.headingTo(manager.getTargetWaypoint());
+
 	} 
 	else 
 	{
@@ -1723,7 +1763,11 @@ void reportLocation()
 	manager.sendTelem(Protocol::telemetryType(LATITUDE),    location.degLatitude());
 	manager.sendTelem(Protocol::telemetryType(LONGITUDE),   location.degLongitude());
 	
-  manager.sendTelem(Protocol::telemetryType(HEADING),     trueHeading);  
+	#ifdef simMode
+	manager.sendTelem(Protocol::telemetryType(HEADING),     gps.getCourse());	
+	#else	
+	manager.sendTelem(Protocol::telemetryType(HEADING),     trueHeading);
+	#endif
 
 	//manager.sendTelem(Protocol::telemetryType(PITCH),       toDeg(pitch.get())-90);
 	//manager.sendTelem(Protocol::telemetryType(ROLL),        toDeg(roll.get())-90);

@@ -3,6 +3,7 @@
 #include "Arduino.h"
 #include "math/SpatialMath.h"
 #include "math/Waypoint.h"
+#include "math/floatgps.h"
 
 class NMEA;
 /**
@@ -18,7 +19,7 @@ typedef bool (*sectionHandler)(NMEA&);
 
 class NMEA{
 public:
-	explicit NMEA(Stream& stream): inStream(stream) { stream.setTimeout(0); }
+	explicit NMEA(Stream& stream): inStream(stream) { stream.setTimeout(0); memset(&curGPSCoord,0,sizeof(GPS_COORD)); }
 	/** Read more data from the input stream and parse whats available */
 	void update();
 	/** Start reading from a different input stream */
@@ -28,11 +29,19 @@ public:
 	}
 	/** true if data has been updated since the last time anything was read */
 	uint16_t dataIndex(){ return dataFrameIndex;	}
+
+	//
+	//NOTE: this are function that will return less percision
+	//
 	/** Latitude in decimal degrees, north is positive */
-	float getLatitude(){ return latitude;	}
+	float getLatitude(){ return gps_angle_to_float(&curGPSCoord.latitude);	}
 	/** Longitude in decimal degrees, east is positive */
-	float getLongitude(){ return longitude;	}
+	float getLongitude(){ return gps_angle_to_float(&curGPSCoord.longitude);	}
 	/** Time of GPS fix in HHMMSS format */
+
+	/** Lat/long in GPS_COORD */
+	GPS_COORD getGPS_COORD() { return curGPSCoord; }		
+
 	float getTimeOfFix(){ return timeOfFix;	}
 	/** Date of fix in DDMMYY format */
 	float getDateOfFix(){ return dateOfFix;	}
@@ -44,8 +53,9 @@ public:
 	float getCourse(){ return course;	}
 	/** Angle between magnetic north and true north */
 	float getMagVar(){ return magVar;	}
+
 	/** Latitude/Longitude location as a Waypoint, CCW positive */
-	Waypoint getLocation(){ return Waypoint(latitude,longitude);	}
+	Waypoint getLocation(){ return Waypoint(curGPSCoord);	}
 
 	uint16_t getNumSat(){ return numSV; }
 	float getHDOP(){ return hdop; }
@@ -62,6 +72,9 @@ public:
 	}
 private:
 	Stream& inStream;
+
+	GPS_COORD curGPSCoord;
+
 	float latitude = 0.0;
 	float longitude = 0.0;
 	float timeOfFix = 0, dateOfFix = 0;
@@ -95,6 +108,7 @@ private:
      * on failure, return false and leave `store` alone
 	 */
 	bool readFloat(float& store);
+	//bool readGPSCoordFloat(GPS_COORD coord, uint8_t type );
 	//same as readFloat but with unsigned int type
 	bool readUInt(unsigned int& store);
 	//holds the parsers sequence position in the $GPRMC string, -1 otherwise

@@ -172,7 +172,8 @@ void CommManager::addWaypoint(float lat, float lng, uint8_t index, uint16_t alt 
 		requestResync();
 		return;
 	}
-	Waypoint data = Waypoint(lat, lng, Units::DEGREES, alt);
+	//Waypoint data = Waypoint(lat, lng, Units::DEGREES, alt);
+	Waypoint data = Waypoint(lat, lng);
 	//todo fix. Now we assume index is ok?
 	//add would returns error but ignored
 	waypoints->add(index, data);
@@ -193,7 +194,8 @@ inline void CommManager::handleWaypoint(uint8_t* msg, uint8_t length)
 		lon.bytes[3-i] = msg[5+i];
 	}
 	uint16_t alt  = (((uint16_t)msg[9])<<8) | msg[10];
-	Waypoint data = Waypoint(lat.f, lon.f, Units::DEGREES, alt);
+	//Waypoint data = Waypoint(lat.f, lon.f, Units::DEGREES, alt);
+	Waypoint data = Waypoint(lat.f, lon.f);
 
 	uint8_t  index = msg[11];
 	switch(subtype)
@@ -411,10 +413,14 @@ void CommManager::setTargetIndex(uint16_t index)
 	sendCommand(commandType(TARGET), targetIndex);
 
 	#ifdef extLogger
-	Serial2.print("target lat:");
-	Serial2.println(cachedTarget.degLatitude(),6);
-	Serial2.print("target long:");
-	Serial2.println(cachedTarget.degLongitude(),6);
+	char buff[32];
+	gps_coord_to_str(&cachedTarget.m_gpsCoord,buff,32,6,"DD");
+	Serial2.print("Target lonlat: ");
+	Serial2.println(buff);
+	//Serial2.print("target lat:");
+	//Serial2.println(cachedTarget.degLatitude(),6);
+	//Serial2.print("target long:");
+	//Serial2.println(cachedTarget.degLongitude(),6);
 	#endif
 
 }

@@ -7,6 +7,8 @@
 #include "input/Sensor.h"
 #include "input/GPS.h"
 
+#include "math/floatgps.h"
+
 class LEA6H_sim : public Sensor, public GPS {
 protected:
 
@@ -23,7 +25,7 @@ protected:
     float m_magVar;
     float m_timeOfFix;
 
-    //Waypoint m_location;
+    Waypoint m_location;
 
     uint16_t m_dataIndex;
 
@@ -45,19 +47,33 @@ public:
     void  clearUpdatedRMC()           { m_updatedRMC=false;     }
     void  setUpdatedRMC()             { m_updatedRMC=true;      }
     uint16_t dataIndex()              {  return m_dataIndex;    }
+
+    //course isn't calculated (in this class) just a set/get var
     float getCourse()                 {  return m_course;       }
     void setCourse(float course)      {  m_course = course;     }
+
     float getDateOfFix()              {  return m_dateOfFix;    }
+
+    //groundspeed isn't calculated (in this class) just a set/get var
     float getGroundSpeed()            {  return m_groundSpeed;  }
     void setGroundSpeed(float speed)   {  m_groundSpeed=speed;   }
-    double getLatitude()               {  return m_latitude;     }
-    void setLatitude(double lat)      {  m_latitude = lat;      }
-    double getLongitude()              {  return m_longitude;    }
-    void setLongitude(double lng)     {  m_longitude = lng;     }
+    
+
+    //
+    //NOTE: this are function that will return less percision
+    //
+    /** Latitude in decimal degrees, north is positive */
+    float getLatitude(){ return gps_angle_to_float(&m_location.m_gpsCoord.latitude); }
+    /** Longitude in decimal degrees, east is positive */
+    float getLongitude(){ return gps_angle_to_float(&m_location.m_gpsCoord.longitude); }
+    void setLatitude(double lat)      {  float_to_gps_angle(lat,&m_location.m_gpsCoord.latitude);     }
+    void setLongitude(double lng)     {  float_to_gps_angle(lng,&m_location.m_gpsCoord.longitude);     }
+
     float getMagVar()                 {  return m_magVar;       }
     float getTimeOfFix()              {  return m_timeOfFix;    }
     
-    Waypoint getLocation()            {  return Waypoint(m_latitude,m_longitude);    }
+    Waypoint getLocation()                { return Waypoint(m_location); }
+    void setLocation(Waypoint location)   { m_location.update(location.m_gpsCoord); }
 
     //todo
     //void handleCommand();
@@ -78,8 +94,8 @@ LEA6H_sim::LEA6H_sim()
   m_course=90.0;
   m_dateOfFix=100620;
   m_groundSpeed=0.0;
-  m_latitude=47.626025;
-  m_longitude=-117.644087;
+  setLatitude(47.626025);
+  setLongitude(-117.644087);
   m_magVar=1.0;
   m_timeOfFix=083559.00; 
 }

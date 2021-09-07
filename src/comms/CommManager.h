@@ -98,11 +98,11 @@ public:
 	Waypoint getTargetWaypoint();
 	Waypoint getWaypoint(uint16_t index);
 
-	void CommManager::addWaypoint(float lat, float lng, uint8_t index, uint16_t alt );
+	void addWaypoint(float lat, float lng, uint8_t index, uint16_t alt );
 
 private:
 	CommManager(const CommManager& copy); //intentionally not implemented
-	boolean recieveWaypoint(waypointSubtype type, uint8_t index, Waypoint point);
+	//No implementation? //boolean recieveWaypoint(waypointSubtype type, uint8_t index, Waypoint point);
 	boolean rightMatch(const uint8_t* lhs, const uint8_t llen,
 					   const uint8_t* rhs, const uint8_t rlen);
 	void	onConnect();
