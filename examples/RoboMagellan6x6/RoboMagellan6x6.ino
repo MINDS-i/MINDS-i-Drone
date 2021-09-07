@@ -93,7 +93,7 @@ ServoGenerator::Servo servo[3]; //drive, steer, backSteer
 
 //== scheduler, navigation, obstacle, stop times ==
 
-uint32_t uTime = 0, nTime = 0, sTime = 0;
+uint32_t nTime = 0, sTime = 0;
 #ifdef simMode
 uint32_t simTime = 0;
 #endif
@@ -472,17 +472,12 @@ void setup()
 	gps.begin();
 
 
-	//mpu.begin();
-	
 	//*important* disable cs on Pressure sensor
   	// that is on same spi bus 
   	// (mpu6000 driver did this in the drivers begin())
   	pinMode(40, OUTPUT);
   	digitalWrite(40, HIGH);   
 	mpudmp.begin();
-
-	
-
 	
 	for(int i=0; i<3; i++) 
 		pinMode(LEDpin[i], OUTPUT);
@@ -501,10 +496,7 @@ void setup()
 	#endif
 	manager.requestResync();
 
-	//not used currently. Remove?
-	//uTime = millis();
 
-	
 	//add state callbacks
 	manager.setStateStopCallback(stateStop);
 	manager.setStateStartCallback(stateStart);
@@ -1403,8 +1395,6 @@ void waypointUpdated()
 
 	distance = manager.getTargetWaypoint().distanceTo(location);
 
-String msg1("Waypoint update " + String(distance));
-manager.sendString(msg1.c_str());
 
 	extLog("Target lat", manager.getTargetWaypoint().degLatitude(),6);
 	extLog("Target long", manager.getTargetWaypoint().degLongitude(),6);
