@@ -28,10 +28,13 @@ public:
 	/** true if data has been updated since the last time anything was read */
 	uint16_t dataIndex(){ return dataFrameIndex;	}
 
+	//
+	//NOTE: this are function that will return less percision
+	//
 	/** Latitude in decimal degrees, north is positive */
-	float getLatitude(){ return latitude;	}
+	float getLatitude(){ return gps_angle_to_float(&curGPSCoord.latitude);	}
 	/** Longitude in decimal degrees, east is positive */
-	float getLongitude(){ return longitude;	}
+	float getLongitude(){ return gps_angle_to_float(&curGPSCoord.longitude);	}
 	/** Time of GPS fix in HHMMSS format */
 
 	/** Lat/long in GPS_COORD */
@@ -48,8 +51,9 @@ public:
 	float getCourse(){ return course;	}
 	/** Angle between magnetic north and true north */
 	float getMagVar(){ return magVar;	}
+
 	/** Latitude/Longitude location as a Waypoint, CCW positive */
-	Waypoint getLocation(){ return Waypoint(latitude,longitude);	}
+	Waypoint getLocation(){ return Waypoint(curGPSCoord);	}
 
 	bool getUpdatedRMC()
 	{

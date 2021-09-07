@@ -7,6 +7,14 @@
 
 #include "floatgps.h"
 
+
+enum GPS_DATA_PRECISION
+{
+	GPS_DATA_PRECISION_UNKNOWN,
+	GPS_DATA_PRECISION_LOW,
+	GPS_DATA_PRECISION_HIGH,
+};
+
 class Waypoint
 {
 
@@ -14,11 +22,11 @@ public:
 	//float lat, lng; //these are stored in degrees
 	uint16_t extra; //8.8 fixed value used for altitude (air) or speed (ground)
 	GPS_COORD m_gpsCoord;
+	uint8_t m_precision = GPS_DATA_PRECISION_UNKNOWN; 
 
-	Waypoint()
-	        { float_to_gps_angle(0.0,&this->m_gpsCoord.longitude); float_to_gps_angle(0.0,&this->m_gpsCoord.latitude); }
-	Waypoint(float latitude, float longitude)
-			{ float_to_gps_angle(longitude,&this->m_gpsCoord.longitude); float_to_gps_angle(latitude,&this->m_gpsCoord.latitude); }
+	Waypoint() { update(0.0,0.0);}
+	Waypoint(float latitude, float longitude) { update(latitude,longitude); }
+
 	// Not sure if needed right now
 	// Waypoint(float latitude, float longitude, Units::Rotation rad, uint16_t ex)
 	// 		{ float_to_gps_angle(0.0,&this->m_gpsCoord.longitude); float_to_gps_angle(0,&this->m_gpsCoord.latitude); }
@@ -28,8 +36,8 @@ public:
 	// 		lng = toDeg(longitude);
 	// 	} //if not set to radians, they will stay initialized to degrees
 	// }
-	Waypoint(GPS_COORD gpsCoord):
-			m_gpsCoord(gpsCoord) {}
+
+	Waypoint(GPS_COORD gpsCoord) { update(gpsCoord); }
 
 
 
@@ -37,6 +45,7 @@ public:
 	{
 		float_to_gps_angle(longitude,&this->m_gpsCoord.longitude); 
 		float_to_gps_angle(latitude,&this->m_gpsCoord.latitude);
+		m_precision=GPS_DATA_PRECISION_LOW;
 	}
 
 	// void update(float latitude, float longitude, Units::Rotation rad)
@@ -52,7 +61,8 @@ public:
 
 	void update(GPS_COORD gpsCoord)
 	{
-		m_gpsCoord = gpsCoord;	
+		m_gpsCoord = gpsCoord;
+		m_precision=GPS_DATA_PRECISION_HIGH;
 	}
 
 	//*warning* this will return loss of percision.
@@ -66,6 +76,7 @@ public:
     struct Components{ float y, x; };
 
 	/**
+	 * *** Should be removed in future: GPS_LOCAL instead *** 
 	 * Calculate the resulting vector as components for direct travel to
 	 * the target waypoint. The resulting vector components are not normalized.
 	 * x = North positive, south negative;
@@ -110,6 +121,9 @@ public:
 	{
 		return extra;
 	}
+
+	uint8_t getGPSDataPrecision() { return m_precision; }
+
 
 	#ifndef STAND_ALONE_TEST
 	float getAltitude();

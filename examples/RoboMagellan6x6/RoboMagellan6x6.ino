@@ -499,7 +499,8 @@ void setup()
 	#endif
 	manager.requestResync();
 
-	uTime = millis();
+	//not used currently. Remove?
+	//uTime = millis();
 
 	
 	//add state callbacks
@@ -1043,6 +1044,10 @@ void updateSIM()
 
 	gps.setCourse(gps.getLocation().headingTo(manager.getTargetWaypoint())+steering_error);
 
+	String msg("SetCourseSim " + String(gps.getCourse()));
+	manager.sendString(msg.c_str());	
+
+
 	//Only move if in auto mode
 	//Stalled is simulated but still handle
 	if (driveState == DRIVE_STATE_AUTO && autoState != AUTO_STATE_STALLED)
@@ -1051,15 +1056,30 @@ void updateSIM()
 
 		//3600000 = milliseconds per hour
 		float dTraveled = gps.getGroundSpeed()*dT/3600000.f;
+
+
+	String msg("sim ground speed " + String(gps.getGroundSpeed()));
+	manager.sendString(msg.c_str());
+
+
+	char fbuff[32];
+	char sbuff[32];
+	dtostrf(dTraveled, 6, 6, fbuff);	
+	sprintf(sbuff,"%s %s\n","Distance traveled",fbuff);
+
+	//String msg1("sim traveled " + String(dTraveled));
+	manager.sendString(sbuff);
 		
 	
 		//todo.  Add Some kind of randomness?
 		Waypoint newLocation = location.extrapolate(gps.getCourse(), dTraveled);
+
+		gps.setLocation(newLocation);
 	
-		gps.setLatitude(newLocation.degLatitude());
-		//Serial.println(newLocation.degLatitude(),8);
-		gps.setLongitude(newLocation.degLongitude());
-		//Serial.println(newLocation.degLongitude(),8);
+		//gps.setLatitude(newLocation.degLatitude());
+		////Serial.println(newLocation.degLatitude(),8);
+		//gps.setLongitude(newLocation.degLongitude());
+		////Serial.println(newLocation.degLongitude(),8);
 
 		simTime=millis();
 		
@@ -1329,6 +1349,9 @@ void waypointUpdated()
 {
 
 	distance = manager.getTargetWaypoint().distanceTo(location);
+
+String msg1("Waypoint update " + String(distance));
+manager.sendString(msg1.c_str());
 
 	extLog("Target lat", manager.getTargetWaypoint().degLatitude(),6);
 	extLog("Target long", manager.getTargetWaypoint().degLongitude(),6);
@@ -1689,7 +1712,7 @@ void reportLocation()
 	
 	#ifdef simMode
 	//ba add -90 just to make display correct.  No idea why this works
-	manager.sendTelem(Protocol::telemetryType(HEADING),     trueHeading);	
+	manager.sendTelem(Protocol::telemetryType(HEADING),     gps.getCourse());	
 	#else	
 	manager.sendTelem(Protocol::telemetryType(HEADING),     trueHeading-compassUIOffset);
 	#endif
