@@ -308,8 +308,6 @@ const sectionHandler NMEA::sectionHandlersGPGNS[] {
 	[](NMEA& nmea) -> bool { return 1; },
 	//difstation
 	[](NMEA& nmea) -> bool { return 1; },
-	//nav status
-	[](NMEA& nmea) -> bool { return 1; },
 	//checksum
 	[](NMEA& nmea) -> bool {
 		uint8_t msgCheckSum;
