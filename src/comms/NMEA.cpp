@@ -37,17 +37,23 @@ void NMEA::update(){
 			//Serial.println(n);
 			dataFrameIndex++;
 			seqPos = 0;
+			msgLen = 0;
 			clearBuffer();
 		} 
 		else if (seqPos != -1) 
 		{
-			if((n != ',') && (n != '*'))
-			{
+			if((n != ',') && (n != '*') && (n != '\r'))
+ 			{
+				msg[msgLen] = n;  //capture full msg for later checksum
+				msgLen++;
 				bool success = pushToBuffer(n);
 				if(!success) seqPos = -1; //buffer full
 			} 
 			else 
 			{
+				msg[msgLen] = n; //capture full msg for later checksum
+				msgLen++;
+
 				bool parseSuccess=false;
 
 				// two consective commas is not an error, just skip it
@@ -83,6 +89,20 @@ void NMEA::update(){
 			}
 		}
 
+	}
+}
+
+bool NMEA::verifyChecksum(char msg[],uint8_t msgLen,uint8_t msgCheckSum){
+	uint8_t checksum = 0x00;
+	for(uint8_t i=0;i<msgLen;i++) {
+		checksum = byte(msg[i]) ^ checksum;
+	}
+
+	if (checksum == msgCheckSum) {
+		return true;
+	}	
+	else {
+		return false;
 	}
 }
 
@@ -176,7 +196,7 @@ const sectionHandler NMEA::sectionHandlersGPRMC[] {
 				|| strcmp("GNRMC", nmea.sectionBuf) == 0;
 	},
 	//TimeOfFix
-	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.timeOfFix); },
+	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.rmc_msg.timeOfFix); },
 	//Status
 	[](NMEA& nmea) -> bool {
 		if(nmea.sectionBufPos != 1) return false;
@@ -191,9 +211,9 @@ const sectionHandler NMEA::sectionHandlersGPRMC[] {
 	[](NMEA& nmea) -> bool {
 		if(nmea.sectionBufPos != 1) return false;
 		else if(nmea.sectionBuf[0] == 'N')
-			nmea.latitude =  toDecDegrees(nmea.tmpLatLon);
+			nmea.rmc_msg.latitude =  toDecDegrees(nmea.tmpLatLon);
 		else if(nmea.sectionBuf[0] == 'S')
-			nmea.latitude = -toDecDegrees(nmea.tmpLatLon);
+			nmea.rmc_msg.latitude = -toDecDegrees(nmea.tmpLatLon);
 		else return false;
 		return true;
 	},
@@ -203,28 +223,54 @@ const sectionHandler NMEA::sectionHandlersGPRMC[] {
 	[](NMEA& nmea) -> bool {
 		if(nmea.sectionBufPos != 1) return false;
 		else if(nmea.sectionBuf[0] == 'E')
-			nmea.longitude =  toDecDegrees(nmea.tmpLatLon);
+			nmea.rmc_msg.longitude =  toDecDegrees(nmea.tmpLatLon);
 		else if(nmea.sectionBuf[0] == 'W')
-			nmea.longitude = -toDecDegrees(nmea.tmpLatLon);
+			nmea.rmc_msg.longitude = -toDecDegrees(nmea.tmpLatLon);
 		else return false;
 		return true;
 	},
 	//Ground Speed
 	[](NMEA& nmea) -> bool {
-		bool success = nmea.readFloat(nmea.groundSpeed);
-		if(success) nmea.groundSpeed = toMilesPerHours(nmea.groundSpeed);
+		bool success = nmea.readFloat(nmea.rmc_msg.groundSpeed);
+		if(success) nmea.rmc_msg.groundSpeed = toMilesPerHours(nmea.rmc_msg.groundSpeed);
 		return success;
 	},
 	//Track Angle
-	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.course); },
+	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.rmc_msg.course); },
 	//Date
-	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.dateOfFix); },
+	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.rmc_msg.dateOfFix); },
 	//Magnetic Variation
-	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.magVar); },
+	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.rmc_msg.magVar); },
 	//magnetic Variation direction
 	[](NMEA& nmea) -> bool {
-		if(nmea.sectionBuf[0] == 'E') nmea.magVar *= -1;
+		if(nmea.sectionBuf[0] == 'E') nmea.rmc_msg.magVar *= -1;
 		return true;
+	},
+	//Mode Indicator
+	[](NMEA& nmea) -> bool {
+		return true;
+	},
+	//Checksum
+	[](NMEA& nmea) -> bool {
+		uint8_t msgCheckSum;
+		if(nmea.sectionBufPos == 2) {
+			sscanf(&nmea.sectionBuf[0], "%2hhx",&msgCheckSum);
+			// verify checksum is correct before moving data externally accessible variables
+			if (nmea.verifyChecksum(nmea.msg,nmea.msgLen-4,msgCheckSum)) {
+				nmea.latitude = nmea.rmc_msg.latitude;
+				nmea.longitude = nmea.rmc_msg.longitude;
+				nmea.timeOfFix = nmea.rmc_msg.timeOfFix;
+				nmea.dateOfFix = nmea.rmc_msg.dateOfFix;
+				nmea.warning = nmea.rmc_msg.warning;
+				nmea.groundSpeed = nmea.rmc_msg.groundSpeed;
+				nmea.course = nmea.rmc_msg.course;
+				nmea.magVar = nmea.rmc_msg.magVar;
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
 	}
 };
 
@@ -249,11 +295,11 @@ const sectionHandler NMEA::sectionHandlersGPGNS[] {
 	[](NMEA& nmea) -> bool { return 1; },
 	//NumSV
 	[](NMEA& nmea) -> bool {
-		bool success = nmea.readUInt(nmea.numSV);		
+		bool success = nmea.readUInt(nmea.gns_msg.numSV);		
 		return success;
 	},
 	//HDOP
-	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.hdop); },
+	[](NMEA& nmea) -> bool { return nmea.readFloat(nmea.gns_msg.hdop); },
 	//alt
 	[](NMEA& nmea) -> bool { return 1; },
 	//sep
@@ -264,7 +310,22 @@ const sectionHandler NMEA::sectionHandlersGPGNS[] {
 	[](NMEA& nmea) -> bool { return 1; },
 	//nav status
 	[](NMEA& nmea) -> bool { return 1; },
-
+	//checksum
+	[](NMEA& nmea) -> bool {
+		uint8_t msgCheckSum;
+		if(nmea.sectionBufPos == 2) {
+			sscanf(&nmea.sectionBuf[0], "%2hhx",&msgCheckSum);
+			// verify checksum is correct before moving data externally accessible variables
+			if (nmea.verifyChecksum(nmea.msg,nmea.msgLen-4,msgCheckSum)) {
+				nmea.numSV = nmea.gns_msg.numSV;
+				nmea.hdop = nmea.gns_msg.hdop;
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+	}
 
 };
 

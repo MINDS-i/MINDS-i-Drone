@@ -14,13 +14,31 @@ class NMEA;
  */
 typedef bool (*sectionHandler)(NMEA&);
 
+struct rmc_data{
+	float latitude;
+	float longitude;
+	float timeOfFix;
+	float dateOfFix;
+	bool warning;
+	float groundSpeed;
+	float course;
+	float magVar;
+};
 
+struct gns_data{
+	unsigned int numSV;
+	float hdop;
+};
 
 class NMEA{
 public:
 	explicit NMEA(Stream& stream): inStream(stream) { stream.setTimeout(0); }
 	/** Read more data from the input stream and parse whats available */
 	void update();
+
+	/** Verify that the checksum is correct */
+	bool verifyChecksum(char msg[],uint8_t msgLen,uint8_t msgCheckSum);
+
 	/** Start reading from a different input stream */
 	void newStream(Stream& stream){
 		inStream = stream;
@@ -72,6 +90,11 @@ private:
 	unsigned int numSV=0;
 	float hdop = 0.0;
 	uint16_t dataFrameIndex = 0;
+
+	rmc_data rmc_msg;
+	gns_data gns_msg;
+	char msg[256];
+	uint8_t msgLen;
 
 	bool updatedRMC = false;
 
