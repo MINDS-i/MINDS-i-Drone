@@ -1348,8 +1348,12 @@ void extrapPosition()
 
 		// Logger Msg
 		ExtrapolatedPositionMsg_t msg;
-		msg.latitude = debugger.lat_float_to_int32(location.degLatitude());
-		msg.longitude = debugger.lon_float_to_int32(location.degLongitude());
+		GPS_ANGLE loc_lat = location.angLatitude();
+		GPS_ANGLE loc_lon = location.angLongitude();
+		msg.latitude.minutes = int16_t(loc_lat.minutes);
+		msg.latitude.frac = debugger.frac_float_to_int32(loc_lat.frac);  
+		msg.longitude.minutes = int16_t(loc_lon.minutes);
+		msg.longitude.frac = debugger.frac_float_to_int32(loc_lon.frac);    
 		msg.altitude = debugger.alt_float_to_uint16(0);
 		debugger.send(msg);
 
@@ -1389,10 +1393,15 @@ void updateGPS()
 
 		// Logger Msg
 		RawPositionMsg_t msg;
-		msg.latitude = debugger.lat_float_to_int32(location.degLatitude());
-		msg.longitude = debugger.lon_float_to_int32(location.degLongitude());
+		GPS_ANGLE loc_lat = location.angLatitude();
+		GPS_ANGLE loc_lon = location.angLongitude();
+		msg.latitude.minutes = int16_t(loc_lat.minutes);
+		msg.latitude.frac = debugger.frac_float_to_int32(loc_lat.frac);  
+		msg.longitude.minutes = int16_t(loc_lon.minutes);
+		msg.longitude.frac = debugger.frac_float_to_int32(loc_lon.frac);    
 		msg.altitude = debugger.alt_float_to_uint16(0);
 		debugger.send(msg);
+
 
 		if (driveState == DRIVE_STATE_AUTO)
 		{
@@ -1483,16 +1492,28 @@ void positionChanged()
 
 	// Logger Msg
 	WaypointMsg_t msg;
-	msg.latStart = debugger.lat_float_to_int32(backWaypoint.degLatitude());
-	msg.lonStart = debugger.lon_float_to_int32(backWaypoint.degLongitude());
+
+	GPS_ANGLE backWpLat = backWaypoint.angLatitude();
+	GPS_ANGLE backWpLon = backWaypoint.angLongitude();
+	msg.latStart.minutes = int16_t(backWpLat.minutes);
+	msg.latStart.frac = debugger.frac_float_to_int32(backWpLat.frac);  
+	msg.lonStart.minutes = int16_t(backWpLon.minutes);
+	msg.lonStart.frac = debugger.frac_float_to_int32(backWpLon.frac);
+
 	Waypoint end_target = manager.getTargetWaypoint();
-	msg.latTarget = debugger.lat_float_to_int32(end_target.degLatitude());
-	msg.lonTarget = debugger.lon_float_to_int32(end_target.degLongitude());
+	GPS_ANGLE endTargetWpLat = end_target.angLatitude();
+	GPS_ANGLE endTargetWpLon = end_target.angLongitude();
+	msg.latTarget.minutes = int16_t(endTargetWpLat.minutes);
+	msg.latTarget.frac = debugger.frac_float_to_int32(endTargetWpLat.frac);  
+	msg.lonTarget.minutes = int16_t(endTargetWpLon.minutes);
+	msg.lonTarget.frac = debugger.frac_float_to_int32(endTargetWpLon.frac);
 
 	if (backWaypoint.radLongitude() == 0 || distance*5280.l < 25)
 	{
-		msg.latIntermediate = 0;
-		msg.lonIntermediate = 0;
+		msg.latIntermediate.minutes = 0;
+		msg.latIntermediate.frac = 0;  
+		msg.lonIntermediate.minutes = 0;
+		msg.lonIntermediate.frac = 0;
 
 		pathHeading = location.headingTo(manager.getTargetWaypoint());
 	} 
@@ -1519,8 +1540,13 @@ void positionChanged()
 		//Find the heading to get there from current location
 		pathHeading  = location.headingTo(intermediate);
 
-		msg.latIntermediate = debugger.lat_float_to_int32(intermediate.degLatitude());
-		msg.lonIntermediate = debugger.lon_float_to_int32(intermediate.degLongitude());
+		GPS_ANGLE intermediateWpLat = intermediate.angLatitude();
+		GPS_ANGLE intermediateWpLon = intermediate.angLongitude();
+
+		msg.latIntermediate.minutes = int16_t(intermediateWpLat.minutes);
+		msg.latIntermediate.frac = debugger.frac_float_to_int32(intermediateWpLat.frac);  
+		msg.lonIntermediate.minutes = int16_t(intermediateWpLon.minutes);
+		msg.lonIntermediate.frac = debugger.frac_float_to_int32(intermediateWpLon.frac);
 
 	}
 

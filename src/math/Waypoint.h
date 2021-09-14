@@ -72,6 +72,9 @@ public:
 	float degLatitude() const  { return gps_angle_to_float(&m_gpsCoord.latitude); }
 	float degLongitude() const { return gps_angle_to_float(&m_gpsCoord.longitude); }
     
+	//returns lat/lon without precision loss
+	GPS_ANGLE angLatitude() const  { return m_gpsCoord.latitude; }
+	GPS_ANGLE angLongitude() const { return m_gpsCoord.longitude; }
 
     struct Components{ float y, x; };
 
