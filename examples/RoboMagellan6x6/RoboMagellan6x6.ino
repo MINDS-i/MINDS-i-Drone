@@ -7,9 +7,9 @@
 #include "version.h"
 
 
-#define DEBUG  //comment out to disable debugger
+//#define M_DEBUG  //comment out to disable debugger
 
-#ifdef DEBUG
+#ifdef M_DEBUG
   #include "MINDSiDebugger.h"
   MINDSiDebugger debugger;
 #endif
@@ -1350,7 +1350,7 @@ void extrapPosition()
 		//extLog("extrap lat",location.degLatitude(),6);
 		//extLog("extrap long",location.degLongitude(),6);
 
-    #ifdef DEBUG
+    #ifdef M_DEBUG
 		// Logger Msg
 		ExtrapolatedPositionMsg_t msg;
 		GPS_ANGLE loc_lat = location.angLatitude();
@@ -1396,7 +1396,7 @@ void updateGPS()
 		}
 		#endif
 
-    #ifdef DEBUG
+    #ifdef M_DEBUG
 		// Logger Msg
 		RawPositionMsg_t msg;
 		GPS_ANGLE loc_lat = location.angLatitude();
@@ -1496,7 +1496,7 @@ void positionChanged()
 	extLog("PC lat",location.degLatitude(),6);
 	extLog("PC long",location.degLongitude(),6);
 
-  #ifdef DEBUG
+  #ifdef M_DEBUG
 	// Logger Msg
 	WaypointMsg_t msg;
 
@@ -1519,7 +1519,7 @@ void positionChanged()
 
 	if (backWaypoint.radLongitude() == 0 || distance*5280.l < 25)
 	{
-    #ifdef DEBUG
+    #ifdef M_DEBUG
 		msg.latIntermediate.minutes = 0;
 		msg.latIntermediate.frac = 0;  
 		msg.lonIntermediate.minutes = 0;
@@ -1550,7 +1550,7 @@ void positionChanged()
 		//Find the heading to get there from current location
 		pathHeading  = location.headingTo(intermediate);
 
-    #ifdef DEBUG
+    #ifdef M_DEBUG
 		GPS_ANGLE intermediateWpLat = intermediate.angLatitude();
 		GPS_ANGLE intermediateWpLon = intermediate.angLongitude();
 
@@ -1561,7 +1561,7 @@ void positionChanged()
     #endif
 	}
 
-  #ifdef DEBUG
+  #ifdef M_DEBUG
 	msg.pathHeading = (int16_t)(truncateDegree(pathHeading)*100.0);
 	debugger.send(msg);
   #endif
@@ -1624,7 +1624,7 @@ void checkPing()
 		}
 	}
 
-  #ifdef DEBUG
+  #ifdef M_DEBUG
 	if (pIter == 0) //only log when all ping values have been updated
 	{
 		// Logger Msg
@@ -1652,7 +1652,7 @@ void output(float mph, uint8_t steer)
 	extLog("mph",mph,6);
 	extLog("steer",steer,6);
 
-  #ifdef DEBUG
+  #ifdef M_DEBUG
 	// Logger Msg
 	ControlMsg_t msg;
 	msg.speed = (int16_t)(mph*100);
@@ -1744,7 +1744,7 @@ void updateGyro()
 	// }
 	// #endif
 
-  #ifdef DEBUG
+  #ifdef M_DEBUG
 	// Logger Msg
 	OrientationMsg_t msg;
 	msg.heading = (uint16_t)(trueHeading*100);
