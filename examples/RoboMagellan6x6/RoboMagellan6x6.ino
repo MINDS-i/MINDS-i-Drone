@@ -5,10 +5,14 @@
 #include "MINDS-i-Drone.h"
 #include "util/callbackTemplate.h"
 #include "version.h"
-#include "MINDSiDebugger.h"
 
-MINDSiDebugger debugger;
 
+#define DEBUG  //comment out to disable debugger
+
+#ifdef DEBUG
+  #include "MINDSiDebugger.h"
+  MINDSiDebugger debugger;
+#endif
 
 //=============================================//
 //  Defines used to control compile options
@@ -1346,6 +1350,7 @@ void extrapPosition()
 		//extLog("extrap lat",location.degLatitude(),6);
 		//extLog("extrap long",location.degLongitude(),6);
 
+    #ifdef DEBUG
 		// Logger Msg
 		ExtrapolatedPositionMsg_t msg;
 		GPS_ANGLE loc_lat = location.angLatitude();
@@ -1356,7 +1361,7 @@ void extrapPosition()
 		msg.longitude.frac = debugger.frac_float_to_int32(loc_lon.frac);    
 		msg.altitude = debugger.alt_float_to_uint16(0);
 		debugger.send(msg);
-
+    #endif
 	}
 
 	positionChanged();
@@ -1391,6 +1396,7 @@ void updateGPS()
 		}
 		#endif
 
+    #ifdef DEBUG
 		// Logger Msg
 		RawPositionMsg_t msg;
 		GPS_ANGLE loc_lat = location.angLatitude();
@@ -1401,7 +1407,7 @@ void updateGPS()
 		msg.longitude.frac = debugger.frac_float_to_int32(loc_lon.frac);    
 		msg.altitude = debugger.alt_float_to_uint16(0);
 		debugger.send(msg);
-
+    #endif
 
 		if (driveState == DRIVE_STATE_AUTO)
 		{
@@ -1490,6 +1496,7 @@ void positionChanged()
 	extLog("PC lat",location.degLatitude(),6);
 	extLog("PC long",location.degLongitude(),6);
 
+  #ifdef DEBUG
 	// Logger Msg
 	WaypointMsg_t msg;
 
@@ -1507,14 +1514,17 @@ void positionChanged()
 	msg.latTarget.frac = debugger.frac_float_to_int32(endTargetWpLat.frac);  
 	msg.lonTarget.minutes = int16_t(endTargetWpLon.minutes);
 	msg.lonTarget.frac = debugger.frac_float_to_int32(endTargetWpLon.frac);
+  #endif
+  
 
 	if (backWaypoint.radLongitude() == 0 || distance*5280.l < 25)
 	{
+    #ifdef DEBUG
 		msg.latIntermediate.minutes = 0;
 		msg.latIntermediate.frac = 0;  
 		msg.lonIntermediate.minutes = 0;
 		msg.lonIntermediate.frac = 0;
-
+    #endif
 		pathHeading = location.headingTo(manager.getTargetWaypoint());
 	} 
 	else 
@@ -1540,6 +1550,7 @@ void positionChanged()
 		//Find the heading to get there from current location
 		pathHeading  = location.headingTo(intermediate);
 
+    #ifdef DEBUG
 		GPS_ANGLE intermediateWpLat = intermediate.angLatitude();
 		GPS_ANGLE intermediateWpLon = intermediate.angLongitude();
 
@@ -1547,12 +1558,14 @@ void positionChanged()
 		msg.latIntermediate.frac = debugger.frac_float_to_int32(intermediateWpLat.frac);  
 		msg.lonIntermediate.minutes = int16_t(intermediateWpLon.minutes);
 		msg.lonIntermediate.frac = debugger.frac_float_to_int32(intermediateWpLon.frac);
-
+    #endif
 	}
 
+  #ifdef DEBUG
 	msg.pathHeading = (int16_t)(truncateDegree(pathHeading)*100.0);
 	debugger.send(msg);
-
+  #endif
+  
 	extLog("PC PathHeading",pathHeading,6);
 
 }
@@ -1611,6 +1624,7 @@ void checkPing()
 		}
 	}
 
+  #ifdef DEBUG
 	if (pIter == 0) //only log when all ping values have been updated
 	{
 		// Logger Msg
@@ -1622,7 +1636,7 @@ void checkPing()
 		msg.ping5 = ping[4][PING_CUR];
 		debugger.send(msg);
 	}
-
+  #endif
 
 	//digitalWrite(A8,LOW);
 }
@@ -1638,11 +1652,13 @@ void output(float mph, uint8_t steer)
 	extLog("mph",mph,6);
 	extLog("steer",steer,6);
 
+  #ifdef DEBUG
 	// Logger Msg
 	ControlMsg_t msg;
 	msg.speed = (int16_t)(mph*100);
 	msg.steering = steer;
 	debugger.send(msg);
+  #endif
   
 #if useEncoder
 	//the one wire encoder would need to feed fabs(mph) to cruise
@@ -1728,13 +1744,14 @@ void updateGyro()
 	// }
 	// #endif
 
+  #ifdef DEBUG
 	// Logger Msg
 	OrientationMsg_t msg;
 	msg.heading = (uint16_t)(trueHeading*100);
 	msg.roll = (uint16_t)(toDeg(mpudmp.getEulerY())*100);
 	msg.pitch = (uint16_t)(toDeg(mpudmp.getEulerX())*100);
 	debugger.send(msg);
-
+  #endif
 }
 
 
