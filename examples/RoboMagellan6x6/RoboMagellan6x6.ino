@@ -26,7 +26,7 @@ bool extLogger_gps = false;
 bool extLogger_gen = true;
 
 //==== Peripheral HW vars ====/
-bool isBumperEnabled = true;
+bool isBumperEnabled = false;
 
 //=============================================//
 //Constants that should never change during 
