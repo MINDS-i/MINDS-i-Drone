@@ -18,7 +18,9 @@ public:
 	void clearAccumulator(){ pid.clearAccumulator(); }
 	void train(float out){ pid.train(out); }
 	void set(float input){ pid.set(input); }
+	float get() { return pid.get(); }
 	void stop() { pid.stop(); }
+	boolean isStopped() { pid.isStopped(); }
 	float update(float current){
 		uint32_t time = micros();
 

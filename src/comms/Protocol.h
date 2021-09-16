@@ -67,7 +67,8 @@ namespace Protocol{
                         GPSHDOP = 19,  };
     enum sensorType
     {
-        OBJDETECT_SONIC = 0
+        OBJDETECT_SONIC = 0,
+        OBJDETECT_BUMPER = 1,
     };
 
     enum infoType { APM_VERSION = 0,
@@ -79,7 +80,9 @@ namespace Protocol{
                       CLEAR_WAYPOINTS = 3,
                       DELETE_WAYPOINT = 4,
                       STATE_STOP      = 5,
-                      STATE_START     = 6 };
+                      STATE_START     = 6,
+					  BUMPER_DISABLE  = 7,
+					  BUMPER_ENABLE   = 8 };
 
     enum stateType { APM_STATE   = 0,
                      DRIVE_STATE = 1,

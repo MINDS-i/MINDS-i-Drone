@@ -7,6 +7,7 @@
 #include "version.h"
 
 
+
 //=============================================//
 //  Defines used to control compile options
 //=============================================//
@@ -23,6 +24,9 @@
 //==== debug vars ====/
 bool extLogger_gps = false;
 bool extLogger_gen = true;
+
+//==== Peripheral HW vars ====/
+bool isBumperEnabled = false;
 
 //=============================================//
 //Constants that should never change during 
@@ -79,6 +83,9 @@ LEA6H			gps;
 //MPU6000			mpu;
 MPU6000_DMP		mpudmp;
 
+
+bumper bumperSensor;
+
 CommManager		manager(commSerial, storage);
 Settings		settings(storage);
 Waypoint		location(0,0);
@@ -93,7 +100,7 @@ ServoGenerator::Servo servo[3]; //drive, steer, backSteer
 
 //== scheduler, navigation, obstacle, stop times ==
 
-uint32_t nTime = 0, sTime = 0;
+uint32_t uTime = 0, nTime = 0, sTime = 0, pTime;
 #ifdef simMode
 uint32_t simTime = 0;
 #endif
@@ -121,7 +128,7 @@ float cur_euler_z=0;
 double   gyroHalf; //Store Gyro Heading halfway between gps points
 double   distance;
 boolean  stop = true;
-boolean  backDir;
+int8_t  backDir;
 
 //todo testing
 float lastOutputAngle=0;
@@ -153,6 +160,26 @@ enum AUTO_STATES {
 	AUTO_STATE_STALLED,
 };
 
+enum AVOID_STATES {
+	AVOID_STATE_ENTER = 0,
+	AVOID_STATE_FWD_BRAKE,
+	AVOID_STATE_STRAIGHTBACK,
+	AVOID_STATE_STEER,
+	AVOID_STATE_REV_BRAKE,
+	AVOID_STATE_DONE,
+	AVOID_STATE_NUM_STATES
+};
+
+const char AVOID_STATES_STRING[AVOID_STATE_NUM_STATES][32] = 
+{
+	"Avoid State Enter",
+	"Avoid State Forward Brake",	
+	"Avoid State Straightback",
+	"Avoid State Steer",
+	"Avoid State Reverse Brake",
+	"Avoid State Done"
+};
+
 //warning assign as flags. Unique bits 1,2,4,8,etc
 enum AUTO_STATE_FLAGS {
 	AUTO_STATE_FLAGS_NONE		=0x00,
@@ -168,6 +195,7 @@ uint8_t driveState=DRIVE_STATE_INVALID;
 uint8_t prevDriveState=DRIVE_STATE_INVALID;
 uint8_t autoState=AUTO_STATE_INVALID;
 uint8_t autoStateFlags=AUTO_STATE_FLAGS_NONE;
+uint8_t avoidState=AVOID_STATE_DONE;
 
 
 
@@ -176,6 +204,7 @@ uint8_t autoStateFlags=AUTO_STATE_FLAGS_NONE;
 //==================================
 
 void checkPing();
+void checkBumperSensor();
 void readAccelerometer();
 void reportLocation();
 void reportState();
@@ -188,6 +217,8 @@ void updateSIM();
 
 void stateStop();
 void stateStart();
+void bumperDisable();
+void bumperEnable();
 void version();
 
 void setupSettings();
@@ -212,6 +243,7 @@ struct schedulerData scheduler[] =
 	{reportLocation,	110	,44		,1},
 	{reportState,		110	,110	,1},
 	{checkPing,			22	,88		,1},
+	{checkBumperSensor, 80	,55		,1},
 	//{navigate,			0	,66		,1},
 	{compass_sync,		500	,1000	,0},
 	#ifdef simMode
@@ -226,6 +258,7 @@ enum SCHEDULED_FUNCTIONS
 	SCHD_FUNC_RPRTLOC,
 	SCHD_FUNC_RPRTSTATE,
 	SCHD_FUNC_CHKPING,
+	SCHD_FUNC_BUMPSENSOR,
 	//SCHD_FUNC_NAVIGATE,
 	SCHD_FUNC_COMPASS_SYNC,
 	#ifdef simMode	
@@ -254,6 +287,7 @@ int		revThrow;
 float	revSpeed;
 float	pingWeight;
 int		avoidCoastTime, avoidStraightBack, avoidSteerBack; 
+int     cautionTime=1000;
 float	tireDiameter;
 int		steerCenter;
 //in miles, margin for error in rover location
@@ -268,9 +302,9 @@ float compassOffset = M_PI;
 //  Settings callbacks
 //===========================
 
-void dangerTimeCallback(float in){ 
-	avoidStraightBack = avoidCoastTime+(in/2);
-	avoidSteerBack = avoidCoastTime+in; 
+void dangerTimeCallback(float in){
+	avoidStraightBack = in;
+	avoidSteerBack = in; 
 }
 
 void pingBlockLevelEdgesCallback(float in){
@@ -435,8 +469,6 @@ void setup()
 	#endif
 
 	changeAPMState(APM_STATE_INIT);
-
-
 	setupSettings();
 
 	//initialize vars with sane values
@@ -471,6 +503,7 @@ void setup()
 
 	gps.begin();
 
+	bumperSensor.begin(A6,A5);
 
 	//*important* disable cs on Pressure sensor
   	// that is on same spi bus 
@@ -500,20 +533,20 @@ void setup()
 	//add state callbacks
 	manager.setStateStopCallback(stateStop);
 	manager.setStateStartCallback(stateStart);
+  manager.setBumperDisableCallback(bumperDisable);
+  manager.setBumperEnableCallback(bumperEnable);
 	manager.setVersionCallback(version);
 
-	//===   ba testing ===//
-	pinMode(A5, OUTPUT);
-    pinMode(A6, OUTPUT);
+	// //===   ba testing ===//
 
-    pinMode(A7, OUTPUT);    
-	pinMode(A8, OUTPUT);
+    // pinMode(A7, OUTPUT);    
+	// pinMode(A8, OUTPUT);
 	
-	pinMode(13, OUTPUT);
+	// pinMode(13, OUTPUT);
 	
-	#ifdef extLogger
-	pinMode(45, OUTPUT);
-	#endif
+	// #ifdef extLogger
+	// pinMode(45, OUTPUT);
+	// #endif
 
 	//=== end ba testing ===//
 
@@ -565,23 +598,16 @@ void loop()
 	
 
 
-	digitalWrite(A5, HIGH);
 
 	//======================================================
 	//Functions that don't directely affect the rover.
 	//======================================================
 
-	digitalWrite(A6, HIGH);
 	manager.update();
-	digitalWrite(A6, LOW);
 
-	digitalWrite(A6, HIGH);
 	updateGPS();
-	digitalWrite(A6, LOW);
-
-	digitalWrite(A6, HIGH);
 	updateGyro();
-	digitalWrite(A6, LOW);
+	bumperSensor.update();
 
 	//======================================================
 	//Functions that are run in various states and at 
@@ -608,12 +634,11 @@ void loop()
 
 	for (i=0;i<sizeof(scheduler)/sizeof(*scheduler);i++)
 	{
-		digitalWrite(A6,HIGH);
+		digitalWrite(A7,HIGH);
 		if(scheduler[i].enabled && scheduler[i].lastTime <= millis())
 		{
 			scheduler[i].lastTime = scheduler[i].delay+millis();
 			scheduler[i].function();			
-			////digitalWrite(A5, LOW);
 
 			//ba- think over.  Issue is that the same *faster* tasks may run without
 			//letting others *slower* tasks run 
@@ -622,7 +647,7 @@ void loop()
 			//break;
 
 		}
-		digitalWrite(A6,LOW);
+		digitalWrite(A7,LOW);
 
 	}
 	//run navigate all the time
@@ -737,7 +762,6 @@ void loop()
 
 
 
-	digitalWrite(A5,LOW);
 }
 
 
@@ -846,6 +870,8 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
 					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
+					scheduler[SCHD_FUNC_BUMPSENSOR].enabled 	= true;
+					
 					//scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
 					#ifdef simMode
 					scheduler[SCHD_FUNC_UPDATESIM].enabled 	= true;
@@ -880,6 +906,7 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
 					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
+					scheduler[SCHD_FUNC_BUMPSENSOR].enabled 	= true;
 					//scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
 					
 					#ifdef simMode
@@ -914,6 +941,7 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
 					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
+					scheduler[SCHD_FUNC_BUMPSENSOR].enabled 	= true;
 					//scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
 
 					//Only radio state sets previous drivestate
@@ -983,13 +1011,41 @@ void changeAutoState(uint8_t newState)
 					//might consider leaving in caution but for now...
 					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
 
-					//determine backup angle
-					output(0, steerCenter);
-					sTime = millis();
+					
+					avoidState=AVOID_STATE_ENTER;
+					
 
-					//Maybe find weight of left vs right (rather then just edge)
-					backDir = ping[0][PING_CUR]<ping[4][PING_CUR];
-					//change speed 
+					int8_t bumperBackDir;
+
+					if (bumperSensor.leftButtonState()==bumperSensor.rightButtonState())
+					{
+						//Caution bumperBackDir of 0 doesn't mean bumper sensor wasn't triggered
+						//It is either both sensors or triggered or neither
+						bumperBackDir = 0;						
+					}
+					else if (bumperSensor.leftButtonState() > bumperSensor.rightButtonState())
+						bumperBackDir = 1;
+					else
+						bumperBackDir = -1;
+
+
+					//bumper always takes precidence over ultrasonic
+					//except when both bumper sensors are triggered.  Then use altrasonic to decide
+					if (bumperBackDir!=0)
+					{						
+						backDir=bumperBackDir;
+					}
+					else
+					{
+						//if bumper isn't set (or both were triggered) then use ultrasonic to decide
+						if (ping[0][PING_CUR] < ping[4][PING_CUR])
+							backDir = 1;
+						else
+							backDir = -1;
+
+					}
+
+
 
 					autoState=newState;
 					break;
@@ -1084,6 +1140,22 @@ void updateSIM()
 }
 #endif
 
+
+void handleAvoidState(int8_t speed, int8_t steer, uint8_t nextState, uint32_t timeout)
+{
+	output(speed,steer);
+	
+	if (millis() > sTime+timeout)
+	{
+		//reset timer
+		sTime=millis();
+		//setup for next state
+		avoidState=nextState;
+		manager.sendString(AVOID_STATES_STRING[nextState]);
+
+	}
+}
+
 void navigate()
 {
 	float   mph = ((APMRadio::get(RadioPin[1])-90) / 90.f)*maxFwd;
@@ -1106,30 +1178,90 @@ void navigate()
 	if (driveState == DRIVE_STATE_AUTO  )
 	{
 
-
 		if ( autoState == AUTO_STATE_AVOID)
 		{
-
-			//The below is in a specific order to accommodate the flow
-			//of time.  The first check is the furthest in time and working
-			//toward the closest.		
-
-			
-			if ( millis() > sTime+avoidSteerBack)
+			//TODO: could be simplified into function calls
+			//inputs: speed,steer,nextstate,timeout
+			switch (avoidState)
 			{
-				changeAutoState(AUTO_STATE_FULL);
-			}		
-			else if ( millis() > sTime+avoidStraightBack )
-			{
-				if(backDir) 
-					output(revSpeed, steerCenter-revThrow);
-				else 		
-					output(revSpeed, steerCenter+revThrow);
-			}		
-			else if( millis() > sTime+avoidCoastTime )
-			{			
-				output(revSpeed, steerCenter);
+				case AVOID_STATE_ENTER:					
+					//set timer
+					sTime=millis();
+					//setup for next state
+					avoidState=AVOID_STATE_FWD_BRAKE;
+					manager.sendString(AVOID_STATES_STRING[AVOID_STATE_FWD_BRAKE]);			
+					break;
+				case AVOID_STATE_FWD_BRAKE:
+					{	
+						//todo consider consolitating foward and reverse into single function
+
+						float current_speed = RPMtoMPH(encoder::getRPM());
+
+						//String msg("MPH " + String(mph));
+						//manager.sendString(msg.c_str());
+						//String msg1("RPM " + String(encoder::getRPM()));
+						//manager.sendString(msg1.c_str());
+
+
+						//If new speed is low enough move on to new state
+						//TODO timeout as well?
+						if (current_speed < .5)
+						{
+							avoidState=AVOID_STATE_STRAIGHTBACK;
+							manager.sendString(AVOID_STATES_STRING[AVOID_STATE_STRAIGHTBACK]);
+						}
+						else
+						{
+							output(0,steerCenter);						
+						}
+						sTime = millis();
+					}
+					break;	
+				case AVOID_STATE_STRAIGHTBACK:
+					handleAvoidState(revSpeed,steerCenter,AVOID_STATE_STEER,avoidStraightBack);
+					break;
+				case AVOID_STATE_STEER:
+					int8_t temp_steer;
+					if(backDir == 0)
+					{
+						temp_steer=steerCenter;
+					}
+					else if (backDir < 0) 
+					{
+						temp_steer=steerCenter+revThrow;
+					}
+					else
+					{
+						temp_steer=steerCenter-revThrow;						
+					}
+					handleAvoidState(revSpeed,temp_steer,AVOID_STATE_REV_BRAKE,avoidSteerBack);
+					break;
+				case AVOID_STATE_REV_BRAKE:
+					{
+						//todo consider consolitating foward and reverse into single function
+
+						float current_speed = RPMtoMPH(encoder::getRPM());
+						//calculate and set a reduce speed (maybe use non-linear in future?)
+						//current_speed=current_speed/2.0;
+						//If new speed is slow enough move on to new state
+						if (current_speed > -.5)
+						{
+							avoidState=AVOID_STATE_DONE;
+							manager.sendString(AVOID_STATES_STRING[AVOID_STATE_DONE]);
+						}
+						else
+						{
+							output(0,steerCenter);						
+						}
+						sTime=millis();
+					}
+					break;
+				case AVOID_STATE_DONE:
+					changeAutoState(AUTO_STATE_FULL);
+					break;
+
 			}
+
 
 		} 	
 		else if (autoState == AUTO_STATE_FULL)
@@ -1499,6 +1631,27 @@ void positionChanged()
 
 }
 
+void checkBumperSensor()
+{
+  //If bumper is disabled, do nothing.
+  if(!isBumperEnabled) return;
+  
+	uint8_t leftButtonState=bumperSensor.leftButtonState();
+	uint8_t rightButtonState=bumperSensor.rightButtonState();
+
+	//String msg("Left: " + String(leftButtonState) + " Right: " + String(rightButtonState));
+	//	manager.sendString(msg.c_str());
+
+	if ( driveState == DRIVE_STATE_AUTO && autoState == AUTO_STATE_FULL)
+	{
+		if (leftButtonState || rightButtonState)
+		{		
+	
+			changeAutoState(AUTO_STATE_AVOID);	
+		}
+	}	
+}
+
 void checkPing()
 {
 
@@ -1533,18 +1686,22 @@ void checkPing()
 			{
 				if ( !isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
 				{
-					setAutoStateFlag(AUTO_STATE_FLAG_CAUTION);	
-
+					setAutoStateFlag(AUTO_STATE_FLAG_CAUTION);						
 					//extLog("Caution flag: ","1");
-
 				}
+				//set current time
+				pTime=millis();
 			}
 			else
 			{		
 				if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
 				{
-
-					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
+					//check if enough time has passed to clear
+					if (pTime + cautionTime < millis())
+					{
+						//todo maybe check if any sensor is in caution then don't clear
+						clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
+					}
 
 					//extLog("Caution flag: ","0");
 
@@ -1553,9 +1710,8 @@ void checkPing()
 		}
 	}
 
-
-	//digitalWrite(A8,LOW);
 }
+
 
 void output(float mph, uint8_t steer)
 {
@@ -1567,6 +1723,7 @@ void output(float mph, uint8_t steer)
 
 	extLog("mph",mph,6);
 	extLog("steer",steer,6);
+
 
 
 #if useEncoder
@@ -1779,9 +1936,13 @@ void reportLocation()
 	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),3, ping[3][PING_CUR] );
 	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_SONIC),4, ping[4][PING_CUR] );
 
+	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_BUMPER),BUMPER_BUTTON_LEFT, bumperSensor.leftButtonState());
+	manager.sendSensor(Protocol::dataSubtype(OBJDETECT_BUMPER),BUMPER_BUTTON_RIGHT, bumperSensor.rightButtonState());
+
 	//extra gps info
 	manager.sendTelem(Protocol::telemetryType(GPSNUMSAT), gps.getNumSat());
 	manager.sendTelem(Protocol::telemetryType(GPSHDOP), gps.getHDOP());
+
 
 	digitalWrite(45,LOW);
 }
@@ -1830,6 +1991,16 @@ void stateStop()
 void stateStart()
 {
 	changeDriveState(DRIVE_STATE_AUTO);
+}
+
+void bumperEnable() 
+{
+  isBumperEnabled = true;
+}
+
+void bumperDisable()
+{
+  isBumperEnabled = false;
 }
 
 void version()
@@ -1881,10 +2052,10 @@ void setupSettings()
 	 */
 	settings.attach(6, 20, callback<int, &revThrow>);
 
-	/*GROUNDSETTING index="7" name="Reverse Speed" min="-4" max="-1" def="-2.0"
+	/*GROUNDSETTING index="7" name="Reverse Speed" min="-2" max="-1" def="-1.0"
 	 *Speed in MPH to drive in reverse
 	 */
-	settings.attach(7, -2.0, callback<float, &revSpeed>);
+	settings.attach(7, -1.0, callback<float, &revSpeed>);
 
 	/*GROUNDSETTING index="8" name="Ping Factor" min="1" max="20000" def="1400"
 	 *Factor to determine how strongly obstacles effect the rover's course <br>
@@ -1892,15 +2063,15 @@ void setupSettings()
 	 */
 	settings.attach(8, 1400, callback<float, &pingWeight>);
 
-	/*GROUNDSETTING index="9" name="Coast Time" min="0" max="4000" def="1500"
+	/*GROUNDSETTING index="9" name="Coast Time" min="2000" max="8000" def="2000"
 	 *Time in milliseconds to coast before reversing when an obstacle is encountered
 	 */
-	settings.attach(9, 1500, callback<int, &avoidCoastTime>);
+	settings.attach(9, 2000, callback<int, &avoidCoastTime>);
 
-	/*GROUNDSETTING index="10" name="Min Rev Time" min="0" max="4000" def="800"
-	 *Minimum time in milliseconds to reverse away from an obstacle
+	/*GROUNDSETTING index="10" name="Min Rev Time" min="500" max="2000" def="1000"
+	 *Minimum time in seconds to reverse away from an obstacle
 	 */
-	settings.attach(10, 800, &dangerTimeCallback);
+	settings.attach(10, 1000, &dangerTimeCallback);
 
 	/*GROUNDSETTING index="11" name="Cruise P" min="0" max="10" def="0.05"
 	 *P term in cruise control PID loop

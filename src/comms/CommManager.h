@@ -66,6 +66,8 @@ class CommManager
 	void (*eStopCallback)(void);
 	void (*stateStopCallback)(void);
 	void (*stateStartCallback)(void);
+	void (*bumperDisableCallback)(void);
+	void (*bumperEnableCallback)(void);
 	void (*versionCallback)(void);
 
 public:
@@ -83,6 +85,8 @@ public:
 	void	 setEStopCallback(void (*call)(void));
 	void	 setStateStopCallback(void (*call)(void));
 	void	 setStateStartCallback(void (*call)(void));	
+	void	 setBumperDisableCallback(void (*call)(void));	
+	void	 setBumperEnableCallback(void (*call)(void));	
 	void 	 setVersionCallback(void (*call)(void));
 
 	void 	 clearWaypointList();

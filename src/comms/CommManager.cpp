@@ -15,6 +15,8 @@ using namespace Protocol;
 		eStopCallback(NULL),
 		stateStopCallback(NULL),
 		stateStartCallback(NULL),
+		bumperDisableCallback(NULL),
+		bumperEnableCallback(NULL),
 		versionCallback(NULL),
 		chksumFailureCount(0),
 		pktMismatchCount(0),
@@ -347,7 +349,7 @@ inline void CommManager::handleCommands(uint8_t a, uint8_t b)
 			Serial2.println("Removed");			
 			#endif
 
-			waypoints->remove(b);
+			waypoints->remove(b); 
 			if(b <= getTargetIndex()) 
 				retardTargetIndex();
 			if(waypoints->size()==0) 
@@ -365,6 +367,20 @@ inline void CommManager::handleCommands(uint8_t a, uint8_t b)
 			{
 				sendString("Starting");
 				stateStartCallback();
+			}
+			break;
+		case BUMPER_DISABLE:
+			if (bumperDisableCallback != NULL)
+			{
+				sendString("Bumper Disabled");
+				bumperDisableCallback();
+			}
+			break;
+		case BUMPER_ENABLE:
+			if (bumperEnableCallback != NULL)
+			{
+				sendString("Bumper Enabled");
+				bumperEnableCallback();
 			}
 			break;
 	}
@@ -486,11 +502,20 @@ void CommManager::setStateStartCallback(void (*call)(void))
 	stateStartCallback = call;
 }
 
+void CommManager::setBumperDisableCallback(void (*call)(void))
+{
+	bumperDisableCallback = call;
+}
+
+void CommManager::setBumperEnableCallback(void (*call)(void))
+{
+	bumperEnableCallback = call;
+}
+
 void CommManager::setVersionCallback(void (*call)(void))
 {
 	versionCallback = call;
 }
-
 
 void CommManager::onConnect()
 {
