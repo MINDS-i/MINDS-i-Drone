@@ -1250,31 +1250,37 @@ void navigate()
 
 			extLog("nav outputAngle post err correct",outputAngle);
 
-			//find x and y component of output angle
-			x = cos(toRad(outputAngle));
-			y = sin(toRad(outputAngle));
+			//only adjust steering using the ping sensors if CAUTION flag is active 
+			if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION)) {
+				//find x and y component of output angle
+				x = cos(toRad(outputAngle));
+				y = sin(toRad(outputAngle));
 
-			//Not 100 sure:  Generally using pings sensor values to adjust output angle
-			//modify x and y based on what pings are seeing		
-			for(int i=0; i<5; i++)
-			{
-				//temp is some percentage (at ping of 1400 would mean tmp==1)
-				float tmp = ping[i][PING_CUR]/pingWeight;
-				//value is squared?
-				tmp *= tmp;
-				//add to x,y based on set angle of sensor inverse scaled of percentage
-				x += cos(toRad(pAngle[i]))/tmp;
-				y += sin(toRad(pAngle[i]))/tmp;
+				//Not 100 sure:  Generally using pings sensor values to adjust output angle
+				//modify x and y based on what pings are seeing		
+				for(int i=0; i<5; i++)
+				{
+					//temp is some percentage (at ping of 1400 would mean tmp==1)
+					float tmp = ping[i][PING_CUR]/pingWeight;
+					//value is squared?
+					tmp *= tmp;
+					//add to x,y based on set angle of sensor inverse scaled of percentage
+					x += cos(toRad(pAngle[i]))/tmp;
+					y += sin(toRad(pAngle[i]))/tmp;
+				}
+
+
+				extLog("nav ping X adjust",x,6);
+				extLog("nav ping Y adjust",y,6);
+				extLog("nav outputAngle ping",toDeg(atan2(y,x)),6);
+
+
+				//determine angle based on x,y then adjust from steering center ( 90 )
+				outputAngle = toDeg(atan2(y,x))+steerCenter;
 			}
-
-
-			extLog("nav ping X adjust",x,6);
-			extLog("nav ping Y adjust",y,6);
-			extLog("nav outputAngle ping",toDeg(atan2(y,x)),6);
-
-
-			//determine angle based on x,y then adjust from steering center ( 90 )
-			outputAngle = toDeg(atan2(y,x))+steerCenter;
+			else {
+				outputAngle += steerCenter;    
+			}
 			//Can't steer more then throw
 			outputAngle = constrain(outputAngle,
 					  				double(steerCenter-steerThrow),
@@ -1614,11 +1620,18 @@ void checkPing()
 			{		
 				if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
 				{
+					//check if all sonars before clearing flag
+					int clear_caution = 0;
+					for(int i=0;i<5;i++) {
+						if (ping[i][PING_CUR] >= warnLevel[i]) {
+							clear_caution++;
+						}
+					}
 
-					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
-
+					if (clear_caution >= 5) {
+						clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);          
+					}
 					//extLog("Caution flag: ","0");
-
 				}
 			}
 		}
@@ -2077,17 +2090,17 @@ void setupSettings()
 	/*GROUNDSETTING index="61" name="Warn Ping value Edges" min="500" max="10000" def="2000"
 	 *
 	 */
-	settings.attach(24, 2000, &pingWarnLevelEdgesCallback);
+	settings.attach(24, 2500, &pingWarnLevelEdgesCallback);
 
 	/*GROUNDSETTING index="62" name="Warn Ping value Middles" min="500" max="10000" def="3200"
 	 *
 	 */
-	settings.attach(25, 3200, &pingWarnLevelMiddlesCallback);
+	settings.attach(25, 5000, &pingWarnLevelMiddlesCallback);
 
 	/*GROUNDSETTING index="63" name="Warn Ping value center" min="500" max="10000" def="6000"
 	 *
 	 */
-	settings.attach(26, 6000, &pingWarnLevelCenterCallback);
+	settings.attach(26, 8000, &pingWarnLevelCenterCallback);
 
 	
 
