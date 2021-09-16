@@ -1730,8 +1730,8 @@ void updateHeading()
   float error_propagation_rate = 0.5729578; // rad/s in deg 
   float gps_heading_error = 57.2958; // 1 rad in deg
   float speed_thresh = 0.5592341; // 0.25 m/s in mph-- GPS heading will be bad at very low speeds
-  bool apply_heading_lock = true;
-  int heading_lock_init_time = 5000; // milliseconds
+//  bool apply_heading_lock = true;
+//  int heading_lock_init_time = 5000; // milliseconds
 
   //The main estimate (initialized to 0)
   static float cur_heading_est = 0.0;
@@ -1742,7 +1742,7 @@ void updateHeading()
   float cur_wheel_speed = RPMtoMPH(encoder::getRPM());
 
   static int last_time = mpudmp.lastUpdateTime();
-  static int stopped_time = 0; //in milliseconds 
+//  static int stopped_time = 0; //in milliseconds 
 
   static int heading_good_counter = 0;
 
@@ -1751,7 +1751,7 @@ void updateHeading()
   int dt = cur_time - last_time;
   last_time = cur_time;
 
-  // Heading lock
+/*  // Heading lock
   if (cur_wheel_speed == 0.0) {
       stopped_time += dt;
       if (apply_heading_lock and stopped_time > heading_lock_init_time) {
@@ -1762,6 +1762,7 @@ void updateHeading()
       // rover is moving, reset "stop_time"
       stopped_time = 0;
   }
+*/
 
   // prediction:
   float euler_z = toDeg(mpudmp.getEulerZ());
@@ -1773,6 +1774,7 @@ void updateHeading()
     float cur_gps_heading_meas = truncateDegree(gps.getCourse());  // this will update only once a second?
     new_gps = false;
 
+    //ensure that we have gotten at least one valid gps course
     if (!gps_heading_init && fabs(cur_wheel_speed) > speed_thresh) {
       if (cur_gps_heading_meas > 0.0001 || cur_gps_heading_meas < -0.0001) {
         gps_heading_init = true;
@@ -1784,6 +1786,7 @@ void updateHeading()
     // - vehicle speed is above speed threshold
     // - a valid GPS course is available (start using course before turning allowed)
     // - we are not currently in a hard turn (turn around) mode
+    // - we are driving relativly straight
     if (fabs(cur_wheel_speed) > speed_thresh && gps_heading_init && !isSetAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND) && driving_straight) {
       float update_heading = cur_gps_heading_meas;
       if (cur_wheel_speed < 0) {
@@ -1798,6 +1801,7 @@ void updateHeading()
 
       offset -= truncateDegree(cur_heading_est - old_heading_est);
 
+      //keep variance high until we have a stable solution
       if (heading_lock == false)
       {
         if (abs(heading_diff) < HEADING_LOCK_RANGE) {
