@@ -6,7 +6,6 @@
 #include "util/callbackTemplate.h"
 #include "version.h"
 
-
 //#define M_DEBUG  //comment out to disable debugger
 
 #ifdef M_DEBUG
@@ -14,6 +13,16 @@
   MINDSiDebugger debugger;
 #endif
 
+#define MIN_GOOD_HEADINGS 5 
+#define HEADING_LOCK_RANGE 10
+bool kalman_heading = true;
+float k_heading = 0;
+bool heading_lock = false;
+bool new_gps = false;
+
+int8_t steer_bias = -5;
+
+bool driving_straight = false;
 //=============================================//
 //  Defines used to control compile options
 //=============================================//
@@ -1383,6 +1392,7 @@ void updateGPS()
 
 	if(gps.getUpdatedRMC())
 	{
+		new_gps = true;
 		digitalWrite(A8, HIGH);
 
 		//todo is this not used in sim?
@@ -1522,6 +1532,10 @@ void positionChanged()
 	msg.lonTarget.frac = debugger.frac_float_to_int32(endTargetWpLon.frac);
   #endif
   
+	if (kalman_heading && !heading_lock) {
+		pathHeading = trueHeading; //drive straight
+		return;
+	}  
 
 	if (backWaypoint.radLongitude() == 0 || distance*5280.l < 25)
 	{
@@ -1656,6 +1670,21 @@ void checkPing()
 
 void output(float mph, uint8_t steer)
 {
+	static uint8_t straight_ctr = 0;
+
+	if (abs(steer - steerCenter) > 5) {
+		driving_straight = false;
+		straight_ctr = 0;
+	}
+	else {
+		straight_ctr++;
+		if (straight_ctr >= 5) {
+			driving_straight = true;
+			straight_ctr = 5;  //don't let overflow    
+		}
+	}
+	steer += steer_bias;
+  
 	#ifdef simMode
 	//set speed to gps simulator (simulator only)
 	gps.setGroundSpeed(mph);
@@ -1693,6 +1722,104 @@ void output(float mph, uint8_t steer)
 	servo[2].write(180-steer);
 }
 
+void updateHeading()
+{
+  static bool gps_heading_init = false; //5 good GPS course msgs
+
+  //Tuning parameters
+  float error_propagation_rate = 0.5729578; // rad/s in deg 
+  float gps_heading_error = 57.2958; // 1 rad in deg
+  float speed_thresh = 0.5592341; // 0.25 m/s in mph-- GPS heading will be bad at very low speeds
+  bool apply_heading_lock = true;
+  int heading_lock_init_time = 5000; // milliseconds
+
+  //The main estimate (initialized to 0)
+  static float cur_heading_est = 0.0;
+  static float cur_heading_variance = 1000000;
+
+  // To be populated with actual data from the system
+//  float cur_gyro_meas =  -mpudmp.getGyroZ_raw(); // This should update at least once per estimation cycle (otherwise there's no reason do the estimation so frequently). Make sure that the direction is consistent with orientation.
+  float cur_wheel_speed = RPMtoMPH(encoder::getRPM());
+
+  static int last_time = mpudmp.lastUpdateTime();
+  static int stopped_time = 0; //in milliseconds 
+
+  static int heading_good_counter = 0;
+
+  static float offset = 0;
+  int cur_time = mpudmp.lastUpdateTime();
+  int dt = cur_time - last_time;
+  last_time = cur_time;
+
+  // Heading lock
+  if (cur_wheel_speed == 0.0) {
+      stopped_time += dt;
+      if (apply_heading_lock and stopped_time > heading_lock_init_time) {
+        return;
+      }
+  }
+  else {
+      // rover is moving, reset "stop_time"
+      stopped_time = 0;
+  }
+
+  // prediction:
+  float euler_z = toDeg(mpudmp.getEulerZ());
+  cur_heading_est = truncateDegree(euler_z - offset);
+  float old_heading_est = truncateDegree(euler_z - offset);
+  cur_heading_variance += pow((error_propagation_rate * dt/1000.0),2);
+
+  if (new_gps) {
+    float cur_gps_heading_meas = truncateDegree(gps.getCourse());  // this will update only once a second?
+    new_gps = false;
+
+    if (!gps_heading_init && fabs(cur_wheel_speed) > speed_thresh) {
+      if (cur_gps_heading_meas > 0.0001 || cur_gps_heading_meas < -0.0001) {
+        gps_heading_init = true;
+      }
+    }
+        
+    // correction:
+    // only apply correction if:
+    // - vehicle speed is above speed threshold
+    // - a valid GPS course is available (start using course before turning allowed)
+    // - we are not currently in a hard turn (turn around) mode
+    if (fabs(cur_wheel_speed) > speed_thresh && gps_heading_init && !isSetAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND) && driving_straight) {
+      float update_heading = cur_gps_heading_meas;
+      if (cur_wheel_speed < 0) {
+        // driving backwards, flip the heading measurement
+        update_heading = truncateDegree(update_heading + 180.0);
+      }
+      float gps_heading_var = pow(gps_heading_error,2); 
+      float heading_diff = truncateDegree(update_heading - cur_heading_est);
+      float var_denominator = (1.0 / cur_heading_variance + 1.0 / gps_heading_var);
+      cur_heading_est = truncateDegree((cur_heading_est / cur_heading_variance + (cur_heading_est + heading_diff) / gps_heading_var)  / var_denominator);
+      cur_heading_variance = 1.0 / var_denominator;
+
+      offset -= truncateDegree(cur_heading_est - old_heading_est);
+
+      if (heading_lock == false)
+      {
+        if (abs(heading_diff) < HEADING_LOCK_RANGE) {
+          heading_good_counter++;
+          if (heading_good_counter >= MIN_GOOD_HEADINGS) {
+            heading_lock = true;
+          }
+          else {
+            cur_heading_variance *= 1000;            
+          }
+        }
+        else {
+          cur_heading_variance *= 1000;            
+          heading_good_counter = 0;
+        }
+      }
+    }
+  }
+  
+  k_heading = truncateDegree(euler_z - offset);
+}
+
 void updateGyro()
 {
 	//update gyro and accel here (mpu6000_dmp)
@@ -1700,6 +1827,7 @@ void updateGyro()
 
  	if (mpudmp.updateReady())
   	{
+		updateHeading();
   		float euler_x, euler_y, euler_z;
 
 	    //mpu.getQ(q_w,q_x,q_y,q_z);
@@ -1736,6 +1864,10 @@ void updateGyro()
 			mpudmp.setLastUpdateTime(millis());
 		}
 
+	}
+
+	if (kalman_heading) {
+		trueHeading = k_heading;
 	}
 	
 	// float dt = lowFilter.millisSinceUpdate();
@@ -1895,6 +2027,9 @@ void reportLocation()
 	//extra gps info
 	manager.sendTelem(Protocol::telemetryType(GPSNUMSAT), gps.getNumSat());
 	manager.sendTelem(Protocol::telemetryType(GPSHDOP), gps.getHDOP());
+
+	//extra gps info
+	manager.sendTelem(Protocol::telemetryType(HEADING_LOCK), ( heading_lock ) == true ? 1 : 0);
 
 	digitalWrite(45,LOW);
 }
