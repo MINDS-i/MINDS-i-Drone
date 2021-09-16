@@ -160,11 +160,10 @@ enum AUTO_STATES {
 
 enum AVOID_STATES {
 	AVOID_STATE_ENTER = 0,
-	AVOID_STATE_BRAKE,
-	AVOID_STATE_DISENGAGE_BRAKE,
+	AVOID_STATE_FWD_BRAKE,
 	AVOID_STATE_STRAIGHTBACK,
 	AVOID_STATE_STEER,
-	AVOID_STATE_COAST,
+	AVOID_STATE_REV_BRAKE,
 	AVOID_STATE_DONE,
 	AVOID_STATE_NUM_STATES
 };
@@ -172,11 +171,10 @@ enum AVOID_STATES {
 const char AVOID_STATES_STRING[AVOID_STATE_NUM_STATES][32] = 
 {
 	"Avoid State Enter",
-	"Avoid State Brake",
-	"Avoid State Disengage_brake",
+	"Avoid State Forward Brake",	
 	"Avoid State Straightback",
 	"Avoid State Steer",
-	"Avoid State Coast",
+	"Avoid State Reverse Brake",
 	"Avoid State Done"
 };
 
@@ -1012,11 +1010,7 @@ void changeAutoState(uint8_t newState)
 
 					
 					avoidState=AVOID_STATE_ENTER;
-					//clear out cruise control as we are taking manual control
-					//during backup.  Not sure if this makes a difference.
-					cruise.stop();
-					cruise.update(0);
-
+					
 
 					int8_t bumperBackDir;
 
@@ -1026,7 +1020,7 @@ void changeAutoState(uint8_t newState)
 						//It is either both sensors or triggered or neither
 						bumperBackDir = 0;						
 					}
-					else if (bumperSensor.leftButtonState() < bumperSensor.rightButtonState())
+					else if (bumperSensor.leftButtonState() > bumperSensor.rightButtonState())
 						bumperBackDir = 1;
 					else
 						bumperBackDir = -1;
@@ -1125,11 +1119,10 @@ void updateSIM()
 #endif
 
 
-void handleAvoidState(uint8_t speed, int8_t steer, uint8_t nextState, uint32_t timeout)
+void handleAvoidState(int8_t speed, int8_t steer, uint8_t nextState, uint32_t timeout)
 {
-	servo[0].write(speed);
-	servo[1].write(steer);
-	servo[2].write(180-steer);
+	output(speed,steer);
+	
 	if (millis() > sTime+timeout)
 	{
 		//reset timer
@@ -1163,7 +1156,6 @@ void navigate()
 	if (driveState == DRIVE_STATE_AUTO  )
 	{
 
-
 		if ( autoState == AUTO_STATE_AVOID)
 		{
 			//TODO: could be simplified into function calls
@@ -1174,19 +1166,37 @@ void navigate()
 					//set timer
 					sTime=millis();
 					//setup for next state
-					avoidState=AVOID_STATE_BRAKE;
-					
+					avoidState=AVOID_STATE_FWD_BRAKE;
+					manager.sendString(AVOID_STATES_STRING[AVOID_STATE_FWD_BRAKE]);			
 					break;
-				case AVOID_STATE_BRAKE:
-					//avoidCoastTime also used for breaking
-					handleAvoidState(45,steerCenter,AVOID_STATE_DISENGAGE_BRAKE,avoidCoastTime);
+				case AVOID_STATE_FWD_BRAKE:
+					{	
+						//todo consider consolitating foward and reverse into single function
+
+						float current_speed = RPMtoMPH(encoder::getRPM());
+
+						//String msg("MPH " + String(mph));
+						//manager.sendString(msg.c_str());
+						//String msg1("RPM " + String(encoder::getRPM()));
+						//manager.sendString(msg1.c_str());
+
+
+						//If new speed is low enough move on to new state
+						//TODO timeout as well?
+						if (current_speed < .5)
+						{
+							avoidState=AVOID_STATE_STRAIGHTBACK;
+							manager.sendString(AVOID_STATES_STRING[AVOID_STATE_STRAIGHTBACK]);
+						}
+						else
+						{
+							output(0,steerCenter);						
+						}
+						sTime = millis();
+					}
 					break;	
-				case AVOID_STATE_DISENGAGE_BRAKE:
-					//200ms for brake disengage seem correct
-					handleAvoidState(90,steerCenter,AVOID_STATE_STRAIGHTBACK,200);
-					break;
 				case AVOID_STATE_STRAIGHTBACK:
-					handleAvoidState(80,steerCenter,AVOID_STATE_STEER,avoidStraightBack);
+					handleAvoidState(revSpeed,steerCenter,AVOID_STATE_STEER,avoidStraightBack);
 					break;
 				case AVOID_STATE_STEER:
 					int8_t temp_steer;
@@ -1196,16 +1206,33 @@ void navigate()
 					}
 					else if (backDir < 0) 
 					{
-						temp_steer=revThrow;
+						temp_steer=steerCenter+revThrow;
 					}
 					else
 					{
-						temp_steer=-revThrow;						
+						temp_steer=steerCenter-revThrow;						
 					}
-					handleAvoidState(80,temp_steer,AVOID_STATE_COAST,avoidSteerBack);
+					handleAvoidState(revSpeed,temp_steer,AVOID_STATE_REV_BRAKE,avoidSteerBack);
 					break;
-				case AVOID_STATE_COAST:					
-					handleAvoidState(90,steerCenter,AVOID_STATE_DONE,avoidCoastTime);
+				case AVOID_STATE_REV_BRAKE:
+					{
+						//todo consider consolitating foward and reverse into single function
+
+						float current_speed = RPMtoMPH(encoder::getRPM());
+						//calculate and set a reduce speed (maybe use non-linear in future?)
+						//current_speed=current_speed/2.0;
+						//If new speed is slow enough move on to new state
+						if (current_speed > -.5)
+						{
+							avoidState=AVOID_STATE_DONE;
+							manager.sendString(AVOID_STATES_STRING[AVOID_STATE_DONE]);
+						}
+						else
+						{
+							output(0,steerCenter);						
+						}
+						sTime=millis();
+					}
 					break;
 				case AVOID_STATE_DONE:
 					changeAutoState(AUTO_STATE_FULL);
@@ -1576,12 +1603,11 @@ void checkPing()
 			{
 				if ( !isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
 				{
-					setAutoStateFlag(AUTO_STATE_FLAG_CAUTION);	
-					//set current time
-					pTime=millis();
+					setAutoStateFlag(AUTO_STATE_FLAG_CAUTION);						
 					//extLog("Caution flag: ","1");
-
 				}
+				//set current time
+				pTime=millis();
 			}
 			else
 			{		
@@ -1614,6 +1640,7 @@ void output(float mph, uint8_t steer)
 
 	extLog("mph",mph,6);
 	extLog("steer",steer,6);
+
 
 
 #if useEncoder
@@ -1938,10 +1965,10 @@ void setupSettings()
 	 */
 	settings.attach(6, 20, callback<int, &revThrow>);
 
-	/*GROUNDSETTING index="7" name="Reverse Speed" min="-4" max="-1" def="-2.0"
+	/*GROUNDSETTING index="7" name="Reverse Speed" min="-2" max="-1" def="-1.0"
 	 *Speed in MPH to drive in reverse
 	 */
-	settings.attach(7, -2.0, callback<float, &revSpeed>);
+	settings.attach(7, -1.0, callback<float, &revSpeed>);
 
 	/*GROUNDSETTING index="8" name="Ping Factor" min="1" max="20000" def="1400"
 	 *Factor to determine how strongly obstacles effect the rover's course <br>
@@ -1954,10 +1981,10 @@ void setupSettings()
 	 */
 	settings.attach(9, 2000, callback<int, &avoidCoastTime>);
 
-	/*GROUNDSETTING index="10" name="Min Rev Time" min="2000" max="8000" def="3000"
+	/*GROUNDSETTING index="10" name="Min Rev Time" min="500" max="2000" def="1000"
 	 *Minimum time in seconds to reverse away from an obstacle
 	 */
-	settings.attach(10, 3000, &dangerTimeCallback);
+	settings.attach(10, 1000, &dangerTimeCallback);
 
 	/*GROUNDSETTING index="11" name="Cruise P" min="0" max="10" def="0.05"
 	 *P term in cruise control PID loop
