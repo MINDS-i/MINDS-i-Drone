@@ -64,7 +64,8 @@ namespace Protocol{
                         HOMEALTITUDE = 16,
                         DELTAALTITUDE = 17,
                         GPSNUMSAT = 18,
-                        GPSHDOP = 19,  };
+                        GPSHDOP = 19,
+                        HEADING_LOCK = 20 };
     enum sensorType
     {
         OBJDETECT_SONIC = 0
