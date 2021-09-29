@@ -2278,7 +2278,7 @@ void setupSettings()
 	 */
 	settings.attach(2, 1, callback<int, &steerStyle>);
 
-	/*GROUNDSETTING index="3" name="Steer Scalar" min="0" max"8" def="1.5"
+	/*GROUNDSETTING index="3" name="Steer Scalar" min="0" max="8" def="1.5"
 	 *Multiplier that determines how aggressively to steer
 	 */
 	settings.attach(3, 1.5, callback<float, &steerFactor>);
