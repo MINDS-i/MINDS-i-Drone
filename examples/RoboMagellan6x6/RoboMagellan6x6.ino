@@ -2320,7 +2320,7 @@ void setupSettings()
 	 */
 	settings.attach(10, 1000, &dangerTimeCallback);
 
-	/*GROUNDSETTING index="11" name="Cruise P" min="0" max="10" def="0.05"
+	/*GROUNDSETTING index="11" name="Cruise P" min="0" max="1" def="0.05"
 	 *P term in cruise control PID loop
 	 */
 	settings.attach(11, 0.05, &newPIDparam);
