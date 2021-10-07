@@ -1920,7 +1920,7 @@ void version()
 
 void setupSettings()
 {
-	/*GROUNDSETTING index="0" name="Line Gravity" min="0" max="1" def="0.50"
+	/*GROUNDSETTING index="0" name="Line Gravity" min="0.25" max="0.75" def="0.50"
 	 *Defines how strongly the rover should attempt to return to the original
 	 *course between waypoints, verses the direct path from its current location
 	 * to the target<br>
