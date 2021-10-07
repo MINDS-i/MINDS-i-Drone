@@ -101,7 +101,10 @@ bool NMEA::verifyChecksum(char msg[],uint8_t msgLen,uint8_t msgCheckSum){
 	if (checksum == msgCheckSum) {
 		return true;
 	}	
-	else {
+	else {		
+		digitalWrite(13, LOW);
+		digitalWrite(13, HIGH);
+		digitalWrite(13, LOW);
 		return false;
 	}
 }

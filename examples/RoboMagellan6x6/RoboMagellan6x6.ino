@@ -6,7 +6,7 @@
 #include "util/callbackTemplate.h"
 #include "version.h"
 
-//#define M_DEBUG  //comment out to disable debugger
+#define M_DEBUG  //comment out to disable debugger
 
 #ifdef M_DEBUG
   #include "MINDSiDebugger.h"
@@ -391,6 +391,12 @@ bool isSetAutoStateFlag(uint8_t flag)
 void setup() 
 {
 
+	//setup pins for debugging
+	pinMode(13, OUTPUT);
+	pinMode(A7,OUTPUT);
+	pinMode(A8,OUTPUT);
+	pinMode(45,OUTPUT);
+
 	
 	//commSerial->begin(Protocol::BAUD_RATE);	
 	commSerial->begin(57600);
@@ -481,7 +487,7 @@ void loop()
 	int i;
 
 
-	
+	digitalWrite(45,HIGH);
 
 
 
@@ -525,7 +531,7 @@ void loop()
 	navigate();
 
 
-
+	digitalWrite(45,LOW);
 
 }
 
@@ -1261,7 +1267,7 @@ void updateGPS()
 			// currently not used
 			//gpsTime = millis();
 		}
-		//digitalWrite(A8, LOW);
+		digitalWrite(A8, LOW);
 	}
 }
 
@@ -1810,7 +1816,7 @@ void compass_sync()
 
 void reportLocation()
 {
-	digitalWrite(45,HIGH);
+	//digitalWrite(45,HIGH);
 
 	float voltage  = float(analogRead(67)/1024.l*5.l*10.1f);
 	float amperage = float(analogRead(66)/1024.l*5.l*17.0f);
@@ -1853,12 +1859,12 @@ void reportLocation()
 	//extra gps info
 	manager.sendTelem(Protocol::telemetryType(HEADING_LOCK), ( heading_lock ) == true ? 1 : 0);
 
-	digitalWrite(45,LOW);
+	//digitalWrite(45,LOW);
 }
 
 void reportState()
 {
-	digitalWrite(45,HIGH);
+	//digitalWrite(45,HIGH);
 	
 	manager.sendState(Protocol::stateType(APM_STATE),apmState);
 	manager.sendState(Protocol::stateType(DRIVE_STATE),driveState);
@@ -1867,7 +1873,7 @@ void reportState()
 	manager.sendState(Protocol::stateType(GPS_STATE),gps.getWarning());
 
 
-	digitalWrite(45,LOW);
+	//digitalWrite(45,LOW);
 }
 
 
