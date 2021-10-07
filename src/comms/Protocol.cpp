@@ -65,6 +65,9 @@ namespace Protocol
 
 		if(type == WAYPOINT) return true;
 		if(type == DATA && subtype == SETTING) return true;
+		if(type == WORD && subtype == COMMAND) {
+			return true;
+		}
 
 		return false;
 	}
