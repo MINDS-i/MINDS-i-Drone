@@ -20,7 +20,7 @@ float k_heading = 0;
 bool heading_lock = false;
 bool new_gps = false;
 
-int8_t steer_bias = -5;
+int8_t steer_bias = 0;
 
 bool driving_straight = false;
 //=============================================//
