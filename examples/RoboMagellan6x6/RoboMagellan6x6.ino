@@ -1598,6 +1598,7 @@ void waypointUpdated()
 		else
 		{
 			changeDriveState(DRIVE_STATE_STOP);
+			manager.setTargetIndex(0);
 		}
 
 		clearAutoStateFlag(AUTO_STATE_FLAG_APPROACH);
