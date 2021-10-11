@@ -2279,7 +2279,7 @@ void setupSettings()
 	 */
 	settings.attach(2, 1, callback<int, &steerStyle>);
 
-	/*GROUNDSETTING index="3" name="Steer Scalar" min="0" max"8" def="1.5"
+	/*GROUNDSETTING index="3" name="Steer Scalar" min="0" max="8" def="1.5"
 	 *Multiplier that determines how aggressively to steer
 	 */
 	settings.attach(3, 1.5, callback<float, &steerFactor>);
@@ -2321,7 +2321,7 @@ void setupSettings()
 	 */
 	settings.attach(10, 1000, &dangerTimeCallback);
 
-	/*GROUNDSETTING index="11" name="Cruise P" min="0" max="10" def="0.05"
+	/*GROUNDSETTING index="11" name="Cruise P" min="0" max="1" def="0.05"
 	 *P term in cruise control PID loop
 	 */
 	settings.attach(11, 0.05, &newPIDparam);
