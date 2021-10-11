@@ -70,6 +70,7 @@ const float MilesPerRev   = (((PI)/12.f)/5280.f) * (13.f/37.f);
 //hours per min      rev per mile
 const float MPHvRPM       = (1.f/60.f)        * (1.f/MilesPerRev);
 
+#define MAN_MAX_FWD (5) 
 
 //== steering related ==
 
@@ -1173,7 +1174,7 @@ void handleAvoidState(int8_t speed, int8_t steer, uint8_t nextState, uint32_t ti
 
 void navigate()
 {
-	float   mph = ((APMRadio::get(RadioPin[1])-90) / 90.f)*maxFwd;
+	float   mph = ((APMRadio::get(RadioPin[1])-90) / 90.f)*MAN_MAX_FWD;
 	uint8_t steer = APMRadio::get(RadioPin[2]);
 
 		
