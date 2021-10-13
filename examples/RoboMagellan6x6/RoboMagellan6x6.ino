@@ -20,7 +20,7 @@ float k_heading = 0;
 bool heading_lock = false;
 bool new_gps = false;
 
-int8_t steer_bias = -5;
+int8_t steer_bias = 0;
 
 bool driving_straight = false;
 //=============================================//
@@ -63,6 +63,7 @@ const float MilesPerRev   = (((PI)/12.f)/5280.f) * (13.f/37.f);
 //hours per min      rev per mile
 const float MPHvRPM       = (1.f/60.f)        * (1.f/MilesPerRev);
 
+#define MAN_MAX_FWD (5) 
 
 //== steering related ==
 
@@ -903,7 +904,7 @@ void handleAvoidState(int8_t speed, int8_t steer, uint8_t nextState, uint32_t ti
 
 void navigate()
 {
-	float   mph = ((APMRadio::get(RadioPin[1])-90) / 90.f)*maxFwd;
+	float   mph = ((APMRadio::get(RadioPin[1])-90) / 90.f)*MAN_MAX_FWD;
 	uint8_t steer = APMRadio::get(RadioPin[2]);
 
 		
@@ -1297,6 +1298,7 @@ void waypointUpdated()
 		else
 		{
 			changeDriveState(DRIVE_STATE_STOP);
+			manager.setTargetIndex(0);
 		}
 
 		clearAutoStateFlag(AUTO_STATE_FLAG_APPROACH);
@@ -1946,7 +1948,7 @@ void setupSettings()
 	 */
 	settings.attach(2, 1, callback<int, &steerStyle>);
 
-	/*GROUNDSETTING index="3" name="Steer Scalar" min="0" max"8" def="1.5"
+	/*GROUNDSETTING index="3" name="Steer Scalar" min="0" max="8" def="1.5"
 	 *Multiplier that determines how aggressively to steer
 	 */
 	settings.attach(3, 1.5, callback<float, &steerFactor>);
@@ -1988,7 +1990,7 @@ void setupSettings()
 	 */
 	settings.attach(10, 1000, &dangerTimeCallback);
 
-	/*GROUNDSETTING index="11" name="Cruise P" min="0" max="10" def="0.05"
+	/*GROUNDSETTING index="11" name="Cruise P" min="0" max="1" def="0.05"
 	 *P term in cruise control PID loop
 	 */
 	settings.attach(11, 0.05, &newPIDparam);
