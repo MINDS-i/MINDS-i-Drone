@@ -289,6 +289,7 @@ enum SCHEDULED_FUNCTIONS
 //==============================================
 
 float	lineGravity;
+int   lookAheadDist = 25; //feet
 int		steerThrow, steerStyle;
 float	steerFactor;
 float	minFwd, maxFwd;
@@ -1357,7 +1358,7 @@ void positionChanged()
 		return;
 	}  
 
-	if (backWaypoint.radLongitude() == 0 || distance*5280.l < 25)
+	if (backWaypoint.radLongitude() == 0 || distance*5280.l < lookAheadDist*lineGravity)
 	{
     #ifdef M_DEBUG
 		msg.latIntermediate.minutes = 0;
@@ -1371,7 +1372,7 @@ void positionChanged()
 	{
 		// find a point along path from backwaypoint to targetwaypoint in which to drive toward (pathHeading)
 		//  First we determine how much of our current vector "counts" toward the target (cos).
-		//  Whatever is left of distance along that original (optimal) vector is scalled by lineGravity.
+		//  From there determine an intermediary waypoint along that original (optimal) vector is a lookAheadDis scalled by lineGravity.
 		//  LineGravity will scale the point to either heading directory orthogonal to original (optimal) vector or 
 		//  directly toward the target waypoint
 
@@ -1383,8 +1384,8 @@ void positionChanged()
 		float AL    = backWaypoint.headingTo(location);
 		//percentage of our current vector. what amount of distance in in direction we should be going.
 		float d     = cos(toRad(AL-AB)) * backWaypoint.distanceTo(location);
-		//scale remaining distance by linegravity (0,1) then add the 'd' distance. 
-		float D     = d + (full-d)*(1.l-lineGravity);
+		//scale the look-ahead distance by linegravity (0.25,5.00) then add the 'd' distance. 
+		float D     = d + (lookAheadDist*lineGravity);
 		//find waypoint for this new distance along the previous-to-target path
 		Waypoint intermediate = backWaypoint.extrapolate(AB, D);
 		//Find the heading to get there from current location
@@ -1922,12 +1923,12 @@ void version()
 
 void setupSettings()
 {
-	/*GROUNDSETTING index="0" name="Line Gravity" min="0.25" max="0.75" def="0.50"
+	/*GROUNDSETTING index="0" name="Line Gravity" min="0.25" max="5.00" def="1.00"
 	 *Defines how strongly the rover should attempt to return to the original
 	 *course between waypoints, verses the direct path from its current location
 	 * to the target<br>
 	 */
-	settings.attach(0, .50, callback<float, &lineGravity>);
+	settings.attach(0, 1.00, callback<float, &lineGravity>);
 
 	/*GROUNDSETTING index="1" name="Steer Throw" min="0" max="90" def="45"
 	 *The number of degrees that rover will turn its wheels when it needs to
