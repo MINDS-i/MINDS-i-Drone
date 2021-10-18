@@ -86,12 +86,8 @@ LEA6H_sim		gps;
 LEA6H			gps;
 #endif
 
-//compass
-//HMC5883L hmc;
-
 //MPU6000			mpu;
 MPU6000_DMP		mpudmp;
-
 
 bumper bumperSensor;
 
@@ -99,33 +95,25 @@ CommManager		manager(commSerial, storage);
 Settings		settings(storage);
 Waypoint		location(0,0);
 Waypoint		backWaypoint(0,0);
-HLA				lowFilter (600000, 0);//10 minutes
-HLA				highFilter(    10, 0);//10 milliseconds
-HLA 			pitch( 100, 0);
-HLA 			roll ( 100, 0);
 PIDparameters   cruisePID(0,0,0,-90,90);
 PIDcontroller   cruise(&cruisePID);
 ServoGenerator::Servo servo[3]; //drive, steer, backSteer
 
 //== scheduler, navigation, obstacle, stop times ==
 
-uint32_t uTime = 0, nTime = 0, sTime = 0, pTime;
+uint32_t nTime = 0, sTime = 0;
 #ifdef simMode
 uint32_t simTime = 0;
 #endif
-uint32_t gpsHalfTime = 0, gpsTime = 0;
-//used in accelerometer calculations
-int32_t Ax,Ay,Az; 
 
 //== Ping ==
-
 enum PING_HIST {
 	PING_CUR = 0,
 	PING_LAST,
 };
 
 uint16_t ping[5][2] = {20000,20000,20000,20000,20000};
-uint8_t  sIter,pIter; //iterators for scheduler and ping
+uint8_t  pIter; //iterators for scheduler and ping
 
 //== mpu6000 ==//
 float euler_z_offset=0;
@@ -133,16 +121,10 @@ float last_euler_z=0;
 float cur_euler_z=0;
 
 //== gyro ==
-
 double   gyroHalf; //Store Gyro Heading halfway between gps points
 double   distance;
 boolean  stop = true;
 int8_t  backDir;
-
-//todo testing
-float lastOutputAngle=0;
-float lastAngularError=0;
-
 
 //====================================
 // State related variables/enums
@@ -214,12 +196,10 @@ uint8_t avoidState=AVOID_STATE_DONE;
 
 void checkPing();
 void checkBumperSensor();
-void readAccelerometer();
 void reportLocation();
 void reportState();
 void extrapPosition();
 void navigate();
-void compass_sync();
 #ifdef simMode
 void updateSIM();
 #endif
@@ -248,13 +228,11 @@ struct schedulerData
 struct schedulerData scheduler[] = 
 {
 	{extrapPosition,	110	,0		,1},
-	{readAccelerometer,	110	,22		,1},
 	{reportLocation,	110	,44		,1},
 	{reportState,		110	,110	,1},
 	{checkPing,			22	,88		,1},
 	{checkBumperSensor, 80	,55		,1},
 	//{navigate,			0	,66		,1},
-	{compass_sync,		500	,1000	,0},
 	#ifdef simMode
 	{updateSIM,			500	,100	,1}
 	#endif
@@ -296,7 +274,6 @@ int		revThrow;
 float	revSpeed;
 float	pingWeight;
 int		avoidCoastTime, avoidStraightBack, avoidSteerBack; 
-int     cautionTime=1000;
 float	tireDiameter;
 int		steerCenter;
 //in miles, margin for error in rover location
@@ -400,11 +377,6 @@ void setup()
 	changeAPMState(APM_STATE_INIT);
 	setupSettings();
 
-	//initialize vars with sane values
-	lastOutputAngle=steerCenter;
-	lastAngularError=steerCenter;
-
-
 	gps.begin();
 
 	bumperSensor.begin(A6,A5);
@@ -462,11 +434,6 @@ void setup()
 		manager.update();
 		delay(10);
 	}
-
-	// compass_sync();
-	// compass_sync();
-	// compass_sync();
-	// compass_sync();	
 
 	euler_z_offset = mpudmp.getEulerZ();
 
@@ -636,9 +603,6 @@ void changeDriveState(uint8_t newState)
 					#endif 
 					
 					driveState=newState;
-
-					//still might be rolling so not best place?
-					//compass_sync();
 
 					if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
 						clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
@@ -937,12 +901,6 @@ void navigate()
 
 						float current_speed = RPMtoMPH(encoder::getRPM());
 
-						//String msg("MPH " + String(mph));
-						//manager.sendString(msg.c_str());
-						//String msg1("RPM " + String(encoder::getRPM()));
-						//manager.sendString(msg1.c_str());
-
-
 						//If new speed is low enough move on to new state
 						//TODO timeout as well?
 						if (current_speed < .5)
@@ -1021,11 +979,6 @@ void navigate()
 			//difference between pathheading (based on waypoints (previous and current))
 			//error can only be as much as 180 degrees off (opposite directions).
 			angularError = truncateDegree(pathHeading - trueHeading);
-
-
-			//angularCorrection = (lastAngularError - angularError) - lastOutputAngle - lastAngularCorrection;
-
-
 
 			if (!isSetAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND))
 			{
@@ -1109,9 +1062,6 @@ void navigate()
 			//arbitrarily using +/- 90 as it still give some "room" while still clamping.
 			outputAngle = constrain(outputAngle,double(-90.0),double(90.0));
 
-			//possible correction in steering (pulling left or right)
-			//outputAngle += steerSkew;
-
 			//only adjust steering using the ping sensors if CAUTION flag is active 
 			if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION)) {
 				//find x and y component of output angle
@@ -1183,9 +1133,6 @@ void navigate()
 			}
 			
 			output(speed, outputAngle);
-
-			lastOutputAngle=outputAngle;
-			lastAngularError=angularError;
 		}
 	}//end drive state auto check
 
@@ -1194,7 +1141,6 @@ void navigate()
 void extrapPosition()
 {
 	float dTraveled;
-	//digitalWrite(A7,HIGH);
 
 	float dT = millis()-nTime;
 	//ignore irrational values
@@ -1220,8 +1166,6 @@ void extrapPosition()
 	}
 
 	positionChanged();
-	//digitalWrite(A7,LOW);
-
 }
 
 
@@ -1257,12 +1201,8 @@ void updateGPS()
 		if (driveState == DRIVE_STATE_AUTO)
 		{
 			waypointUpdated();
-			syncHeading();
 			positionChanged();
-			// currently not used
-			//gpsTime = millis();
 		}
-		//digitalWrite(A8, LOW);
 	}
 }
 
@@ -1298,32 +1238,6 @@ void waypointUpdated()
 		clearAutoStateFlag(AUTO_STATE_FLAG_APPROACH);
 	}
 }
-
-void syncHeading()
-{
-	// if(!gps.getWarning() && gps.getCourse() != 0)
-	// {
-
-	// 	if (!isSetAutoStateFlag(AUTO_STATE_AVOID) && !isSetAutoStateFlag(AUTO_STATE_FLAG_APPROACH) && 
-	// 							(fabs(lastOutputAngle)<20.0) )
-	// 	{
-	// 		trueHeading = gps.getCourse();
-	// 		euler_z_offset = last_euler_z - trueHeading;
-
-
-	// 		/*
-	// 		if(millis() - gpsTime < 1500) //dont use gyrohalf if it is too old
-	// 			trueHeading = truncateDegree(gps.getCourse() + trueHeading - gyroHalf);
-	// 		else
-	// 			trueHeading = truncateDegree(gps.getCourse());
-	// 		gpsHalfTime = millis()+(millis()-gpsTime)/2;*/
-	// 	}
-	// }
-	
-}
-
-
-
 
 void positionChanged()
 {
@@ -1432,9 +1346,6 @@ void checkBumperSensor()
 
 void checkPing()
 {
-
-	//digitalWrite(A8,HIGH);
-
 	//copy cur value into last
 	ping[pIter][PING_LAST] = ping[pIter][PING_CUR];
 
@@ -1466,8 +1377,6 @@ void checkPing()
 				{
 					setAutoStateFlag(AUTO_STATE_FLAG_CAUTION);						
 				}
-				//set current time
-				pTime=millis();
 			}
 			else
 			{		
@@ -1503,8 +1412,6 @@ void checkPing()
 		debugger.send(msg);
 	}
   #endif
-
-	//digitalWrite(A8,LOW);
 }
 
 
@@ -1566,19 +1473,15 @@ void updateHeading()
   float error_propagation_rate = 0.5729578; // rad/s in deg 
   float gps_heading_error = 57.2958; // 1 rad in deg
   float speed_thresh = 0.5592341; // 0.25 m/s in mph-- GPS heading will be bad at very low speeds
-//  bool apply_heading_lock = true;
-//  int heading_lock_init_time = 5000; // milliseconds
 
   //The main estimate (initialized to 0)
   static float cur_heading_est = 0.0;
   static float cur_heading_variance = 1000000;
 
   // To be populated with actual data from the system
-//  float cur_gyro_meas =  -mpudmp.getGyroZ_raw(); // This should update at least once per estimation cycle (otherwise there's no reason do the estimation so frequently). Make sure that the direction is consistent with orientation.
   float cur_wheel_speed = RPMtoMPH(encoder::getRPM());
 
   static int last_time = mpudmp.lastUpdateTime();
-//  static int stopped_time = 0; //in milliseconds 
 
   static int heading_good_counter = 0;
 
@@ -1586,19 +1489,6 @@ void updateHeading()
   int cur_time = mpudmp.lastUpdateTime();
   int dt = cur_time - last_time;
   last_time = cur_time;
-
-/*  // Heading lock
-  if (cur_wheel_speed == 0.0) {
-      stopped_time += dt;
-      if (apply_heading_lock and stopped_time > heading_lock_init_time) {
-        return;
-      }
-  }
-  else {
-      // rover is moving, reset "stop_time"
-      stopped_time = 0;
-  }
-*/
 
   // prediction:
   float euler_z = toDeg(mpudmp.getEulerZ());
@@ -1670,16 +1560,8 @@ void updateGyro()
 		updateHeading();
   		float euler_x, euler_y, euler_z;
 
-	    //mpu.getQ(q_w,q_x,q_y,q_z);
-
 	    mpudmp.getEuler(euler_x,euler_z,euler_z);
 	    
- 
-	    
-	    //Serial2.print("eulerz; "); 
-	    //Serial2.println(euler_z); 
-	    
-
 		last_euler_z = cur_euler_z;
 		cur_euler_z = euler_z;
 	    trueHeading =  cur_euler_z  - euler_z_offset;
@@ -1720,96 +1602,6 @@ void updateGyro()
   #endif
 }
 
-
-void readAccelerometer()
-{
-
-	// digitalWrite(13,HIGH);
-	// Ax = mpu.acclX();
-	// Ay = mpu.acclY();
-	// Az = mpu.acclZ();
-	// //atan2 gets angle of x and y vectors
-	// pitch.update( atan2(sqrt(Ax*Ax+Az*Az), Ay) );
-	// //atan2 gets angle of y and z vectors
-	// roll.update( atan2(sqrt(Ay*Ay+Az*Az),-Ax) );
-	// digitalWrite(13,LOW);
-}
-
-void compass_update()
-{
-	//cur_compass_heading = hmc.getAzimuth();
-	//cur_compass_heading_avg;
-}
-
-void compass_sync()
-{
-
-	// if ( driveState == DRIVE_STATE_STOP)
-	// {
-	// 	//=== use gps to set offset of gyro ===//
-	// 	//todo clean this up
-	// 	float tmp = hmc.getAzimuth();
-	// 	float gyro_tmp = mpudmp.getEulerZ();
-	// 	float compassRaw = hmc.getRawAzimuth();
-
-	// 	Serial2.print("compass raw: ");
-	// 	Serial2.print(toDeg(compassRaw));
-	// 	Serial2.print(" ");
-	// 	Serial2.println(compassRaw);	    		
-
-
-	// 	Serial2.print("compass: ");
-	// 	Serial2.print(toDeg(tmp));
-	// 	Serial2.print(" ");
-	// 	Serial2.println(tmp);	    		
-
-	// 	Serial2.print("Compass \"Calib\" offset: ");
-	// 	Serial2.println(compassOffset);
-
-	
-	// 	//tmp += (M_PI+0.34);
-	// 	tmp += (compassOffset+0.34);
-	// 	if (tmp < -M_PI)
-	// 	tmp = tmp + (2*M_PI);
-	// 	if (tmp > M_PI)
-	// 	tmp = tmp - (2*M_PI);
-
-	    
-	// 	Serial2.print("compass_corrected: ");
-	// 	Serial2.print(toDeg(tmp));
-	// 	Serial2.print(" ");
-	// 	Serial2.println(tmp);
-
-
-	  	
-	//    	Serial2.print("gyro: ");
-	// 	Serial2.print(toDeg(gyro_tmp));
-	// 	Serial2.print(" ");
-	// 	Serial2.println(gyro_tmp);
-
-
-	// 	euler_z_offset=gyro_tmp-tmp;
-	//     //correct for any wraps out of the -3.14 to 3.14
-	// 	if (euler_z_offset < -PI)
-	// 	euler_z_offset += 2*PI;
-
-	// 	if (euler_z_offset > PI)
-	// 	euler_z_offset -= 2*PI;
-	  	
-
-	//    	Serial2.print("offset: ");
-	// 	Serial2.print(toDeg(euler_z_offset));
-	// 	Serial2.print(" ");
-	// 	Serial2.println(euler_z_offset);
-
-
-
-	// 	Serial2.print("trueHeading: ");
-	// 	Serial2.println(trueHeading);
-
-	// }
-}
-
 void reportLocation()
 {
 	digitalWrite(45,HIGH);
@@ -1825,8 +1617,6 @@ void reportLocation()
 	manager.sendTelem(Protocol::telemetryType(HEADING),     trueHeading);
 	#endif
 
-	//manager.sendTelem(Protocol::telemetryType(PITCH),       toDeg(pitch.get())-90);
-	//manager.sendTelem(Protocol::telemetryType(ROLL),        toDeg(roll.get())-90);
 	manager.sendTelem(Protocol::telemetryType(PITCH),       toDeg(mpudmp.getEulerX()));
 	manager.sendTelem(Protocol::telemetryType(ROLL),        toDeg(mpudmp.getEulerY()));
 
@@ -1871,20 +1661,6 @@ void reportState()
 
 	digitalWrite(45,LOW);
 }
-
-
-// void calibrateGyro(){ //takes one second
-// 	float tmp = 0;
-// 	for(int i=0; i<100; i++)
-// 	{
-// 		float Gz = toDeg(mpu.gyroZ());
-// 		tmp += Gz/100;
-// 		delay(10);
-// 	}
-// 	lowFilter.set(tmp);
-// }
-
-
 
 void newPIDparam(float x)
 {
