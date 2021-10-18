@@ -4,7 +4,7 @@
 //Linear Three Axis Tune
 // A = (a+shift)*scalar
 //shift should be applied before scalar
-#pragma GCC diagnostic ignored "-pedantic"
+#pragma GCC diagnostic ignored "-Wpedantic"
 struct LTATune{
 	union{
 		float params[2][3];

@@ -6,10 +6,10 @@
 #include "util/LTATune.h"
 
 namespace commonSettings{
-	static const uint16_t VERSION =	 __TIME__[6]
-									+__TIME__[7]*10
-									+__TIME__[3]*100
-									+__TIME__[4]*1000;
+	static const uint16_t VERSION =	 __TIME__[7]
+									+__TIME__[6]*10
+									+__TIME__[4]*100
+									+uint16_t(__TIME__[3])*1000;
 	static const uint16_t CALIBRATION_VERSON = 8;
 	enum Common{
 		ACCL_X_SHFT	= 50,
