@@ -19,9 +19,6 @@ bool kalman_heading = true;
 float k_heading = 0;
 bool heading_lock = false;
 bool new_gps = false;
-
-int8_t steer_bias = 0;
-
 bool driving_straight = false;
 //=============================================//
 //  Defines used to control compile options
@@ -1437,7 +1434,7 @@ void output(float mph, uint8_t steer)
 			straight_ctr = 5;  //don't let overflow    
 		}
 	}
-	steer += steer_bias;
+	steer += steerSkew;
   
 	#ifdef simMode
 	//set speed to gps simulator (simulator only)
