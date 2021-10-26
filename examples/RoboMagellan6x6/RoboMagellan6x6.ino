@@ -1667,10 +1667,29 @@ void reportState()
 	//digitalWrite(45,LOW);
 }
 
+<<<<<<< HEAD
 void updateSteerSkew(float s)
 {
 	uint8_t skew = uint8_t(s);
 	steerSkew = uint8_t(skew);
+=======
+
+// void calibrateGyro(){ //takes one second
+// 	float tmp = 0;
+// 	for(int i=0; i<100; i++)
+// 	{
+// 		float Gz = toDeg(mpu.gyroZ());
+// 		tmp += Gz/100;
+// 		delay(10);
+// 	}
+// 	lowFilter.set(tmp);
+// }
+
+void updateSteerSkew(float s)
+{
+	writeSteerSkew(s);
+	steerSkew = s;
+>>>>>>> 3e5c7e2 (Added write to eeprom for Dashboard changes to steerSkew)
 }
 
 void newPIDparam(float x)
