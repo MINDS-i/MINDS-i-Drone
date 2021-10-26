@@ -382,6 +382,12 @@ inline void CommManager::handleCommands(uint8_t a, uint8_t b)
 				sendString("Bumper Enabled");
 				bumperEnableCallback();
 			}
+		case SETTINGS_RESET:
+			if (settingsResetCallback != NULL)
+			{
+				sendString("Settings Resetting");
+				settingsResetCallback();
+			}
 			break;
 	}
 }
@@ -510,6 +516,11 @@ void CommManager::setBumperDisableCallback(void (*call)(void))
 void CommManager::setBumperEnableCallback(void (*call)(void))
 {
 	bumperEnableCallback = call;
+}
+
+void CommManager::setSettingsResetCallback(void (*call)(void))
+{
+	settingsResetCallback = call;
 }
 
 void CommManager::setVersionCallback(void (*call)(void))
