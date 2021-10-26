@@ -6,7 +6,7 @@
 #include "util/callbackTemplate.h"
 #include "version.h"
 
-//#define M_DEBUG  //comment out to disable debugger
+#define M_DEBUG  //comment out to disable debugger
 
 #ifdef M_DEBUG
   #include "MINDSiDebugger.h"
@@ -267,6 +267,7 @@ enum SCHEDULED_FUNCTIONS
 //==============================================
 
 float	lineGravity;
+int   lookAheadDist = 25; //feet
 int		steerThrow, steerStyle;
 float	steerFactor;
 float	minFwd, maxFwd;
@@ -369,6 +370,12 @@ bool isSetAutoStateFlag(uint8_t flag)
 void setup() 
 {
 
+	//setup pins for debugging
+	pinMode(13, OUTPUT);
+	pinMode(A7,OUTPUT);
+	pinMode(A8,OUTPUT);
+	pinMode(45,OUTPUT);
+
 	
 	//commSerial->begin(Protocol::BAUD_RATE);	
 	commSerial->begin(57600);
@@ -449,7 +456,7 @@ void loop()
 	int i;
 
 
-	
+	digitalWrite(45,HIGH);
 
 
 
@@ -493,7 +500,7 @@ void loop()
 	navigate();
 
 
-
+	digitalWrite(45,LOW);
 
 }
 
@@ -1271,7 +1278,7 @@ void positionChanged()
 		return;
 	}  
 
-	if (backWaypoint.radLongitude() == 0 || distance*5280.l < 25)
+	if (backWaypoint.radLongitude() == 0 || distance*5280.l < lookAheadDist*lineGravity)
 	{
     #ifdef M_DEBUG
 		msg.latIntermediate.minutes = 0;
@@ -1285,7 +1292,7 @@ void positionChanged()
 	{
 		// find a point along path from backwaypoint to targetwaypoint in which to drive toward (pathHeading)
 		//  First we determine how much of our current vector "counts" toward the target (cos).
-		//  Whatever is left of distance along that original (optimal) vector is scalled by lineGravity.
+		//  From there determine an intermediary waypoint along that original (optimal) vector is a lookAheadDis scalled by lineGravity.
 		//  LineGravity will scale the point to either heading directory orthogonal to original (optimal) vector or 
 		//  directly toward the target waypoint
 
@@ -1297,8 +1304,8 @@ void positionChanged()
 		float AL    = backWaypoint.headingTo(location);
 		//percentage of our current vector. what amount of distance in in direction we should be going.
 		float d     = cos(toRad(AL-AB)) * backWaypoint.distanceTo(location);
-		//scale remaining distance by linegravity (0,1) then add the 'd' distance. 
-		float D     = d + (full-d)*(1.l-lineGravity);
+		//scale the look-ahead distance by linegravity (0.25,5.00) then add the 'd' distance. 
+		float D     = d + (lookAheadDist*lineGravity);
 		//find waypoint for this new distance along the previous-to-target path
 		Waypoint intermediate = backWaypoint.extrapolate(AB, D);
 		//Find the heading to get there from current location
@@ -1604,7 +1611,7 @@ void updateGyro()
 
 void reportLocation()
 {
-	digitalWrite(45,HIGH);
+	//digitalWrite(45,HIGH);
 
 	float voltage  = float(analogRead(67)/1024.l*5.l*10.1f);
 	float amperage = float(analogRead(66)/1024.l*5.l*17.0f);
@@ -1645,12 +1652,12 @@ void reportLocation()
 	//extra gps info
 	manager.sendTelem(Protocol::telemetryType(HEADING_LOCK), ( heading_lock ) == true ? 1 : 0);
 
-	digitalWrite(45,LOW);
+	//digitalWrite(45,LOW);
 }
 
 void reportState()
 {
-	digitalWrite(45,HIGH);
+	//digitalWrite(45,HIGH);
 	
 	manager.sendState(Protocol::stateType(APM_STATE),apmState);
 	manager.sendState(Protocol::stateType(DRIVE_STATE),driveState);
@@ -1659,7 +1666,7 @@ void reportState()
 	manager.sendState(Protocol::stateType(GPS_STATE),gps.getWarning());
 
 
-	digitalWrite(45,LOW);
+	//digitalWrite(45,LOW);
 }
 
 void newPIDparam(float x)
@@ -1698,12 +1705,12 @@ void version()
 
 void setupSettings()
 {
-	/*GROUNDSETTING index="0" name="Line Gravity" min="0.25" max="0.75" def="0.50"
+	/*GROUNDSETTING index="0" name="Line Gravity" min="0.25" max="5.00" def="1.00"
 	 *Defines how strongly the rover should attempt to return to the original
 	 *course between waypoints, verses the direct path from its current location
 	 * to the target<br>
 	 */
-	settings.attach(0, .50, callback<float, &lineGravity>);
+	settings.attach(0, 1.00, callback<float, &lineGravity>);
 
 	/*GROUNDSETTING index="1" name="Steer Throw" min="0" max="90" def="45"
 	 *The number of degrees that rover will turn its wheels when it needs to
