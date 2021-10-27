@@ -1666,6 +1666,12 @@ void reportState()
 	//digitalWrite(45,LOW);
 }
 
+void updateSteerSkew(float s)
+{
+	writeSteerSkew(s);
+	steerSkew = s;
+}
+
 void newPIDparam(float x)
 {
 	// indexes for cruise control PID settings defined below

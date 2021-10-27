@@ -25,7 +25,8 @@ namespace commonSettings{
 		MAG_Y_SCLR	= 60,
 		MAG_Z_SCLR	= 61,
 		CALIB_VER	= 62,
-		STORAGE_VER	= 63
+		STORAGE_VER	= 63,
+		STEER_SKEW	= 64
 	};
 }
 using namespace commonSettings;
@@ -56,6 +57,10 @@ public:
 		validFormat = (storage->getRecord(STORAGE_VER) == VERSION);
 		if (!validFormat) storage->updateRecord(STORAGE_VER, VERSION);
 		formatChecked = true;
+	}
+	void writeSteerSkew(float skew){
+		if(storage == NULL) return;
+		storage->updateRecord(STEER_SKEW, skew);
 	}
 	void writeCalibrationVersion(){
 		if(storage == NULL) return;
