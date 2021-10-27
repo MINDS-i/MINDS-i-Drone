@@ -385,9 +385,13 @@ inline void CommManager::handleCommands(uint8_t a, uint8_t b)
 		case SETTINGS_RESET:
 			if (settingsResetCallback != NULL)
 			{
-				sendString("Settings Resetting");
-				//todo?
+				sendString("Settings Resetting");				
 				settingsResetCallback();
+				//resend settings
+				for(int i=0; i<MAX_SETTINGS; i++)
+				{
+					sendSetting(i, getSetting(i));
+				}
 			}
 			break;
 	}
