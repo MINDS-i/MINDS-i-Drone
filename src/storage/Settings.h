@@ -25,8 +25,7 @@ namespace commonSettings{
 		MAG_Y_SCLR	= 60,
 		MAG_Z_SCLR	= 61,
 		CALIB_VER	= 62,
-		STORAGE_VER	= 63,
-		STEER_SKEW	= 64
+		STORAGE_VER	= 63
 	};
 }
 using namespace commonSettings;
@@ -58,10 +57,6 @@ public:
 		if (!validFormat) storage->updateRecord(STORAGE_VER, VERSION);
 		formatChecked = true;
 	}
-	void writeSteerSkew(float skew){
-		if(storage == NULL) return;
-		storage->updateRecord(STEER_SKEW, skew);
-	}
 	void writeCalibrationVersion(){
 		if(storage == NULL) return;
 		storage->updateRecord(CALIB_VER, CALIBRATION_VERSON);
@@ -80,6 +75,18 @@ public:
 		uint8_t index = (int)type;
 
 		if (!validFormat) {
+			storage->updateRecord(index, defaul);
+		}
+		storage->attachCallback(index, call);
+		return true;
+	}
+	bool attach(int type, EE_STORAGE_TYPE min, EE_STORAGE_TYPE max, EE_STORAGE_TYPE defaul, void (*call)(EE_STORAGE_TYPE)){
+		if(storage == NULL) return false;
+		uint8_t index = (int)type;
+
+		EE_STORAGE_TYPE value  = storage->getRecord(index);
+
+		if (value < min || value > max) {
 			storage->updateRecord(index, defaul);
 		}
 		storage->attachCallback(index, call);
