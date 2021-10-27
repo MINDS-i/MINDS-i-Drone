@@ -2369,24 +2369,24 @@ void setupSettings()
 
 //skew
 
-	/*GROUNDSETTING index="57" name="Steer Skew" min="-45" max="45" def="0"
+	/*GROUNDSETTING index="20" name="Steer Skew" min="-45" max="45" def="0"
 	 *
 	 */
 	settings.attach(20, 0, callback<float,&steerSkew>);
 
 //ping 
 
-	/*GROUNDSETTING index="58" name="Avoid Ping value Edges" min="500" max="10000" def="1000"
+	/*GROUNDSETTING index="21" name="Avoid Ping value Edges" min="500" max="10000" def="1000"
 	 *
 	 */
 	settings.attach(21, 1000, &pingBlockLevelEdgesCallback);
 
-	/*GROUNDSETTING index="59" name="Avoid Ping value Middles" min="500" max="10000" def="1600"
+	/*GROUNDSETTING index="22" name="Avoid Ping value Middles" min="500" max="10000" def="1600"
 	 *
 	 */
 	settings.attach(22, 1600, &pingBlockLevelMiddlesCallback);
 
-	/*GROUNDSETTING index="60" name="Avoid Ping value center" min="500" max="10000" def="3000"
+	/*GROUNDSETTING index="23" name="Avoid Ping value center" min="500" max="10000" def="3000"
 	 *
 	 */
 	settings.attach(23, 3000, &pingBlockLevelCenterCallback);
@@ -2394,17 +2394,17 @@ void setupSettings()
 
 
 
-	/*GROUNDSETTING index="61" name="Warn Ping value Edges" min="500" max="10000" def="2000"
+	/*GROUNDSETTING index="24" name="Warn Ping value Edges" min="500" max="10000" def="2500"
 	 *
 	 */
 	settings.attach(24, 2500, &pingWarnLevelEdgesCallback);
 
-	/*GROUNDSETTING index="62" name="Warn Ping value Middles" min="500" max="10000" def="3200"
+	/*GROUNDSETTING index="25" name="Warn Ping value Middles" min="500" max="10000" def="5000"
 	 *
 	 */
 	settings.attach(25, 5000, &pingWarnLevelMiddlesCallback);
 
-	/*GROUNDSETTING index="63" name="Warn Ping value center" min="500" max="10000" def="6000"
+	/*GROUNDSETTING index="26" name="Warn Ping value center" min="500" max="10000" def="8000"
 	 *
 	 */
 	settings.attach(26, 8000, &pingWarnLevelCenterCallback);
