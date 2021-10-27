@@ -69,7 +69,7 @@ double   pathHeading;
 double   trueHeading;
 
 //test for correcting mechanically caused drift left-right
-float steerSkew = 0;
+uint8_t steerSkew = 0;
 
 int8_t turnAroundDir=0;
 
@@ -1669,8 +1669,8 @@ void reportState()
 
 void updateSteerSkew(float s)
 {
-	writeSteerSkew(s);
-	steerSkew = s;
+	uint8_t skew = uint8_t(s);
+	steerSkew = uint8_t(skew);
 }
 
 void newPIDparam(float x)
@@ -1873,7 +1873,7 @@ void setupSettings()
 	/*GROUNDSETTING index="20" name="Steer Skew" min="-45" max="45" def="0"
 	 *
 	 */
-	settings.attach(20, 0, callback<float,&steerSkew>);
+	settings.attach(20, -10, 10, 0, &updateSteerSkew);
 
 //ping 
 
