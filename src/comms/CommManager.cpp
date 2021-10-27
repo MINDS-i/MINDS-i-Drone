@@ -386,6 +386,7 @@ inline void CommManager::handleCommands(uint8_t a, uint8_t b)
 			if (settingsResetCallback != NULL)
 			{
 				sendString("Settings Resetting");
+				//todo?
 				settingsResetCallback();
 			}
 			break;
