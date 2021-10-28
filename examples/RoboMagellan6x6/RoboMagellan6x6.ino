@@ -418,6 +418,7 @@ void setup()
 	manager.setStateStartCallback(stateStart);
   manager.setBumperDisableCallback(bumperDisable);
   manager.setBumperEnableCallback(bumperEnable);
+  manager.setSettingsResetCallback(setDefaultSettings);
 	manager.setVersionCallback(version);
 
 
@@ -1700,6 +1701,58 @@ void bumperDisable()
 void version()
 {
 	manager.sendVersion(version_major, version_minor, version_rev);
+}
+
+
+//todo: add string and make array of structs?
+//update setupSettings to use array too
+//hard to mantain currently but another branch is updating the setupsettings()
+//function and don't want to cause conflicts
+
+enum SETTINGS_INDEX_ID
+{
+	SETTINGS_DATA_MIN=0,
+	SETTINGS_DATA_MAX=1,
+	SETTINGS_DATA_DEF=2,
+};
+
+const float settingsData[][3] PROGMEM = { 
+															{.25,5.0,1.0},			//Line Gravity
+															{0,90,45},					//Steer Throw
+															{0,2,1},						//Steer Style
+															{0,8,1.5},					//Steer Scalar (steerFactor)
+															{1,3,1.5},					//Min Fwd Speed
+															{1.5,3,2.0},				//Max Fwd Speed
+															{0,90,20},					//Rev Str Throw
+															{-2,-1,-1},					//Reverse Speed
+															{1,20000,1400},			//Ping Factor
+															{2000,8000, 2000},  //Coast Time
+															{500,2000, 1000},   //Min Rev Time
+															{0,1, 0.05},				//Cruise P
+															{0,10, 0.1},				//Cruise I
+															{0,10, 0.0},				//Cruise D
+															{0,12, 5.85},			  //Tire Diameter
+															{0,180, 90},				//Steer Center
+															{0,.003, .0015},		//Waypoint acheived radius in miles
+															{0,.0076, .0038},	  //Approach radius
+															{0,1, 0},					  //GryoSync
+															{-45,45, 0},				//Steer Skew
+															{500,10000, 1000},	//Avoid Ping value Edges
+															{500,10000, 1600},	//Avoid Ping value Middles
+															{500,10000, 3000},	//Avoid Ping value center
+															{500,10000, 2000},	//Warn Ping value Edges
+															{500,10000, 3200},	//Warn Ping value Middles
+															{500,10000, 6000}	  //Warn Ping value center
+															//27 --reset compass offset.  Remove?
+
+														};
+
+void setDefaultSettings()
+{
+	for (byte i=0;i<sizeof(settingsData)/sizeof(settingsData[0]);i++)
+	{		
+		storage->updateRecord(i,pgm_read_float_near(&settingsData[i][SETTINGS_DATA_DEF]));
+	}
 }
 
 
