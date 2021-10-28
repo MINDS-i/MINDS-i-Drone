@@ -6,7 +6,7 @@
 #include "util/callbackTemplate.h"
 #include "version.h"
 
-#define M_DEBUG  //comment out to disable debugger
+//#define M_DEBUG  //comment out to disable debugger
 
 #ifdef M_DEBUG
   #include "MINDSiDebugger.h"
@@ -69,7 +69,7 @@ double   pathHeading;
 double   trueHeading;
 
 //test for correcting mechanically caused drift left-right
-uint8_t steerSkew = 0;
+int8_t steerSkew = 0;
 
 int8_t turnAroundDir=0;
 
@@ -1668,8 +1668,7 @@ void reportState()
 
 void updateSteerSkew(float s)
 {
-	uint8_t skew = uint8_t(s);
-	steerSkew = uint8_t(skew);
+	steerSkew = int8_t(round(s));
 }
 
 void newPIDparam(float x)
