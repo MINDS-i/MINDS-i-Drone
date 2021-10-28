@@ -58,10 +58,6 @@ public:
 		if (!validFormat) storage->updateRecord(STORAGE_VER, VERSION);
 		formatChecked = true;
 	}
-	void writeSteerSkew(float skew){
-		if(storage == NULL) return;
-		storage->updateRecord(STEER_SKEW, skew);
-	}
 	void writeCalibrationVersion(){
 		if(storage == NULL) return;
 		storage->updateRecord(CALIB_VER, CALIBRATION_VERSON);
