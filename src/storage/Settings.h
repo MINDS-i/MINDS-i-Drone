@@ -25,7 +25,8 @@ namespace commonSettings{
 		MAG_Y_SCLR	= 60,
 		MAG_Z_SCLR	= 61,
 		CALIB_VER	= 62,
-		STORAGE_VER	= 63
+		STORAGE_VER	= 63,
+		STEER_SKEW	= 64
 	};
 }
 using namespace commonSettings;
@@ -75,6 +76,18 @@ public:
 		uint8_t index = (int)type;
 
 		if (!validFormat) {
+			storage->updateRecord(index, defaul);
+		}
+		storage->attachCallback(index, call);
+		return true;
+	}
+	bool attach(int type, EE_STORAGE_TYPE min, EE_STORAGE_TYPE max, EE_STORAGE_TYPE defaul, void (*call)(EE_STORAGE_TYPE)){
+		if(storage == NULL) return false;
+		uint8_t index = (int)type;
+
+		EE_STORAGE_TYPE value  = storage->getRecord(index);
+
+		if (value < min || value > max) {
 			storage->updateRecord(index, defaul);
 		}
 		storage->attachCallback(index, call);

@@ -6,7 +6,7 @@
 #include "util/callbackTemplate.h"
 #include "version.h"
 
-#define M_DEBUG  //comment out to disable debugger
+//#define M_DEBUG  //comment out to disable debugger
 
 #ifdef M_DEBUG
   #include "MINDSiDebugger.h"
@@ -19,9 +19,6 @@ bool kalman_heading = true;
 float k_heading = 0;
 bool heading_lock = false;
 bool new_gps = false;
-
-int8_t steer_bias = 0;
-
 bool driving_straight = false;
 //=============================================//
 //  Defines used to control compile options
@@ -72,7 +69,7 @@ double   pathHeading;
 double   trueHeading;
 
 //test for correcting mechanically caused drift left-right
-float steerSkew = 0;
+int8_t steerSkew = 0;
 
 int8_t turnAroundDir=0;
 
@@ -1438,7 +1435,7 @@ void output(float mph, uint8_t steer)
 			straight_ctr = 5;  //don't let overflow    
 		}
 	}
-	steer += steer_bias;
+	steer += steerSkew;
   
 	#ifdef simMode
 	//set speed to gps simulator (simulator only)
@@ -1670,6 +1667,11 @@ void reportState()
 	//digitalWrite(45,LOW);
 }
 
+void updateSteerSkew(float s)
+{
+	steerSkew = int8_t(round(s));
+}
+
 void newPIDparam(float x)
 {
 	// indexes for cruise control PID settings defined below
@@ -1735,16 +1737,15 @@ const float settingsData[][3] PROGMEM = {
 															{0,180, 90},				//Steer Center
 															{0,.003, .0015},		//Waypoint acheived radius in miles
 															{0,.0076, .0038},	  //Approach radius
-															{0,1, 0},					  //GryoSync
-															{-45,45, 0},				//Steer Skew
+															{0,1, 0},					  //old GryoSync...removed
+															{0,1,0},				//???...missing index 19
+															{-10,10, 0},				//Steer Skew
 															{500,10000, 1000},	//Avoid Ping value Edges
 															{500,10000, 1600},	//Avoid Ping value Middles
 															{500,10000, 3000},	//Avoid Ping value center
 															{500,10000, 2000},	//Warn Ping value Edges
 															{500,10000, 3200},	//Warn Ping value Middles
 															{500,10000, 6000}	  //Warn Ping value center
-															//27 --reset compass offset.  Remove?
-
 														};
 
 void setDefaultSettings()
@@ -1758,93 +1759,110 @@ void setDefaultSettings()
 
 void setupSettings()
 {
+	uint8_t index;
+
 	/*GROUNDSETTING index="0" name="Line Gravity" min="0.25" max="5.00" def="1.00"
 	 *Defines how strongly the rover should attempt to return to the original
 	 *course between waypoints, verses the direct path from its current location
 	 * to the target<br>
 	 */
-	settings.attach(0, 1.00, callback<float, &lineGravity>);
+	index = 0;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float, &lineGravity>);
 
 	/*GROUNDSETTING index="1" name="Steer Throw" min="0" max="90" def="45"
 	 *The number of degrees that rover will turn its wheels when it needs to
 	 *to turn its most extreme amount
 	 */
-	settings.attach(1, 45, callback<int, &steerThrow>);
+	index = 1;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<int, &steerThrow>);
 
 	/*GROUNDSETTING index="2" name="Steer Style" min="0" max="2" def="1"
 	 *Switches between arctangent of error steering (0) <br>
 	 *square of error steering (1) <br>
 	 *and proportional to error steering (2)
 	 */
-	settings.attach(2, 1, callback<int, &steerStyle>);
+	index = 2;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<int, &steerStyle>);
 
 	/*GROUNDSETTING index="3" name="Steer Scalar" min="0" max="8" def="1.5"
 	 *Multiplier that determines how aggressively to steer
 	 */
-	settings.attach(3, 1.5, callback<float, &steerFactor>);
+	index = 3;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float, &steerFactor>);
 
 
 	/*GROUNDSETTING index="4" name="Min Fwd Speed" min="1" max="3" def="1.5"
 	 *Minimum forward driving speed in MPH
 	 */
-	settings.attach(4, 1.5, callback<float, &minFwd>);
+	index = 4;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float, &minFwd>);
 
 	/*GROUNDSETTING index="5" name="Max Fwd Speed" min="1.5" max="3" def="2.0"
 	 *Maximum forward driving speed in MPH
 	 */
-	settings.attach(5, 2.0, callback<float, &maxFwd>);
+	index = 5;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float, &maxFwd>);
 
 	/*GROUNDSETTING index="6" name="Rev Str Throw" min="0" max="90" def="20"
 	 *How far to turn the wheels when backing away from an obstacle
 	 */
-	settings.attach(6, 20, callback<int, &revThrow>);
+	index = 6;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<int, &revThrow>);
 
 	/*GROUNDSETTING index="7" name="Reverse Speed" min="-2" max="-1" def="-1.0"
 	 *Speed in MPH to drive in reverse
 	 */
-	settings.attach(7, -1.0, callback<float, &revSpeed>);
+	index = 7;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float, &revSpeed>);
 
 	/*GROUNDSETTING index="8" name="Ping Factor" min="1" max="20000" def="1400"
 	 *Factor to determine how strongly obstacles effect the rover's course <br>
 	 *Larger numbers correspond to larger effects from obstacles
 	 */
-	settings.attach(8, 1400, callback<float, &pingWeight>);
+	index = 8;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float, &pingWeight>);
 
 	/*GROUNDSETTING index="9" name="Coast Time" min="2000" max="8000" def="2000"
 	 *Time in milliseconds to coast before reversing when an obstacle is encountered
 	 */
-	settings.attach(9, 2000, callback<int, &avoidCoastTime>);
+	index = 9;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<int, &avoidCoastTime>);
 
 	/*GROUNDSETTING index="10" name="Min Rev Time" min="500" max="2000" def="1000"
 	 *Minimum time in seconds to reverse away from an obstacle
 	 */
-	settings.attach(10, 1000, &dangerTimeCallback);
+	index = 10;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &dangerTimeCallback);
 
 	/*GROUNDSETTING index="11" name="Cruise P" min="0" max="1" def="0.05"
 	 *P term in cruise control PID loop
 	 */
-	settings.attach(11, 0.05, &newPIDparam);
+	index = 11;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &newPIDparam);
 
 	/*GROUNDSETTING index="12" name="Cruise I" min="0" max="10" def="0.1"
 	 *I term in cruise control PID loop
 	 */
-	settings.attach(12, 0.1, &newPIDparam);
+	index = 12;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &newPIDparam);
 
 	/*GROUNDSETTING index="13" name="Cruise D" min="0" max="10" def="0.0"
 	 *D term in cruise control PID loop
 	 */
-	settings.attach(13, 0.0, &newPIDparam);
-
+	index = 13;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &newPIDparam);
 
 	/*GROUNDSETTING index="14" name="Tire Diameter" min="0" max="12" def="5.85"
 	 *Tire Diameter in inches, used to calculate MPH
 	 */
-	settings.attach(14, 5.85, callback<float, &tireDiameter>);
+	index = 14;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float, &tireDiameter>);
 
 	/*GROUNDSETTING index="15" name="Steer Center" min="0" max="180" def="90"
 	 *Center point in degrees corresponding to driving straight
 	 */
-	settings.attach(15, 90, callback<int, &steerCenter>);
+	index = 15;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<int, &steerCenter>);
 
 //Target radi settings
 
@@ -1852,66 +1870,60 @@ void setupSettings()
 	/*GROUNDSETTING index="16" name="Waypoint acheived radius in miles" min="0" max=".003" def=".0015"
 	 * Radius centered at waypoint where target is determined to be meet
 	 */
-	settings.attach(16, .0015, callback<float,&PointRadius>);
+	index = 16;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float,&PointRadius>);
 
 	/*GROUNDSETTING index="17" name="Approach radius" min="0" max=".0076" def=".0038"
 	 * Radius cneter at waypoint where the approach flag is set
 	 */
-	settings.attach(17, .0038, callback<float,&approachRadius>);
-
-	//testing: gyro sync with north
-	/*GROUNDSETTING index="18" name="GryoSync" min="0" max="1" def="0"
-	 * Change to init gyro sync to north
-	 */
-	settings.attach(18, 0, &triggerGyroSyncNorth);	
+	index = 17;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float,&approachRadius>);
 
 //skew
 
 	/*GROUNDSETTING index="20" name="Steer Skew" min="-45" max="45" def="0"
 	 *
 	 */
-	settings.attach(20, 0, callback<float,&steerSkew>);
+	index = 20;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &updateSteerSkew);
 
 //ping 
 
 	/*GROUNDSETTING index="21" name="Avoid Ping value Edges" min="500" max="10000" def="1000"
 	 *
 	 */
-	settings.attach(21, 1000, &pingBlockLevelEdgesCallback);
+	index = 21;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &pingBlockLevelEdgesCallback);
 
 	/*GROUNDSETTING index="22" name="Avoid Ping value Middles" min="500" max="10000" def="1600"
 	 *
 	 */
-	settings.attach(22, 1600, &pingBlockLevelMiddlesCallback);
+	index = 22;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &pingBlockLevelMiddlesCallback);
 
 	/*GROUNDSETTING index="23" name="Avoid Ping value center" min="500" max="10000" def="3000"
 	 *
 	 */
-	settings.attach(23, 3000, &pingBlockLevelCenterCallback);
-
-
-
+	index = 23;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &pingBlockLevelCenterCallback);
 
 	/*GROUNDSETTING index="24" name="Warn Ping value Edges" min="500" max="10000" def="2500"
 	 *
 	 */
-	settings.attach(24, 2500, &pingWarnLevelEdgesCallback);
+	index = 24;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &pingWarnLevelEdgesCallback);
 
 	/*GROUNDSETTING index="25" name="Warn Ping value Middles" min="500" max="10000" def="5000"
 	 *
 	 */
-	settings.attach(25, 5000, &pingWarnLevelMiddlesCallback);
+	index = 25;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &pingWarnLevelMiddlesCallback);
 
 	/*GROUNDSETTING index="26" name="Warn Ping value center" min="500" max="10000" def="8000"
 	 *
 	 */
-	settings.attach(26, 8000, &pingWarnLevelCenterCallback);
-
-	
-
-
-	settings.attach(27, compassOffset, callback<float,&compassOffset>);
-
+	index = 26;
+	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &pingWarnLevelCenterCallback);
 }
 
 
