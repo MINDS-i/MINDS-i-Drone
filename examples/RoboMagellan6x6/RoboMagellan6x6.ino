@@ -15,8 +15,6 @@
 
 #define MIN_GOOD_HEADINGS 5 
 #define HEADING_LOCK_RANGE 10
-bool kalman_heading = true;
-float k_heading = 0;
 bool heading_lock = false;
 bool new_gps = false;
 bool driving_straight = false;
@@ -435,7 +433,7 @@ void setup()
 //this all needs to be cleaned up after it works (hopefully)
 	for (uint8_t i=0;i<10;i++)
 	{
-		updateGyro();
+//		updateGyro(); - depreicated for updateHeading()
 		manager.update();
 		delay(10);
 	}
@@ -465,7 +463,8 @@ void loop()
 	manager.update();
 
 	updateGPS();
-	updateGyro();
+//	updateGyro(); - depreicated for updateHeading()
+	updateHeading();
 	bumperSensor.update();
 
 	//======================================================
@@ -1271,7 +1270,7 @@ void positionChanged()
 	msg.lonTarget.frac = debugger.frac_float_to_int32(endTargetWpLon.frac);
   #endif
   
-	if (kalman_heading && !heading_lock) {
+	if (!heading_lock) {
 		pathHeading = trueHeading; //drive straight
 		return;
 	}  
@@ -1472,87 +1471,138 @@ void output(float mph, uint8_t steer)
 
 void updateHeading()
 {
-  static bool gps_heading_init = false; //5 good GPS course msgs
+	//attempt to get new updates from IMU
+	mpudmp.update();
 
-  //Tuning parameters
-  float error_propagation_rate = 0.5729578; // rad/s in deg 
-  float gps_heading_error = 57.2958; // 1 rad in deg
-  float speed_thresh = 0.5592341; // 0.25 m/s in mph-- GPS heading will be bad at very low speeds
+	//new imu data triggers prediction and correction
+	//correction only completed if new gps data is avaliable
+	if (mpudmp.updateReady())
+	{
+		static bool gps_heading_init = false; //5 good GPS course msgs
 
-  //The main estimate (initialized to 0)
-  static float cur_heading_est = 0.0;
-  static float cur_heading_variance = 1000000;
+		//Tuning parameters -
+		float error_propagation_rate = 0.5729578; //est error per sec (deg)
+		float gps_heading_error = 57.2958; //est error per GPS update (deg)
 
-  // To be populated with actual data from the system
-  float cur_wheel_speed = RPMtoMPH(encoder::getRPM());
+		//The main estimate (initialized to 0)
+		static float cur_heading_est = 0.0;
 
-  static int last_time = mpudmp.lastUpdateTime();
+		//initilize heading variance as high since the heading is unknown
+		static float cur_heading_variance = 1000000;
 
-  static int heading_good_counter = 0;
+		// GPS heading will be very bad at very low speeds
+		// TODO: may way to decrease gps_heading_error if checking speed
+		//		and driving straight
+		float cur_wheel_speed = RPMtoMPH(encoder::getRPM());
+		float speed_thresh = 0.5592341; // 0.25 m/s in mph
 
-  static float offset = 0;
-  int cur_time = mpudmp.lastUpdateTime();
-  int dt = cur_time - last_time;
-  last_time = cur_time;
+		static int last_time = mpudmp.lastUpdateTime();
 
-  // prediction:
-  float euler_z = toDeg(mpudmp.getEulerZ());
-  cur_heading_est = truncateDegree(euler_z - offset);
-  float old_heading_est = truncateDegree(euler_z - offset);
-  cur_heading_variance += pow((error_propagation_rate * dt/1000.0),2);
+		// initilizer used to keep variance high until we have
+		// an initial good estimate...ignored afterwards
+		static int heading_good_counter = 0;
 
-  if (new_gps) {
-    float cur_gps_heading_meas = truncateDegree(gps.getCourse());  // this will update only once a second?
-    new_gps = false;
+		static float offset = 0; // correction applied to IMU heading
 
-    //ensure that we have gotten at least one valid gps course
-    if (!gps_heading_init && fabs(cur_wheel_speed) > speed_thresh) {
-      if (cur_gps_heading_meas > 0.0001 || cur_gps_heading_meas < -0.0001) {
-        gps_heading_init = true;
-      }
-    }
-        
-    // correction:
-    // only apply correction if:
-    // - vehicle speed is above speed threshold
-    // - a valid GPS course is available (start using course before turning allowed)
-    // - we are not currently in a hard turn (turn around) mode
-    // - we are driving relativly straight
-    if (fabs(cur_wheel_speed) > speed_thresh && gps_heading_init && !isSetAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND) && driving_straight) {
-      float update_heading = cur_gps_heading_meas;
-      if (cur_wheel_speed < 0) {
-        // driving backwards, flip the heading measurement
-        update_heading = truncateDegree(update_heading + 180.0);
-      }
-      float gps_heading_var = pow(gps_heading_error,2); 
-      float heading_diff = truncateDegree(update_heading - cur_heading_est);
-      float var_denominator = (1.0 / cur_heading_variance + 1.0 / gps_heading_var);
-      cur_heading_est = truncateDegree((cur_heading_est / cur_heading_variance + (cur_heading_est + heading_diff) / gps_heading_var)  / var_denominator);
-      cur_heading_variance = 1.0 / var_denominator;
+		// determine delta time since last IMU heading reading
+		int cur_time = mpudmp.lastUpdateTime();
+		int dt = cur_time - last_time;
+		last_time = cur_time;
 
-      offset -= truncateDegree(cur_heading_est - old_heading_est);
+		// prediction: calculated by the IMU's internal model.  As such, we
+		// 		use the Euler-Z reading directly
+		float euler_z = toDeg(mpudmp.getEulerZ());
+		cur_heading_est = truncateDegree(euler_z - offset);
+		cur_heading_variance += pow((error_propagation_rate * dt/1000.0),2);
 
-      //keep variance high until we have a stable solution
-      if (heading_lock == false)
-      {
-        if (abs(heading_diff) < HEADING_LOCK_RANGE) {
-          heading_good_counter++;
-          if (heading_good_counter >= MIN_GOOD_HEADINGS) {
-            heading_lock = true;
-          }
-          else {
-            cur_heading_variance *= 1000;            
-          }
-        }
-        else {
-          cur_heading_variance *= 1000;            
-          heading_good_counter = 0;
-        }
-      }
-    }
-  }
-  
-  k_heading = truncateDegree(euler_z - offset);
+		// when a new GPS course is available use it to correct the predicted
+		// heading supplied by the IMU
+		if (new_gps) {
+			float cur_gps_heading_meas = truncateDegree(gps.getCourse());  // this will update only once a second?
+			new_gps = false;
+
+			// Ensure that we have gotten at least one valid gps course.
+			// GPS course defaults to 0.0 and we assume we must be moving
+			// under the rover's power before a valid course should be
+			// considered.
+			if (!gps_heading_init && fabs(cur_wheel_speed) > speed_thresh) {
+				if (cur_gps_heading_meas > 0.0001 || cur_gps_heading_meas < -0.0001) {
+				gps_heading_init = true;
+				}
+			}
+
+			// correction: determines the offset between the predicted heading
+			//		(above) and what is provided by the GPS
+			// only apply correction if:
+			// - vehicle speed is above speed threshold
+			// - a valid GPS Course is available
+			// - we are not currently in a hard turn (turn around) mode
+			//		may be superfluous given the next constraint???
+			// - we are driving relativly straight
+			if (fabs(cur_wheel_speed) > speed_thresh // moving fast enough
+				&& gps_heading_init // valid GPS course data is available
+				&& !isSetAutoStateFlag(AUTO_STATE_FLAG_TURNAROUND) // not in a hard turn
+				&& driving_straight) //driving relativly straight
+				{
+
+				//GPS will have 180 offset course if driving backwards
+				float update_heading = cur_gps_heading_meas;
+				if (cur_wheel_speed < 0) { // driving backwards, flip value
+					update_heading = truncateDegree(update_heading + 180.0);
+				}
+
+				// use error estimates (variances) to combine IMU estimate
+				// with GPS course measurment to calculate a new heading
+				// estimate.
+				float gps_heading_var = pow(gps_heading_error,2);
+				float heading_diff = truncateDegree(update_heading - cur_heading_est);
+				float var_denominator = (1.0 / cur_heading_variance + 1.0 / gps_heading_var);
+				float old_heading_est = cur_heading_est;
+				cur_heading_est = truncateDegree((cur_heading_est / cur_heading_variance + (cur_heading_est + heading_diff) / gps_heading_var)  / var_denominator);
+				cur_heading_variance = 1.0 / var_denominator;
+
+				// Use the new heading estimate to calculate a new offset/bias
+				// to be applied to future IMU heading predictions
+				offset -= truncateDegree(cur_heading_est - old_heading_est);
+
+				//keep IMU variance artificially high until we have a stable
+				//heading solution (small variation between IMU based
+				//prediction and GPS course). High IMU variance ensures GPS
+				//course values will dominate the heading estimate.
+				if (heading_lock == false)	{
+					if (abs(heading_diff) < HEADING_LOCK_RANGE) {
+						heading_good_counter++;
+						if (heading_good_counter >= MIN_GOOD_HEADINGS) {
+							heading_lock = true;
+						}
+						else {
+							cur_heading_variance *= 1000;
+						}
+				}
+					else {
+						cur_heading_variance *= 1000;
+						heading_good_counter = 0;
+					}
+				}
+			}
+		}
+
+		trueHeading = truncateDegree(euler_z - offset);
+	}
+	else if (mpudmp.lastUpdateTime() > (millis() + 4000))
+	{
+		manager.sendString("IMU: error");
+		mpudmp.setLastUpdateTime(millis());
+	}
+
+  #ifdef M_DEBUG
+	// Logger Msg
+	OrientationMsg_t msg;
+	msg.heading = (uint16_t)(trueHeading*100);
+	msg.roll = (uint16_t)(toDeg(mpudmp.getEulerY())*100);
+	msg.pitch = (uint16_t)(toDeg(mpudmp.getEulerX())*100);
+	debugger.send(msg);
+  #endif
 }
 
 void updateGyro()
@@ -1562,7 +1612,6 @@ void updateGyro()
 
  	if (mpudmp.updateReady())
   	{
-		updateHeading();
   		float euler_x, euler_y, euler_z;
 
 	    mpudmp.getEuler(euler_x,euler_z,euler_z);
@@ -1591,10 +1640,6 @@ void updateGyro()
 			mpudmp.setLastUpdateTime(millis());
 		}
 
-	}
-
-	if (kalman_heading) {
-		trueHeading = k_heading;
 	}
 	
   #ifdef M_DEBUG
