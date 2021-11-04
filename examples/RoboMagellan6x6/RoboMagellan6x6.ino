@@ -1773,7 +1773,6 @@ void setupSettings()
 	 *The number of degrees that rover will turn its wheels when it needs to
 	 *to turn its most extreme amount
 	 */
-	index = 1;
 	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<int, &steerThrow>);
 
 	/*GROUNDSETTING index="2" name="Steer Style" min="0" max="2" def="1"
@@ -1901,7 +1900,7 @@ void setupSettings()
 	index = 22;
 	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &pingBlockLevelMiddlesCallback);
 
-	/*GROUNDSETTING index="23" name="Avoid Ping value center" min="500" max="10000" def="3000"
+  /*GROUNDSETTING index="23" name="Avoid Ping value center" min="500" max="10000" def="3000"
 	 *
 	 */
 	index = 23;
