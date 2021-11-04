@@ -1767,14 +1767,14 @@ void setupSettings()
 	 * to the target<br>
 	 */
 	index = 0;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float, &lineGravity>);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<float, &lineGravity>);
 
 	/*GROUNDSETTING index="1" name="Steer Throw" min="0" max="90" def="45"
 	 *The number of degrees that rover will turn its wheels when it needs to
 	 *to turn its most extreme amount
 	 */
 	index = 1;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<int, &steerThrow>);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<int, &steerThrow>);
 
 	/*GROUNDSETTING index="2" name="Steer Style" min="0" max="2" def="1"
 	 *Switches between arctangent of error steering (0) <br>
@@ -1782,87 +1782,87 @@ void setupSettings()
 	 *and proportional to error steering (2)
 	 */
 	index = 2;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<int, &steerStyle>);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<int, &steerStyle>);
 
 	/*GROUNDSETTING index="3" name="Steer Scalar" min="0" max="8" def="1.5"
 	 *Multiplier that determines how aggressively to steer
 	 */
 	index = 3;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float, &steerFactor>);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<float, &steerFactor>);
 
 
 	/*GROUNDSETTING index="4" name="Min Fwd Speed" min="1" max="3" def="1.5"
 	 *Minimum forward driving speed in MPH
 	 */
 	index = 4;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float, &minFwd>);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<float, &minFwd>);
 
 	/*GROUNDSETTING index="5" name="Max Fwd Speed" min="1.5" max="3" def="2.0"
 	 *Maximum forward driving speed in MPH
 	 */
 	index = 5;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float, &maxFwd>);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<float, &maxFwd>);
 
 	/*GROUNDSETTING index="6" name="Rev Str Throw" min="0" max="90" def="20"
 	 *How far to turn the wheels when backing away from an obstacle
 	 */
 	index = 6;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<int, &revThrow>);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<int, &revThrow>);
 
 	/*GROUNDSETTING index="7" name="Reverse Speed" min="-2" max="-1" def="-1.0"
 	 *Speed in MPH to drive in reverse
 	 */
 	index = 7;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float, &revSpeed>);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<float, &revSpeed>);
 
 	/*GROUNDSETTING index="8" name="Ping Factor" min="1" max="20000" def="1400"
 	 *Factor to determine how strongly obstacles effect the rover's course <br>
 	 *Larger numbers correspond to larger effects from obstacles
 	 */
 	index = 8;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float, &pingWeight>);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<float, &pingWeight>);
 
 	/*GROUNDSETTING index="9" name="Coast Time" min="2000" max="8000" def="2000"
 	 *Time in milliseconds to coast before reversing when an obstacle is encountered
 	 */
 	index = 9;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<int, &avoidCoastTime>);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<int, &avoidCoastTime>);
 
 	/*GROUNDSETTING index="10" name="Min Rev Time" min="500" max="2000" def="1000"
 	 *Minimum time in seconds to reverse away from an obstacle
 	 */
 	index = 10;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &dangerTimeCallback);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &dangerTimeCallback);
 
 	/*GROUNDSETTING index="11" name="Cruise P" min="0" max="1" def="0.05"
 	 *P term in cruise control PID loop
 	 */
 	index = 11;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &newPIDparam);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &newPIDparam);
 
 	/*GROUNDSETTING index="12" name="Cruise I" min="0" max="10" def="0.1"
 	 *I term in cruise control PID loop
 	 */
 	index = 12;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &newPIDparam);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &newPIDparam);
 
 	/*GROUNDSETTING index="13" name="Cruise D" min="0" max="10" def="0.0"
 	 *D term in cruise control PID loop
 	 */
 	index = 13;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &newPIDparam);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &newPIDparam);
 
 	/*GROUNDSETTING index="14" name="Tire Diameter" min="0" max="12" def="5.85"
 	 *Tire Diameter in inches, used to calculate MPH
 	 */
 	index = 14;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float, &tireDiameter>);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<float, &tireDiameter>);
 
 	/*GROUNDSETTING index="15" name="Steer Center" min="0" max="180" def="90"
 	 *Center point in degrees corresponding to driving straight
 	 */
 	index = 15;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<int, &steerCenter>);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<int, &steerCenter>);
 
 //Target radi settings
 
@@ -1871,13 +1871,13 @@ void setupSettings()
 	 * Radius centered at waypoint where target is determined to be meet
 	 */
 	index = 16;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float,&PointRadius>);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<float,&PointRadius>);
 
 	/*GROUNDSETTING index="17" name="Approach radius" min="0" max=".0076" def=".0038"
 	 * Radius cneter at waypoint where the approach flag is set
 	 */
 	index = 17;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], callback<float,&approachRadius>);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<float,&approachRadius>);
 
 //skew
 
@@ -1885,7 +1885,7 @@ void setupSettings()
 	 *
 	 */
 	index = 20;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &updateSteerSkew);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &updateSteerSkew);
 
 //ping 
 
@@ -1893,37 +1893,37 @@ void setupSettings()
 	 *
 	 */
 	index = 21;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &pingBlockLevelEdgesCallback);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &pingBlockLevelEdgesCallback);
 
 	/*GROUNDSETTING index="22" name="Avoid Ping value Middles" min="500" max="10000" def="1600"
 	 *
 	 */
 	index = 22;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &pingBlockLevelMiddlesCallback);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &pingBlockLevelMiddlesCallback);
 
 	/*GROUNDSETTING index="23" name="Avoid Ping value center" min="500" max="10000" def="3000"
 	 *
 	 */
 	index = 23;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &pingBlockLevelCenterCallback);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &pingBlockLevelCenterCallback);
 
 	/*GROUNDSETTING index="24" name="Warn Ping value Edges" min="500" max="10000" def="2500"
 	 *
 	 */
 	index = 24;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &pingWarnLevelEdgesCallback);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &pingWarnLevelEdgesCallback);
 
 	/*GROUNDSETTING index="25" name="Warn Ping value Middles" min="500" max="10000" def="5000"
 	 *
 	 */
 	index = 25;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &pingWarnLevelMiddlesCallback);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &pingWarnLevelMiddlesCallback);
 
 	/*GROUNDSETTING index="26" name="Warn Ping value center" min="500" max="10000" def="8000"
 	 *
 	 */
 	index = 26;
-	settings.attach(index, settingsData[index][0], settingsData[index][1], settingsData[index][2], &pingWarnLevelCenterCallback);
+	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &pingWarnLevelCenterCallback);
 }
 
 
