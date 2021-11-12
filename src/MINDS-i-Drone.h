@@ -59,7 +59,11 @@ Copyright 2015 MINDS-i Inc.
 #include "input/altIMU/STMtwi.h"
 #include "input/APM/HMC5883L.h"
 #include "input/APM/LEA6H.h"
+
+#include "input/APM/LEA6H_sim.h"
+
 #include "input/APM/MPU6000.h"
+#include "input/APM/MPU6000_HW.h"
 #include "input/APM/MS5611.h"
 #include "input/APM/Power.h"
 #include "input/AxisTranslator.h"
@@ -67,12 +71,19 @@ Copyright 2015 MINDS-i Inc.
 //#include "input/Sensor.h"
 #include "input/SPIcontroller.h"
 #include "input/UM7.h"
+#include "input/Bumper.h"
+
 
 #include "math/Algebra.h"
 #include "math/Quaternion.h"
 #include "math/SpatialMath.h"
 #include "math/Vec3.h"
 #include "math/Waypoint.h"
+
+#include "math/gps_angle.h"
+#include "math/floatgps.h"
+#include "math/gps_print.h"
+#include "math/ftoa.h"
 
 #include "output/AfroESC.h"
 #include "output/EMaxESC.h"

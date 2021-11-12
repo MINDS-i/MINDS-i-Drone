@@ -11,14 +11,17 @@
 		should call callback immediatly upon attachment
 */
 
-class eeStorage : public Storage<EE_STORAGE_TYPE> {
+class eeStorage : public Storage<EE_STORAGE_TYPE> 
+{
 private:
 	static eeStorage* m_instance;
 	void (*callback[NUM_STORED_RECORDS])(EE_STORAGE_TYPE);
 	eeStorage();
 public:
-	static eeStorage* getInstance(){
-		if(m_instance == NULL) m_instance = new eeStorage();
+	static eeStorage* getInstance()
+	{
+		if(m_instance == NULL) 
+			m_instance = new eeStorage();
 		return m_instance;
 	}
 	void attachCallback(uint8_t dataNum, void (*call)(EE_STORAGE_TYPE));
@@ -27,25 +30,35 @@ public:
 };
 eeStorage* eeStorage::m_instance = NULL;
 
-eeStorage::eeStorage(){
+eeStorage::eeStorage()
+{
 	eeprom::setup();
-	for(int i=0; i<NUM_STORED_RECORDS; i++) callback[i] = NULL;
+	for(int i=0; i<NUM_STORED_RECORDS; i++) 
+		callback[i] = NULL;
 }
-void
-eeStorage::attachCallback(uint8_t dataNum, void (*call)(EE_STORAGE_TYPE)){
-	if(dataNum >= NUM_STORED_RECORDS) return;
+
+void eeStorage::attachCallback(uint8_t dataNum, void (*call)(EE_STORAGE_TYPE))
+{
+	if(dataNum >= NUM_STORED_RECORDS) 
+		return;
 	callback[dataNum] = call;
-	if(call != NULL) call(getRecord(dataNum));
+	if(call != NULL) 
+		call(getRecord(dataNum));
 }
-void
-eeStorage::updateRecord(uint8_t dataNum, EE_STORAGE_TYPE value){
-	if(dataNum >= NUM_STORED_RECORDS) return;
+
+void eeStorage::updateRecord(uint8_t dataNum, EE_STORAGE_TYPE value)
+{
+	if(dataNum >= NUM_STORED_RECORDS) 
+		return;
 	eeprom::writeFloat(EEaddrStart+4*dataNum, value);
-	if(callback[dataNum] != NULL) callback[dataNum](value);
+	if(callback[dataNum] != NULL) 
+		callback[dataNum](value);
 }
-EE_STORAGE_TYPE
-eeStorage::getRecord(uint8_t dataNum){
-	if(dataNum >= NUM_STORED_RECORDS) return 0.f;
+
+EE_STORAGE_TYPE eeStorage::getRecord(uint8_t dataNum)
+{
+	if(dataNum >= NUM_STORED_RECORDS) 
+		return 0.f;
 	return eeprom::readFloat(EEaddrStart+4*dataNum);
 }
 

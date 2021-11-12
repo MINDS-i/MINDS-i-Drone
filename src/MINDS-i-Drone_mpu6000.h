@@ -1,0 +1,6 @@
+#ifndef MINDSIDRONELIBS_MPU6000_H
+#define MINDSIDRONELIBS_MPU6000_H
+
+#include "input/APM/MPU6000_HW.h"
+
+#endif

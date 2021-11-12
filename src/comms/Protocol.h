@@ -33,14 +33,17 @@ namespace Protocol{
                           ALTER = 1, };
 
     enum dataSubtype{ TELEMETRY = 0,
-                      SETTING   = 1 };
+                      SETTING   = 1,
+                      SENSORS   = 2,
+                      INFO = 3 };
 
     enum wordSubtype{ CONFIRMATION = 0,
                       SYNC         = 1,
-                      COMMAND      = 2 };
+                      COMMAND      = 2,
+                      STATE        = 3 };
 
     enum stringSubtype{ ERROR = 0,
-                        STATE = 1 };
+                        STR_STATE = 1 };
 
     enum telemetryType{ LATITUDE    = 0,
                         LONGITUDE   = 1,
@@ -58,13 +61,37 @@ namespace Protocol{
                         RDGEAR      = 13,
                         HOMELATITUDE = 14,
                         HOMELONGITUDE = 15,
-                        HOMEALTITUDE = 16 };
+                        HOMEALTITUDE = 16,
+                        DELTAALTITUDE = 17,
+                        GPSNUMSAT = 18,
+                        GPSHDOP = 19,
+                        HEADING_LOCK = 20 };
+    enum sensorType
+    {
+        OBJDETECT_SONIC = 0,
+        OBJDETECT_BUMPER = 1,
+    };
+
+    enum infoType { APM_VERSION = 0,
+                  };
 
     enum commandType{ ESTOP           = 0,
                       TARGET          = 1,
                       LOOPING         = 2,
                       CLEAR_WAYPOINTS = 3,
-                      DELETE_WAYPOINT = 4 };
+                      DELETE_WAYPOINT = 4,
+                      STATE_STOP      = 5,
+                      STATE_START     = 6,
+					  BUMPER_DISABLE  = 7,
+					  BUMPER_ENABLE   = 8 };
+
+    enum stateType { APM_STATE   = 0,
+                     DRIVE_STATE = 1,
+                     AUTO_STATE  = 2,
+                     AUTO_FLAGS  = 3,
+                     GPS_STATE   = 4
+
+    };
 
     const uint8_t  MAX_WAYPOINTS    = 64;
     const uint8_t  MAX_SETTINGS     = NUM_STORED_RECORDS;//taken from eepromconfig
@@ -99,6 +126,7 @@ namespace Protocol{
     uint8_t buildMessageLabel(dataSubtype type);
     uint8_t buildMessageLabel(wordSubtype type);
     uint8_t buildMessageLabel(stringSubtype type);
+    
 }
 
 #endif

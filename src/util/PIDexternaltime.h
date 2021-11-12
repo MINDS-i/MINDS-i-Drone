@@ -27,6 +27,12 @@ public:
         setPoint = input;
         stopped = false;
     }
+
+    float get()
+    {
+        return setPoint;
+    }
+
     /**
      * Stop the pid controller. This clears the accumulator.
      * It will output 0 until the next time `set` is called
@@ -35,6 +41,12 @@ public:
         clearAccumulator();
         stopped = true;
     }
+
+    /**
+     * Return if pid is stopped
+     */
+    boolean isStopped() { return stopped; }
+
     /**
      * Update the PID controller
      * current - the current process value
