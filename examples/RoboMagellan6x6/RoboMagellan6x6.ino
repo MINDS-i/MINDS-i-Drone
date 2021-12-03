@@ -112,6 +112,14 @@ enum PING_HIST {
 uint16_t ping[5][2] = {20000,20000,20000,20000,20000};
 uint8_t  pIter; //iterators for scheduler and ping
 
+//== Power ==
+#define LOW_VOLTAGE_CUTOFF 6.0 //volts
+#define LOW_VOLTAGE_TIME 10 //seconds
+#define RESET_VOLTAGE_THRESHOLD 7.5 //volts
+#define RESET_VOLTAGE_TIME 1 //seconds
+float voltage  = -1.0;
+float amperage = -1.0;
+
 //== mpu6000 ==//
 float euler_z_offset=0;
 float last_euler_z=0;
@@ -138,7 +146,8 @@ enum DRIVE_STATES {
 	DRIVE_STATE_INVALID = 0,
 	DRIVE_STATE_STOP,
 	DRIVE_STATE_AUTO,
-	DRIVE_STATE_RADIO
+	DRIVE_STATE_RADIO,
+	DRIVE_STATE_LOW_VOLTAGE
 };
 
 enum AUTO_STATES {
@@ -193,6 +202,7 @@ uint8_t avoidState=AVOID_STATE_DONE;
 
 void checkPing();
 void checkBumperSensor();
+void checkVoltage();
 void reportLocation();
 void reportState();
 void extrapPosition();
@@ -229,6 +239,7 @@ struct schedulerData scheduler[] =
 	{reportState,		110	,110	,1},
 	{checkPing,			22	,88		,1},
 	{checkBumperSensor, 80	,55		,1},
+	{checkVoltage, 		100 ,66		,1},
 	//{navigate,			0	,66		,1},
 	#ifdef simMode
 	{updateSIM,			500	,100	,1}
@@ -570,7 +581,11 @@ void changeDriveState(uint8_t newState)
 	//ignore if we are not changing state
 	if (driveState == newState)
 		return;
-	
+
+	//ignore if drive state is low battery
+	if (driveState == DRIVE_STATE_LOW_VOLTAGE)
+		return;
+
 
 	switch (newState)
 	{
@@ -869,6 +884,12 @@ void navigate()
 {
 	float   mph = ((APMRadio::get(RadioPin[1])-90) / 90.f)*MAN_MAX_FWD;
 	uint8_t steer = APMRadio::get(RadioPin[2]);
+
+	if (driveState == DRIVE_STATE_LOW_VOLTAGE)
+	{
+		output(0,steerCenter);
+		return;						
+	}
 
 		
 	if (abs(steer-steerCenter) > 5 || fabs(mph)>0.8f ) 
@@ -1349,6 +1370,66 @@ void checkBumperSensor()
 	}	
 }
 
+void checkVoltage()
+{
+	static uint32_t timer = 0;
+
+	voltage  = float(analogRead(67)/1024.l*5.l*10.1f);
+	amperage = float(analogRead(66)/1024.l*5.l*17.0f);
+
+	if (driveState != DRIVE_STATE_LOW_VOLTAGE)
+	{
+		// check to see if the battery voltage has dropped below the low voltage threshhold
+		if (voltage > LOW_VOLTAGE_CUTOFF)
+		{
+			//is this the first consecutive drop below the low voltage threshold 
+			if (timer == 0)
+			{
+				timer = millis(); //store current time
+			}
+
+			//check if voltage has been below the threshold for the required time
+			if ( timer+(LOW_VOLTAGE_TIME*1000) < millis() )
+			{
+				// halt all vehilce operations
+				changeDriveState(DRIVE_STATE_LOW_VOLTAGE);
+				timer = 0;
+				// inform dashboard of low voltage stoppage
+			}
+		}
+		else
+		{
+			//reset voltage timer
+			timer = 0;
+		}
+	}
+	else
+	{
+		if (voltage >= RESET_VOLTAGE_THRESHOLD)
+		{
+			//is this the first consecutive increase to the reset voltage threshold 
+			if (timer == 0)
+			{
+				timer = millis(); //store current time
+			}
+
+			//check if voltage has been above the threshold for the required time
+			if ( timer+(RESET_VOLTAGE_TIME*1000) < millis() )
+			{
+				// enable all vehilce operations
+				changeDriveState(DRIVE_STATE_STOP);
+				timer = 0;
+				// inform dashboard of low voltage stoppage
+			}
+		}
+		else
+		{
+			//reset voltage timer
+			timer = 0;
+		}
+	}
+}
+
 void checkPing()
 {
 	//copy cur value into last
@@ -1611,8 +1692,6 @@ void reportLocation()
 {
 	//digitalWrite(45,HIGH);
 
-	float voltage  = float(analogRead(67)/1024.l*5.l*10.1f);
-	float amperage = float(analogRead(66)/1024.l*5.l*17.0f);
 	manager.sendTelem(Protocol::telemetryType(LATITUDE),    location.degLatitude());
 	manager.sendTelem(Protocol::telemetryType(LONGITUDE),   location.degLongitude());
 	
