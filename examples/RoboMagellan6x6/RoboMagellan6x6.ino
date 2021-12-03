@@ -202,7 +202,7 @@ uint8_t avoidState=AVOID_STATE_DONE;
 
 void checkPing();
 void checkBumperSensor();
-void checkVoltage();
+void checkVoltage(bool startup=false);
 void reportLocation();
 void reportState();
 void extrapPosition();
@@ -456,6 +456,7 @@ void setup()
 
 	changeAPMState(APM_STATE_SELF_TEST);
 
+	checkVoltage(true);
 }
 
 
@@ -1370,7 +1371,7 @@ void checkBumperSensor()
 	}	
 }
 
-void checkVoltage()
+void checkVoltage(bool startup)
 {
 	static uint32_t timer = 0;
 
@@ -1389,7 +1390,7 @@ void checkVoltage()
 			}
 
 			//check if voltage has been below the threshold for the required time
-			if ( timer+(LOW_VOLTAGE_TIME*1000) < millis() )
+			if ( timer+(LOW_VOLTAGE_TIME*1000) < millis() || startup == true )
 			{
 				// halt all vehilce operations
 				changeDriveState(DRIVE_STATE_LOW_VOLTAGE);
