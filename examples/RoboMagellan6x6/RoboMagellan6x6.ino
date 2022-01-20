@@ -374,8 +374,8 @@ void setup()
 	pinMode(45,OUTPUT);
 
 	
-	//commSerial->begin(Protocol::BAUD_RATE);	
-	commSerial->begin(57600);
+	commSerial->begin(Protocol::BAUD_RATE);	
+	//commSerial->begin(57600);
 
 
 	changeAPMState(APM_STATE_INIT);
