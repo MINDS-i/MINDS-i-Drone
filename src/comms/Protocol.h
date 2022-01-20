@@ -97,7 +97,7 @@ namespace Protocol{
 
     const uint8_t  MAX_WAYPOINTS    = 64;
     const uint8_t  MAX_SETTINGS     = NUM_STORED_RECORDS;//taken from eepromconfig
-    const uint16_t BAUD_RATE        = 9600;
+    const uint16_t BAUD_RATE        = 57600;
     const uint16_t U16_FIXED_FACTOR = 256;
 
     const uint8_t SYNC_REQUEST = 0x00;
