@@ -6,7 +6,7 @@
 #include "util/callbackTemplate.h"
 #include "version.h"
 
-//#define M_DEBUG  //comment out to disable debugger
+#define M_DEBUG  //comment out to disable debugger
 
 #ifdef M_DEBUG
   #include "MINDSiDebugger.h"
@@ -112,6 +112,14 @@ enum PING_HIST {
 uint16_t ping[5][2] = {20000,20000,20000,20000,20000};
 uint8_t  pIter; //iterators for scheduler and ping
 
+//== Power ==
+#define LOW_VOLTAGE_CUTOFF 6.0 //volts
+#define LOW_VOLTAGE_TIME 5 //seconds
+#define RESET_VOLTAGE_THRESHOLD 7.2 //volts
+#define RESET_VOLTAGE_TIME 1 //seconds
+float voltage  = -1.0;
+float amperage = -1.0;
+
 //== mpu6000 ==//
 float euler_z_offset=0;
 float last_euler_z=0;
@@ -138,7 +146,9 @@ enum DRIVE_STATES {
 	DRIVE_STATE_INVALID = 0,
 	DRIVE_STATE_STOP,
 	DRIVE_STATE_AUTO,
-	DRIVE_STATE_RADIO
+	DRIVE_STATE_RADIO,
+	DRIVE_STATE_LOW_VOLTAGE_STOP,
+	DRIVE_STATE_LOW_VOLTAGE_RESTART
 };
 
 enum AUTO_STATES {
@@ -193,6 +203,7 @@ uint8_t avoidState=AVOID_STATE_DONE;
 
 void checkPing();
 void checkBumperSensor();
+void checkVoltage();
 void reportLocation();
 void reportState();
 void extrapPosition();
@@ -229,6 +240,7 @@ struct schedulerData scheduler[] =
 	{reportState,		110	,110	,1},
 	{checkPing,			22	,88		,1},
 	{checkBumperSensor, 80	,55		,1},
+	{checkVoltage, 		100 ,66		,1},
 	//{navigate,			0	,66		,1},
 	#ifdef simMode
 	{updateSIM,			500	,100	,1}
@@ -238,13 +250,12 @@ struct schedulerData scheduler[] =
 enum SCHEDULED_FUNCTIONS
 {
 	SCHD_FUNC_EXTRPPOS=0,
-	SCHD_FUNC_RDACC,
 	SCHD_FUNC_RPRTLOC,
 	SCHD_FUNC_RPRTSTATE,
 	SCHD_FUNC_CHKPING,
 	SCHD_FUNC_BUMPSENSOR,
+	SCHD_FUNC_CHKVOLTAGE,
 	//SCHD_FUNC_NAVIGATE,
-	SCHD_FUNC_COMPASS_SYNC,
 	#ifdef simMode	
 	SCHD_FUNC_UPDATESIM,
 	#endif
@@ -445,6 +456,7 @@ void setup()
 
 	changeAPMState(APM_STATE_SELF_TEST);
 
+	checkVoltage();
 }
 
 
@@ -565,12 +577,14 @@ void changeAPMState(uint8_t newState)
 
 void changeDriveState(uint8_t newState)
 {
-	
-
 	//ignore if we are not changing state
 	if (driveState == newState)
 		return;
-	
+
+	//ignore if drive state is low battery
+	if (driveState == DRIVE_STATE_LOW_VOLTAGE_STOP && newState != DRIVE_STATE_LOW_VOLTAGE_RESTART) {
+		return;
+	}
 
 	switch (newState)
 	{
@@ -578,11 +592,13 @@ void changeDriveState(uint8_t newState)
 			//Ignore change to invalid state because it is invalid
 			break;
 
+		case DRIVE_STATE_LOW_VOLTAGE_RESTART:
 		case DRIVE_STATE_STOP:
 
 			switch(driveState)
 			{
 
+				case DRIVE_STATE_LOW_VOLTAGE_STOP:
 				case DRIVE_STATE_INVALID:
 				case DRIVE_STATE_AUTO:
 				case DRIVE_STATE_RADIO:
@@ -596,11 +612,11 @@ void changeDriveState(uint8_t newState)
 					#endif
 
 					scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
-					scheduler[SCHD_FUNC_RDACC].enabled 		= true;
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
 					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
 					scheduler[SCHD_FUNC_BUMPSENSOR].enabled 	= true;
+					scheduler[SCHD_FUNC_CHKVOLTAGE].enabled 		= true;
 					
 					//scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
 					#ifdef simMode
@@ -627,11 +643,11 @@ void changeDriveState(uint8_t newState)
 					backWaypoint = location;
 
 					scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= true;
-					scheduler[SCHD_FUNC_RDACC].enabled 		= true;
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
 					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
 					scheduler[SCHD_FUNC_BUMPSENSOR].enabled 	= true;
+					scheduler[SCHD_FUNC_CHKVOLTAGE].enabled 		= true;
 					//scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
 					
 					#ifdef simMode
@@ -660,11 +676,11 @@ void changeDriveState(uint8_t newState)
 
 
 					scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
-					scheduler[SCHD_FUNC_RDACC].enabled 		= true;
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
 					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
 					scheduler[SCHD_FUNC_BUMPSENSOR].enabled 	= true;
+					scheduler[SCHD_FUNC_CHKVOLTAGE].enabled 		= true;
 					//scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
 
 					//Only radio state sets previous drivestate
@@ -676,7 +692,42 @@ void changeDriveState(uint8_t newState)
 			}
 			break;
 		#endif
+		case DRIVE_STATE_LOW_VOLTAGE_STOP:
+			manager.sendString("Drive State: Low Voltage");
+
+			#ifdef simMode
+			gps.setGroundSpeed(0);
+			#else
+			output(0,steerCenter);
+			#endif
+
+			scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
+			scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
+			scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
+			scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
+			scheduler[SCHD_FUNC_BUMPSENSOR].enabled 	= true;
+			scheduler[SCHD_FUNC_CHKVOLTAGE].enabled 		= true;
+			//scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
+
+			//Invalidate previous drive state and force a STOP state if battery replaced
+			prevDriveState=DRIVE_STATE_INVALID;
+			driveState=newState;
+			break;
 	}
+
+	#ifdef M_DEBUG
+	// Logger Msg
+	StateMsg_t msg;
+	msg.apmState = apmState;
+	msg.driveState = driveState;
+	msg.autoState = autoState;
+	msg.autoFlag = autoStateFlags;
+	msg.voltage = voltage*10;
+	msg.amperage = amperage*10;
+	msg.groundSpeed = RPMtoMPH(encoder::getRPM())*10;
+	debugger.send(msg);
+	#endif
+
 }
 
 
@@ -870,17 +921,22 @@ void navigate()
 	float   mph = ((APMRadio::get(RadioPin[1])-90) / 90.f)*MAN_MAX_FWD;
 	uint8_t steer = APMRadio::get(RadioPin[2]);
 
+	if (driveState == DRIVE_STATE_LOW_VOLTAGE_STOP)
+	{
+		output(0,steerCenter);
+		return;						
+	}
 		
 	if (abs(steer-steerCenter) > 5 || fabs(mph)>0.8f ) 
 	{						
 		changeDriveState(DRIVE_STATE_RADIO);
-
 		output(mph, steer);
 	}
 	else
 	{	
-		if (driveState == DRIVE_STATE_RADIO )
+		if (driveState == DRIVE_STATE_RADIO ) {
 			changeDriveState(prevDriveState);
+		}
 	}
 
 
@@ -1349,6 +1405,73 @@ void checkBumperSensor()
 	}	
 }
 
+void checkVoltage()
+{
+	static uint32_t timer = 0;
+
+	voltage  = float(analogRead(67)/1024.l*5.l*10.1f);
+	amperage = float(analogRead(66)/1024.l*5.l*17.0f);
+
+	if (driveState != DRIVE_STATE_LOW_VOLTAGE_STOP)
+	{
+		// check to see if the battery voltage has dropped below the low voltage threshhold
+		if (voltage < LOW_VOLTAGE_CUTOFF)
+		{
+			//is this the first consecutive drop below the low voltage threshold 
+			if (timer == 0)
+			{
+				timer = millis(); //store current time
+			}
+
+			//check if voltage has been below the threshold for the required time
+			//go straight to a low voltage state if the system boots with a low battery
+			if ( timer+(LOW_VOLTAGE_TIME*1000) < millis())
+			{
+				// halt all vehilce operations
+				changeDriveState(DRIVE_STATE_LOW_VOLTAGE_STOP);
+				timer = 0;
+			}
+		}
+		else
+		{
+			//reset voltage timer
+			timer = 0;
+		}
+	}
+	else
+	{
+		if (voltage >= RESET_VOLTAGE_THRESHOLD)
+		{
+			//is this the first consecutive increase to the reset voltage threshold 
+			if (timer == 0)
+			{
+				timer = millis(); //store current time
+			}
+
+			//check if voltage has been above the threshold for the required time
+			if ( timer+(RESET_VOLTAGE_TIME*1000) < millis() )
+			{
+				// enable all vehilce operations
+				changeDriveState(DRIVE_STATE_LOW_VOLTAGE_RESTART);
+				timer = 0;
+			}
+		}
+		else
+		{
+			//reset voltage timer
+			timer = 0;
+		}
+	}
+	
+	#ifdef M_DEBUG
+	AsciiMsg_t msg;
+	String tst = String(millis()) + ":" + String(timer) + ":" + String(uint8_t(voltage*10));
+	msg.ascii.len = tst.length();
+	tst.toCharArray(msg.ascii.data,tst.length()+1);
+	debugger.send(msg);
+	#endif
+}
+
 void checkPing()
 {
 	//copy cur value into last
@@ -1597,22 +1720,20 @@ void updateGyro()
 		trueHeading = k_heading;
 	}
 	
-  #ifdef M_DEBUG
+/*  #ifdef M_DEBUG
 	// Logger Msg
 	OrientationMsg_t msg;
 	msg.heading = (uint16_t)(trueHeading*100);
 	msg.roll = (uint16_t)(toDeg(mpudmp.getEulerY())*100);
 	msg.pitch = (uint16_t)(toDeg(mpudmp.getEulerX())*100);
 	debugger.send(msg);
-  #endif
+  #endif*/
 }
 
 void reportLocation()
 {
 	//digitalWrite(45,HIGH);
 
-	float voltage  = float(analogRead(67)/1024.l*5.l*10.1f);
-	float amperage = float(analogRead(66)/1024.l*5.l*17.0f);
 	manager.sendTelem(Protocol::telemetryType(LATITUDE),    location.degLatitude());
 	manager.sendTelem(Protocol::telemetryType(LONGITUDE),   location.degLongitude());
 	
