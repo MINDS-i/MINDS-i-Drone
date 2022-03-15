@@ -6,7 +6,7 @@
 #include "util/callbackTemplate.h"
 #include "version.h"
 
-#define M_DEBUG  //comment out to disable debugger
+//#define M_DEBUG  //comment out to disable debugger
 
 #ifdef M_DEBUG
   #include "MINDSiDebugger.h"
@@ -43,8 +43,15 @@ const uint8_t VoltagePin  = 67;
 const uint8_t LEDpin[]    = {25, 26, 27}; //blue, yellow, red
 const uint8_t PingPin[]	  = {A0, A1, A2, A3, A4}; //left to right
 const uint8_t ServoPin[]  = {12, 11,  8};//drive, steer, backS; APM 1,2,3 resp.
-const uint8_t RadioPin[]  = {7, 0, 1}; //auto switch, drive, steer
+uint8_t RadioChannel[]  = {2, 0, 2}; //see enum 
 const uint8_t EncoderPin[]= {2/*APM pin 7*/, 3 /*APM pin 6*/};
+
+
+
+//== radio controller enums ==//
+enum RadioChannelTypes{  RADIO_FAILSAFE = 0, RADIO_STEER = 1, RADIO_THROTTLE = 2};
+enum RadioControllerTypes { RC_TGY_IA6B = 0, RC_HOBBY_KING_GT2B = 1 };
+
 
 //== ping sensor vars ==
 
@@ -131,6 +138,13 @@ double   distance;
 boolean  stop = true;
 int8_t  backDir;
 
+//== radio tx/rx
+uint8_t radioControllerDev = RC_TGY_IA6B;
+bool radioFailsafeEnabled = false; 
+
+uint8_t radioFailsafeCount=0;
+#define RADIO_FAILURE_COUNT_MAX 10
+
 //====================================
 // State related variables/enums
 //====================================
@@ -149,13 +163,14 @@ enum DRIVE_STATES {
 	DRIVE_STATE_RADIO,
 	DRIVE_STATE_LOW_VOLTAGE_STOP,
 	DRIVE_STATE_LOW_VOLTAGE_RESTART
+	DRIVE_STATE_RADIO_FAILSAFE
 };
 
 enum AUTO_STATES {
 	AUTO_STATE_INVALID = 0,
 	AUTO_STATE_FULL,
 	AUTO_STATE_AVOID,
-	AUTO_STATE_STALLED,
+	AUTO_STATE_STALLED
 };
 
 enum AVOID_STATES {
@@ -290,7 +305,6 @@ float PointRadius  = .0015;
 float approachRadius = .0038;
 
 
-float compassOffset = M_PI;
 
 
 //===========================
@@ -320,6 +334,49 @@ void pingWarnLevelMiddlesCallback(float in){
 void pingWarnLevelCenterCallback(float in){
 	warnLevel[2] = (int)in;
 }
+
+
+	//todo? Do we allow disable of failsafe after entering failsafe to clear it?
+void radioFailsafe(float in)
+{
+	String msg("Radio Failsafe " + String(in));
+	manager.sendString(msg.c_str());
+  if ((int)in != 0)
+  {
+  	radioFailsafeEnabled=true;
+		String msg("Radio Failsafe: Enabled");
+		manager.sendString(msg.c_str());
+	}
+	else
+	{
+  	radioFailsafeEnabled=false;
+		String msg("Radio Failsafe: Disabled");
+		manager.sendString(msg.c_str());  	
+	}
+
+}
+
+void radioController(float in){
+	radioControllerDev=(uint8_t)in;
+	switch((int)in)
+	{
+	  case RC_TGY_IA6B: 
+	    RadioChannel[RADIO_THROTTLE] = 2;
+	    RadioChannel[RADIO_STEER] = 0;
+	    RadioChannel[RADIO_FAILSAFE] = 2; 
+	    break;
+	  case RC_HOBBY_KING_GT2B:
+	    RadioChannel[RADIO_THROTTLE] = 0;
+	    RadioChannel[RADIO_STEER] = 1;
+	    RadioChannel[RADIO_FAILSAFE] = 2;
+	    break;
+	  default:
+	    //error.  Ignore?
+	    break;
+	}
+
+}
+
 //testing
 void triggerGyroSyncNorth(float in){
 	euler_z_offset = mpudmp.getEulerZ();
@@ -476,6 +533,8 @@ void loop()
 
 	manager.update();
 
+	checkRadioFailsafe();
+
 	updateGPS();
 	updateGyro();
 	bumperSensor.update();
@@ -510,10 +569,54 @@ void loop()
 	navigate();
 
 
+
+
 	digitalWrite(45,LOW);
 
 }
 
+void checkRadioFailsafe()
+{
+	if (radioFailsafeEnabled == false)
+		return;
+
+	if (driveState != DRIVE_STATE_RADIO_FAILSAFE )
+	{
+		
+		if(APMRadio::get(RadioChannel[RADIO_FAILSAFE]) == 0) 
+	  {
+			// radio disconnect failsafe
+			radioFailsafeCount++;
+
+			if (radioFailsafeCount >= RADIO_FAILURE_COUNT_MAX)
+			{
+				changeDriveState(DRIVE_STATE_RADIO_FAILSAFE);
+			}
+		}
+		else
+		{
+			radioFailsafeCount=0;
+		}
+	}
+	else //DRIVE_STATE_RADIO_FAILSAFE
+	{
+		if(APMRadio::get(RadioChannel[RADIO_FAILSAFE]) != 0) 
+	  {
+			// radio reconnected
+			radioFailsafeCount++;
+
+			if (radioFailsafeCount >= RADIO_FAILURE_COUNT_MAX)
+			{
+				changeDriveState(DRIVE_STATE_STOP);
+			}
+		}
+		else
+		{
+			radioFailsafeCount=0;
+		}
+
+	}
+}
 
 
 void changeAPMState(uint8_t newState)
@@ -602,6 +705,7 @@ void changeDriveState(uint8_t newState)
 				case DRIVE_STATE_INVALID:
 				case DRIVE_STATE_AUTO:
 				case DRIVE_STATE_RADIO:
+				case DRIVE_STATE_RADIO_FAILSAFE:
 					manager.sendString("Drive State: Stop");
 
 
@@ -688,10 +792,13 @@ void changeDriveState(uint8_t newState)
 					prevDriveState=driveState;
 					driveState=newState;
 					break;
-
+				case DRIVE_STATE_RADIO_FAILSAFE:
+					manager.sendString("Drive State: Invalid state change");
+					break;
 			}
 			break;
 		#endif
+
 		case DRIVE_STATE_LOW_VOLTAGE_STOP:
 			manager.sendString("Drive State: Low Voltage");
 
@@ -713,6 +820,40 @@ void changeDriveState(uint8_t newState)
 			prevDriveState=DRIVE_STATE_INVALID;
 			driveState=newState;
 			break;
+
+
+		#ifndef simMode	
+		case DRIVE_STATE_RADIO_FAILSAFE:
+			switch(autoState)
+			{
+				case AUTO_STATE_INVALID:
+				case AUTO_STATE_FULL:
+				case AUTO_STATE_AVOID:
+					manager.sendString("Drive State: Radio failsafe");
+					driveState=newState;
+					
+					radioFailsafeCount=0;
+
+					scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
+					scheduler[SCHD_FUNC_RDACC].enabled 		= true;
+					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
+					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
+					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
+					scheduler[SCHD_FUNC_BUMPSENSOR].enabled 	= true;
+
+					#ifdef simMode
+					gps.setGroundSpeed(0);
+					#else
+					output(0,steerCenter);
+					#endif
+
+					break;
+				case DRIVE_STATE_RADIO:
+					manager.sendString("Drive State: Invalid state change");
+					break;
+			}
+		  break;
+		#endif
 	}
 
 	#ifdef M_DEBUG
@@ -818,7 +959,7 @@ void changeAutoState(uint8_t newState)
 					//don't transition from stalled
 					//do we allow a way of getting out of stall other then power cycle?
 					break;
-
+			
 			}
 
 			break;
@@ -918,8 +1059,10 @@ void handleAvoidState(int8_t speed, int8_t steer, uint8_t nextState, uint32_t ti
 
 void navigate()
 {
-	float   mph = ((APMRadio::get(RadioPin[1])-90) / 90.f)*MAN_MAX_FWD;
-	uint8_t steer = APMRadio::get(RadioPin[2]);
+	float throttle = APMRadio::get(RadioChannel[RADIO_THROTTLE]);
+	float   mph = ((throttle-90) / 90.f)*MAN_MAX_FWD;
+	uint8_t steer = APMRadio::get(RadioChannel[RADIO_STEER]);
+
 
 	if (driveState == DRIVE_STATE_LOW_VOLTAGE_STOP)
 	{
@@ -936,6 +1079,31 @@ void navigate()
 	{	
 		if (driveState == DRIVE_STATE_RADIO ) {
 			changeDriveState(prevDriveState);
+		}
+	}
+
+	if (driveState != DRIVE_STATE_RADIO_FAILSAFE)
+	{
+		if (abs(steer-steerCenter) > 5 || fabs(mph)>0.8f ) 
+		{						
+			switch( radioControllerDev)
+			{
+				case RC_TGY_IA6B:
+				  //need to avoid treating failsafe mode as legit throttle			  
+				  if (throttle !=0)
+						changeDriveState(DRIVE_STATE_RADIO);  	
+						output(mph, steer);
+				  break;
+				default:
+					changeDriveState(DRIVE_STATE_RADIO);
+					output(mph, steer);
+				  break;
+			}
+		}
+		else
+		{	
+			if (driveState == DRIVE_STATE_RADIO )
+				changeDriveState(prevDriveState);
 		}
 	}
 
@@ -1866,7 +2034,11 @@ const float settingsData[][3] PROGMEM = {
 															{500,10000, 3000},	//Avoid Ping value center
 															{500,10000, 2000},	//Warn Ping value Edges
 															{500,10000, 3200},	//Warn Ping value Middles
-															{500,10000, 6000}	  //Warn Ping value center
+															{500,10000, 6000},	  //Warn Ping value center
+															{0,1,0},						//Radio failsafe enabled
+															{0,1,0},						//Radio Dev type
+
+
 														};
 
 void setDefaultSettings()
@@ -2005,6 +2177,7 @@ void setupSettings()
 	/*GROUNDSETTING index="17" name="Approach radius" min="0" max=".0076" def=".0038"
 	 * Radius cneter at waypoint where the approach flag is set
 	 */
+
 	index = 17;
 	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<float,&approachRadius>);
 
@@ -2053,6 +2226,19 @@ void setupSettings()
 	 */
 	index = 26;
 	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &pingWarnLevelCenterCallback);
+	
+	/*GROUNDSETTING index="27" name="Radio Failsafe" min="0" max"1" def="0"
+	 * Enable = 1
+	 * Disable = 0
+	 */
+	settings.attach(27, 0, &radioFailsafe);
+
+	/*GROUNDSETTING index="28" name="Radio Controller" min="0" max"1" def="0"
+	 * 6 Channel - TGY = 0
+	 * 3 Channel - HobbyKing = 1
+	 */
+	settings.attach(28, 0, &radioController);
+
 }
 
 
