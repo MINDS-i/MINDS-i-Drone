@@ -162,7 +162,7 @@ enum DRIVE_STATES {
 	DRIVE_STATE_AUTO,
 	DRIVE_STATE_RADIO,
 	DRIVE_STATE_LOW_VOLTAGE_STOP,
-	DRIVE_STATE_LOW_VOLTAGE_RESTART
+	DRIVE_STATE_LOW_VOLTAGE_RESTART,
 	DRIVE_STATE_RADIO_FAILSAFE
 };
 
@@ -835,7 +835,6 @@ void changeDriveState(uint8_t newState)
 					radioFailsafeCount=0;
 
 					scheduler[SCHD_FUNC_EXTRPPOS].enabled 	= false;
-					scheduler[SCHD_FUNC_RDACC].enabled 		= true;
 					scheduler[SCHD_FUNC_RPRTLOC].enabled 	= true;
 					scheduler[SCHD_FUNC_RPRTSTATE].enabled 	= true;
 					scheduler[SCHD_FUNC_CHKPING].enabled 	= true;
