@@ -1963,9 +1963,12 @@ void updateSteerSkew(float s)
 void newPIDparam(float x)
 {
 	// indexes for cruise control PID settings defined below
+	// Note: low and upper of [-90,90] exceed range of some ESCs
+	//       reducing to [-60,60] changed output range to 
+	//		 [900,2100] PWM 
 	cruisePID = PIDparameters(settings.get(11),
                               settings.get(12),
-                              settings.get(13), -90, 90 );
+                              settings.get(13), -60, 60 );
 }
 
 void stateStop()
