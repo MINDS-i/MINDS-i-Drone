@@ -398,18 +398,11 @@ inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
 
 void setAutoStateFlag(uint8_t flag)
 {
-	String msg("Setting Flag " + String(flag));
-	manager.sendString(msg.c_str());	
-
 	autoStateFlags |= flag;
 }
 
 void clearAutoStateFlag(uint8_t flag)
 {
-	String msg("Clearing Flag " + String(flag));
-	manager.sendString(msg.c_str());	
-
-
 	autoStateFlags &= ~flag;
 }
 
@@ -2229,13 +2222,13 @@ void setupSettings()
 	index = 26;
 	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &pingWarnLevelCenterCallback);
 	
-	/*GROUNDSETTING index="27" name="Radio Failsafe" min="0" max"1" def="0"
+	/*GROUNDSETTING index="27" name="Radio Failsafe" min="0" max="1" def="0"
 	 * Enable = 1
 	 * Disable = 0
 	 */
 	settings.attach(27, 0, &radioFailsafe);
 
-	/*GROUNDSETTING index="28" name="Radio Controller" min="0" max"1" def="0"
+	/*GROUNDSETTING index="28" name="Radio Controller" min="0" max="1" def="0"
 	 * 6 Channel - TGY = 0
 	 * 3 Channel - HobbyKing = 1
 	 */
