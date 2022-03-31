@@ -398,18 +398,11 @@ inline float RPMtoMPH(float rpm){ return (rpm*tireDiameter)/MPHvRPM; }
 
 void setAutoStateFlag(uint8_t flag)
 {
-	String msg("Setting Flag " + String(flag));
-	manager.sendString(msg.c_str());	
-
 	autoStateFlags |= flag;
 }
 
 void clearAutoStateFlag(uint8_t flag)
 {
-	String msg("Clearing Flag " + String(flag));
-	manager.sendString(msg.c_str());	
-
-
 	autoStateFlags &= ~flag;
 }
 
@@ -726,8 +719,10 @@ void changeDriveState(uint8_t newState)
 					#ifdef simMode
 					scheduler[SCHD_FUNC_UPDATESIM].enabled 	= true;
 					#endif 
-					
-					driveState=newState;
+
+					//ensure we don't end up in driveState of 
+					//DRIVE_STATE_LOW_VOLTAGE_RESTART
+					driveState=DRIVE_STATE_STOP;
 
 					if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
 						clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
@@ -800,7 +795,7 @@ void changeDriveState(uint8_t newState)
 		#endif
 
 		case DRIVE_STATE_LOW_VOLTAGE_STOP:
-			manager.sendString("Drive State: Low Voltage");
+			manager.sendString("Drive State: Low Voltage (Stopped). Please Replace Batteries");
 
 			#ifdef simMode
 			gps.setGroundSpeed(0);
@@ -2229,13 +2224,13 @@ void setupSettings()
 	index = 26;
 	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &pingWarnLevelCenterCallback);
 	
-	/*GROUNDSETTING index="27" name="Radio Failsafe" min="0" max"1" def="0"
+	/*GROUNDSETTING index="27" name="Radio Failsafe" min="0" max="1" def="0"
 	 * Enable = 1
 	 * Disable = 0
 	 */
 	settings.attach(27, 0, &radioFailsafe);
 
-	/*GROUNDSETTING index="28" name="Radio Controller" min="0" max"1" def="0"
+	/*GROUNDSETTING index="28" name="Radio Controller" min="0" max="1" def="0"
 	 * 6 Channel - TGY = 0
 	 * 3 Channel - HobbyKing = 1
 	 */
