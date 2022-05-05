@@ -719,8 +719,10 @@ void changeDriveState(uint8_t newState)
 					#ifdef simMode
 					scheduler[SCHD_FUNC_UPDATESIM].enabled 	= true;
 					#endif 
-					
-					driveState=newState;
+
+					//ensure we don't end up in driveState of 
+					//DRIVE_STATE_LOW_VOLTAGE_RESTART
+					driveState=DRIVE_STATE_STOP;
 
 					if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
 						clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
@@ -793,7 +795,7 @@ void changeDriveState(uint8_t newState)
 		#endif
 
 		case DRIVE_STATE_LOW_VOLTAGE_STOP:
-			manager.sendString("Drive State: Low Voltage");
+			manager.sendString("Drive State: Low Voltage (Stopped). Please Replace Batteries");
 
 			#ifdef simMode
 			gps.setGroundSpeed(0);
