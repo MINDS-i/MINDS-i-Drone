@@ -136,7 +136,7 @@ void fly(){
     float rollCmd  = ((float)APMRadio::get(RADIO_ROLL)-90)  /-70.0;
     float yawCmd   = ((float)APMRadio::get(RADIO_YAW)-90)   /-90.0;
     float throttle = ((float)radioBaseThrottle-25)/130.0;
-    bool altSwitch = (APMRadio::get(RADIO_GEAR) > 90);
+    bool altSwitch = (APMRadio::get(RADIO_GEAR) > 45);
 
     // Calculate time delta
     static uint32_t lastRunTime = micros();
