@@ -2051,13 +2051,6 @@ void setupSettings()
 {
 	uint8_t index;
 
-  /*GROUNDSETTING index="0" name="PARSER DEFAULT DUMMY" min="0" max="0" def="0"
-   * DO NOT REMOVE.
-   * This settings entry catches a script index offset that misses the first
-   * real setting in the list. It will NOT be picked up by the parser script and 
-   * placed in the settings XML file.
-   * DO NOT REMOVE.
-   */
    
 	/*GROUNDSETTING index="0" name="Line Gravity" min="0.25" max="5.00" def="1.00"
 	 *Defines how strongly the rover should attempt to return to the original
