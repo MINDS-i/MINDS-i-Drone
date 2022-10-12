@@ -1520,8 +1520,9 @@ void positionChanged()
 		float AL    = backWaypoint.headingTo(location);
 		//percentage of our current vector. what amount of distance in in direction we should be going.
 		float d     = cos(toRad(AL-AB)) * backWaypoint.distanceTo(location);
-		//scale the look-ahead distance by linegravity (0.25,5.00) then add the 'd' distance. 
-		float D     = d + (lookAheadDist*lineGravity);
+		//scale the look-ahead distance (feet) by linegravity (0.25,5.00) then add the 'd' distance. 
+		//make sure to convert look-ahead distance to miles before adding to 'd' (miles)
+		float D     = d + ((lookAheadDist/5280.l)*lineGravity);
 		//find waypoint for this new distance along the previous-to-target path
 		Waypoint intermediate = backWaypoint.extrapolate(AB, D);
 		//Find the heading to get there from current location
