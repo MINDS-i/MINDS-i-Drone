@@ -361,7 +361,7 @@ void radioController(float in){
 	switch((int)in)
 	{
 	  case RC_TGY_IA6B: 
-	    RadioChannel[RADIO_THROTTLE] = 2;
+	    RadioChannel[RADIO_THROTTLE] = 1;
 	    RadioChannel[RADIO_STEER] = 0;
 	    RadioChannel[RADIO_FAILSAFE] = 2; 
 	    break;
@@ -770,7 +770,7 @@ void changeDriveState(uint8_t newState)
 			{
 				case DRIVE_STATE_INVALID:
 				case DRIVE_STATE_STOP:
-				case DRIVE_STATE_AUTO:
+				case DRIVE_STATE_AUTO:				
 					manager.sendString("Drive State: Radio");
 
 
@@ -782,13 +782,19 @@ void changeDriveState(uint8_t newState)
 					scheduler[SCHD_FUNC_CHKVOLTAGE].enabled 		= true;
 					//scheduler[SCHD_FUNC_NAVIGATE].enabled	= true;
 
-					//Only radio state sets previous drivestate
-					//so it knows what to revert back to
 					prevDriveState=driveState;
+
 					driveState=newState;
 					break;
-				case DRIVE_STATE_RADIO_FAILSAFE:
-					manager.sendString("Drive State: Invalid state change");
+				
+				case DRIVE_STATE_RADIO_FAILSAFE:	
+					//should not be able to go into DRIVE_STATE_RADIO from Failsafe (protected in navigate())
+					break;				
+				default:
+					manager.sendString("Drive State: Invalid state change. Stopping");
+					prevDriveState=DRIVE_STATE_STOP;
+					driveState=DRIVE_STATE_STOP;
+					output(0,steerCenter);
 					break;
 			}
 			break;
@@ -819,11 +825,12 @@ void changeDriveState(uint8_t newState)
 
 		#ifndef simMode	
 		case DRIVE_STATE_RADIO_FAILSAFE:
-			switch(autoState)
+			switch(driveState)
 			{
-				case AUTO_STATE_INVALID:
-				case AUTO_STATE_FULL:
-				case AUTO_STATE_AVOID:
+				case DRIVE_STATE_INVALID:
+				case DRIVE_STATE_STOP:
+				case DRIVE_STATE_AUTO:
+				case DRIVE_STATE_RADIO:
 					manager.sendString("Drive State: Radio failsafe");
 					driveState=newState;
 					
@@ -842,8 +849,11 @@ void changeDriveState(uint8_t newState)
 					#endif
 
 					break;
-				case DRIVE_STATE_RADIO:
-					manager.sendString("Drive State: Invalid state change");
+				default:
+					manager.sendString("Drive State: Invalid state change. Stopping");
+					prevDriveState=DRIVE_STATE_STOP;
+					driveState=DRIVE_STATE_STOP;
+					output(0,steerCenter);
 					break;
 			}
 		  break;
@@ -1063,43 +1073,21 @@ void navigate()
 		output(0,steerCenter);
 		return;						
 	}
-		
-	if (abs(steer-steerCenter) > 5 || fabs(mph)>0.8f ) 
-	{						
-		changeDriveState(DRIVE_STATE_RADIO);
-		output(mph, steer);
-	}
-	else
-	{	
-		if (driveState == DRIVE_STATE_RADIO ) {
-			changeDriveState(prevDriveState);
-		}
-	}
 
-	if (driveState != DRIVE_STATE_RADIO_FAILSAFE)
-	{
+	if (driveState != DRIVE_STATE_RADIO_FAILSAFE) {
 		if (abs(steer-steerCenter) > 5 || fabs(mph)>0.8f ) 
 		{						
-			switch( radioControllerDev)
-			{
-				case RC_TGY_IA6B:
-				  //need to avoid treating failsafe mode as legit throttle			  
-				  if (throttle !=0)
-						changeDriveState(DRIVE_STATE_RADIO);  	
-						output(mph, steer);
-				  break;
-				default:
-					changeDriveState(DRIVE_STATE_RADIO);
-					output(mph, steer);
-				  break;
-			}
+			changeDriveState(DRIVE_STATE_RADIO);
+			output(mph, steer);
 		}
 		else
 		{	
-			if (driveState == DRIVE_STATE_RADIO )
+			if (driveState == DRIVE_STATE_RADIO ) {
 				changeDriveState(prevDriveState);
+			}
 		}
 	}
+	
 
 
 	if (driveState == DRIVE_STATE_AUTO  )
