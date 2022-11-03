@@ -328,7 +328,7 @@ namespace Platform {
          */
         settings.attach(28, Units::FEET_PER_MILE / 5.0f, [](float g){ positionHold.setVelocityScale(g); });
 
-        /*AIRSETTING index="29" name="Low Battery Warning" min="0.0" max="+inf" def="14.0"
+        /*AIRSETTING index="29" name="Low Battery Warning" min="0.0" max="+inf" def="10.5"
          * At what voltage to consider the quadcopter low on battery
          */
         settings.attach(29, 10.5f, [](float g){ power.setLowVolt(g); });
