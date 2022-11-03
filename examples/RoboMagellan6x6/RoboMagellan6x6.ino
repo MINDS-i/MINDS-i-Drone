@@ -120,7 +120,9 @@ uint16_t ping[5][2] = {20000,20000,20000,20000,20000};
 uint8_t  pIter; //iterators for scheduler and ping
 
 //== Power ==
-#define LOW_VOLTAGE_CUTOFF 6.0 //volts
+//LOW_VOLTAGE_CUTOFF should be 6.1 or greater as some power
+//modules may not correctly report values below 6.1V
+#define LOW_VOLTAGE_CUTOFF 6.1 //volts; should always be >= 6.1 to assure 
 #define LOW_VOLTAGE_TIME 5 //seconds
 #define RESET_VOLTAGE_THRESHOLD 7.2 //volts
 #define RESET_VOLTAGE_TIME 1 //seconds
