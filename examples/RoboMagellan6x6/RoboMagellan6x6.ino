@@ -43,7 +43,7 @@ const uint8_t VoltagePin  = 67;
 const uint8_t LEDpin[]    = {25, 26, 27}; //blue, yellow, red
 const uint8_t PingPin[]	  = {A0, A1, A2, A3, A4}; //left to right
 const uint8_t ServoPin[]  = {12, 11,  8};//drive, steer, backS; APM 1,2,3 resp.
-uint8_t RadioChannel[]  = {2, 0, 2}; //see enum 
+uint8_t RadioChannel[]  = {1, 0, 2}; //see enum 
 const uint8_t EncoderPin[]= {2/*APM pin 7*/, 3 /*APM pin 6*/};
 
 
