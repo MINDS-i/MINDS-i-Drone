@@ -111,6 +111,12 @@ public:
     float getEulerX() { return m_euler_x; }
     float getEulerY() { return m_euler_y; }
     float getEulerZ() { return m_euler_z; }
+    float get_ax() { return m_Ax; }
+    float get_ay() { return m_Ay; }
+    float get_az() { return m_Az; }
+    float get_wx() { return m_GyroX; }
+    float get_wy() { return m_GyroY; }
+    float get_wz() { return m_GyroZ; }
 
 
 private:

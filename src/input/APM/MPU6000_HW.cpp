@@ -92,7 +92,7 @@ void MPU6000_DMP::update()
 					m_GyroZ = ((m_fifoBuffer[24] << 8) + m_fifoBuffer[25]);
 
 
-	 				m_euler_x = atan2((2 * m_q_y * m_q_z) - (2 * m_q_w * m_q_x), (2 * m_q_w * m_q_w) + (2 * m_q_z * m_q_z) - 1); // phi
+	 			m_euler_x = atan2((2 * m_q_y * m_q_z) - (2 * m_q_w * m_q_x), (2 * m_q_w * m_q_w) + (2 * m_q_z * m_q_z) - 1); // phi
 			    m_euler_y = -asin((2 * m_q_x * m_q_z) + (2 * m_q_w * m_q_y));                                        // theta
 			    m_euler_z = atan2((2 * m_q_x * m_q_y) - (2 * m_q_w * m_q_z), (2 * m_q_w * m_q_w) + (2 * m_q_x * m_q_x) - 1); // psi
 			    // m_euler_x = m_euler_x * 180/M_PI; // angle in degrees -180 to +180
