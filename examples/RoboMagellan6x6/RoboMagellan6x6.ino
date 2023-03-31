@@ -328,8 +328,7 @@ int		avoidCoastTime, avoidStraightBack, avoidSteerBack;
 float	tireDiameter;
 int		steerCenter;
 //in miles, margin for error in rover location
-//float PointRadius  = .0015; 
-float PointRadius  = 0.000621371; 
+float PointRadius  = .0015;
 float approachRadius = .0038;
 
 
@@ -1414,8 +1413,8 @@ void wgs84_to_cartesian(float& x, float& y, const GPS_COORD & coord, const GPS_C
 
   DELTA_GPS delta_gps;
   calc_delta_gps(&ref_coord, &coord, &delta_gps);
-  y = delta_gps.latitude * rho_lat;
-  x = delta_gps.longitude * rho_lon;
+  y = (delta_gps.latitude * M_PI / 180.0) * rho_lat;
+  x = (delta_gps.longitude * M_PI / 180.0) * rho_lon;
 }
 
 
