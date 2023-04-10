@@ -116,6 +116,15 @@ int calc_haversine(const GPS_COORD* gps_start, // starting GPS (degrees)
     DELTA_GPS delta_gps;
 // converts two double gps to single float differences
     err = calc_delta_gps(gps_start, gps_end, &delta_gps);
+
+    //if (delta_gps.latitude == 0.0 && delta_gps.longitude == 0.0) {
+    //    local->distance = 0.0;
+    //    local->heading = 0.0;
+    //    local->x = 0.0;
+    //    local->y = 0.0;
+    //    return err;
+    //}
+
     float delta_phi = fdeg_to_rad(delta_gps.latitude);
     float delta_lambda = fdeg_to_rad(delta_gps.longitude);
     float fphi1_deg = gps_angle_to_float(&gps_start->latitude);
