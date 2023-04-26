@@ -63,7 +63,7 @@ void MPU6000_DMP::update()
     		}
 
 
-    		if (m_fifoCount >= m_packetSize)
+    		while (m_fifoCount >= m_packetSize)
     		{
   				// read a packet from FIFO
     			SPIreadBytes(0x74, m_packetSize, m_fifoBuffer, m_chipSelect);
@@ -103,13 +103,13 @@ void MPU6000_DMP::update()
 				  m_lastUpdateTime=millis();
 
     		}
-    		else
-    		{
+//    		else
+//    		{
     			//took to long wait until next interrupt
     			//want to avoid lockup condition with infinite loop
 
 
-    		}
+//    		}
 
     
   		}
