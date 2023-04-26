@@ -1301,7 +1301,7 @@ void navigate()
 			outputAngle = constrain(outputAngle,double(-90.0),double(90.0));
 
 			//only adjust steering using the ping sensors if CAUTION flag is active 
-			if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION) && false) {
+			if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION)) {
 				//find x and y component of output angle
 				x = cos(toRad(outputAngle));
 				y = sin(toRad(outputAngle));
@@ -1676,7 +1676,7 @@ void checkBumperSensor()
 	//String msg("Left: " + String(leftButtonState) + " Right: " + String(rightButtonState));
 	//	manager.sendString(msg.c_str());
 
-	if ( driveState == DRIVE_STATE_AUTO && autoState == AUTO_STATE_FULL && false)
+	if ( driveState == DRIVE_STATE_AUTO && autoState == AUTO_STATE_FULL)
 	{
 		if (leftButtonState || rightButtonState)
 		{		
@@ -1770,7 +1770,7 @@ void checkPing()
 	pIter = pIter%5;
 
 	
-	if ( driveState == DRIVE_STATE_AUTO && autoState == AUTO_STATE_FULL && false)
+	if ( driveState == DRIVE_STATE_AUTO && autoState == AUTO_STATE_FULL)
 	{	
 
 		if(ping[pIter][PING_CUR] < blockLevel[pIter] && ping[pIter][PING_LAST] < blockLevel[pIter]) 
