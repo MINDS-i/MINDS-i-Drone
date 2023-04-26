@@ -31,8 +31,7 @@ float k_heading = 0;
 bool heading_lock = false;
 bool new_gps = false;
 bool driving_straight = false;
-double ratio_adjustment = 0.01;
-bool finish_side = false;
+double ratio_adjustment = 0.1;
 //=============================================//
 //  Defines used to control compile options
 //=============================================//
@@ -88,7 +87,6 @@ const float MPHvRPM       = (1.f/60.f)        * (1.f/MilesPerRev);
 double   pathHeading; 
 double   headingError; 
 double   crosstrackError; 
-double   wpPathHeading; 
 double   trueHeading;
 double 	 scOutputAngle;
 double 	 trueOutputAngle;
@@ -1262,7 +1260,6 @@ void navigate()
 						outputAngle *= -1;
 					break;
 				case 2:
-					wpPathHeading = backWaypoint.headingTo(manager.getTargetWaypoint());
 					outputAngle = steering_control_lat_lon(
 						backWaypoint.m_gpsCoord,
 						manager.getTargetWaypoint().m_gpsCoord,
@@ -1362,7 +1359,7 @@ void navigate()
 			//then approachSpeed and turning angle then we us it?
 
 //			speed = min(speed, disp)/6.f; //logical speed clamps
-
+      
 			approachSpeed = manager.getTargetWaypoint().getApproachSpeed();
 
       //speed reduction based on steering angle
@@ -1431,6 +1428,7 @@ float steering_control(float x1, float y1, float x2, float y2, float xbot, float
 {
   float path_yaw = atan2(x2 - x1, y2 - y1);
   float yaw_error = yaw_bot - path_yaw;
+
   if (yaw_error > M_PI) {
     yaw_error -= 2 * M_PI;
   }
@@ -1453,6 +1451,7 @@ float steering_control(float x1, float y1, float x2, float y2, float xbot, float
 
   crosstrackError = cross_track_error;
   headingError = yaw_error * 180.0 / M_PI;
+
   return (k_cross_track * cross_track_error + k_yaw * yaw_error);
 }
 
@@ -1516,14 +1515,6 @@ void updateGPS()
 		debugger.send(msg);
     #endif
 
-#ifdef M_DEBUG2
-  AsciiMsg_t msg2;
-  String tst = "Spd_cmd: " + String(manager.getTargetWaypoint().getApproachSpeed());
-  msg2.ascii.len = tst.length();
-  tst.toCharArray(msg2.ascii.data,tst.length()+1);
-  debugger.send(msg2);
-  #endif
-
 		if (driveState == DRIVE_STATE_AUTO)
 		{
 			waypointUpdated();
@@ -1532,42 +1523,28 @@ void updateGPS()
 	}
 }
 
-bool calculate_side(GPS_COORD & wp1, const GPS_COORD & wp2, const GPS_COORD & rover)
+bool finish_line_reached(GPS_COORD & wp1, const GPS_COORD & wp2, const GPS_COORD & rover)
 {
   float x1 = 0.0;
   float y1 = 0.0;
   float x2, y2;
   float dx, dy;
   float fx, fy;
-  float botx, boty;
+  float xbot, ybot;
 
   //convert lat/lon to cartersian with wp1 at (0,0)
   wgs84_to_cartesian(x2, y2, wp2, wp1, 0.0);
-  wgs84_to_cartesian(botx, boty, rover, wp1, 0.0);
+  wgs84_to_cartesian(xbot, ybot, rover, wp1, 0.0);
 
   dx = x2-x1;
   dy = y2-y1;
 
-  //from y=mx+b
-  float b = y2 - ((-(dx/dy))*x2);
-
-  //create an artifical second point on the finish line
-  if (dx > dy) {
-    fy = 1;  //arbitrary
-    fx = ((fy-b)*(-dy))/dx;
-  }
-  else {
-    fx = 1;  //arbitrary
-    fy = ((-(dx/dy))*fx)+b;
-  }
-
-  //true is left
-  if (((x2 - fx)*(boty - fy) - (y2 - fy)*(botx - fx)) >= 0) { //on the line captured here
+  float dx_bot = xbot - x2;
+  float dy_bot = ybot - y2;
+  if ((dx_bot * dx + dy_bot * dy) >= 0.0) {
     return true;
   }
-  else {
-    return false;
-  }
+  return false;
 }
 
 void waypointUpdated()
@@ -1579,21 +1556,19 @@ void waypointUpdated()
 	if (distance < approachRadius && isSetAutoStateFlag(AUTO_STATE_FLAG_APPROACH) == false )
 		setAutoStateFlag(AUTO_STATE_FLAG_APPROACH);
 
-  bool rover_side = calculate_side(backWaypoint.m_gpsCoord, manager.getTargetWaypoint().m_gpsCoord, location.m_gpsCoord);
+  bool finished_line = finish_line_reached(backWaypoint.m_gpsCoord, manager.getTargetWaypoint().m_gpsCoord, location.m_gpsCoord);
 
-	if(distance <= PointRadius || finish_side == rover_side)
-	{
+	if(distance <= PointRadius || finished_line)
+	{  
 		if(manager.getTargetIndex() < manager.numWaypoints()-1)
 		{
 			backWaypoint = manager.getTargetWaypoint();
 			manager.advanceTargetIndex();
-      finish_side = !calculate_side(backWaypoint.m_gpsCoord, manager.getTargetWaypoint().m_gpsCoord, location.m_gpsCoord);
 		}
 		else if (manager.loopWaypoints())
 		{
 			backWaypoint = manager.getTargetWaypoint();
 			manager.setTargetIndex(0);
-      finish_side = !calculate_side(backWaypoint.m_gpsCoord, manager.getTargetWaypoint().m_gpsCoord, location.m_gpsCoord);
 		}
 		else
 		{
@@ -1637,17 +1612,26 @@ void positionChanged()
 		msg.lonIntermediate.minutes = 0;
 		msg.lonIntermediate.frac = 0;
     #endif
-  #ifdef M_DEBUG2
-	msg.pathHeading = (int16_t)(truncateDegree(wpPathHeading)*100.0);
-	debugger.send(msg);
-  #endif
   
   
 	if (kalman_heading && !heading_lock) {
 		pathHeading = trueHeading; //drive straight
+    #ifdef M_DEBUG2
+    msg.pathHeading = (int16_t)(truncateDegree(pathHeading)*100.0);
+    debugger.send(msg);
+    #endif
 		return;
-	}  
+	}
+ else
+ {
+    pathHeading = backWaypoint.headingTo(manager.getTargetWaypoint());
+    #ifdef M_DEBUG2
+    msg.pathHeading = (int16_t)(truncateDegree(pathHeading)*100.0);
+    debugger.send(msg);
+    #endif
+ }
 
+/*
 	if (backWaypoint.radLongitude() == 0 || distance*5280.l < lookAheadDist*lineGravity)
 	{
 		pathHeading = location.headingTo(manager.getTargetWaypoint());
@@ -1678,7 +1662,7 @@ void positionChanged()
 
 	}
 
-
+*/
 }
 
 void checkBumperSensor()
@@ -1843,8 +1827,8 @@ void checkPing()
 void output(float mph, uint8_t steer)
 {
 	static uint8_t straight_ctr = 0;
-	static int ctr = 0;
-
+  static int ctr = 0;
+  
 	if (abs(steer - steerCenter) > 5) {
 		driving_straight = false;
 		straight_ctr = 0;
@@ -1864,7 +1848,7 @@ void output(float mph, uint8_t steer)
 	#endif
 
   #ifdef M_DEBUG2
-	if (ctr >= 20) {
+	if (ctr >= 10) {
 	// Logger Msg
 	ControlMsg_t msg;
 	msg.speed = (int16_t)(mph*100);
@@ -2052,7 +2036,7 @@ void updateGyro()
 	}
 	
 	#ifdef M_DEBUG2
-  if (ctr >= 20) {
+  if (ctr >= 10) {
 	// Logger Msg
 	OrientationMsg_t msg;
 	msg.heading = (uint16_t)(trueHeading*100);
@@ -2128,6 +2112,7 @@ void reportState()
 void updateSteerSkew(float s)
 {
   steerSkew = int8_t(round(s));
+//  steerSkew = -4;
 }
 
 void newPIDparam(float x)
@@ -2150,9 +2135,6 @@ void stateStart()
 {
   //just now starting a mission - set backwaypoint to current location
   backWaypoint = location;
-
-  //set the finishline side for the initial waypoint
-  bool finish_side = !calculate_side(backWaypoint.m_gpsCoord, manager.getTargetWaypoint().m_gpsCoord, location.m_gpsCoord);
 
 	changeDriveState(DRIVE_STATE_AUTO);
 }
@@ -2408,8 +2390,9 @@ void setupSettings()
 	 * 6 Channel - TGY = 0
 	 * 3 Channel - HobbyKing = 1
 	 */
-	settings.attach(28, 1, &radioController);
+	settings.attach(28, 0, &radioController);
 
 }
 
 
+ 
