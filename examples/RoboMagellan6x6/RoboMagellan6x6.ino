@@ -1,14 +1,3 @@
-#include <StateMsgs.h>
-#include <Util.h>
-#include <MINDSiDebugger.h>
-#include <RadioMsgs.h>
-#include <SensorMsgs.h>
-#include <NavigationMsgs.h>
-#include <PositionMsgs.h>
-#include <OrientationMsgs.h>
-#include <AsciiMsgs.h>
-#include <VersionMsgs.h>
-
 #include "SPI.h"
 #include "Wire.h"
 #include "MINDSi.h"
@@ -17,9 +6,9 @@
 #include "util/callbackTemplate.h"
 #include "version.h"
 
-#define M_DEBUG2  //comment out to disable debugger
+//#define M_DEBUG  //comment out to disable debugger
 
-#ifdef M_DEBUG2
+#ifdef M_DEBUG
   #include "MINDSiDebugger.h"
   MINDSiDebugger debugger;
 #endif
@@ -85,11 +74,11 @@ const float MPHvRPM       = (1.f/60.f)        * (1.f/MilesPerRev);
 
 //All Headings are Clockwise+, -179 to 180, 0=north
 double   pathHeading; 
-double   headingError; 
-double   crosstrackError; 
+double   headingError;
+double   crosstrackError;
 double   trueHeading;
-double 	 scOutputAngle;
-double 	 trueOutputAngle;
+double   scOutputAngle;
+double   trueOutputAngle;
 
 //test for correcting mechanically caused drift left-right
 int8_t steerSkew = 0;
@@ -161,7 +150,7 @@ uint8_t radioControllerDev = RC_TGY_IA6B;
 bool radioFailsafeEnabled = false;
 
 float k_cross_track = 0.05;
-float k_yaw = -0.3;
+float k_yaw = 0.3;
 float max_cross_track_error = 2.0;
 
 uint8_t radioFailsafeCount=0;
@@ -311,18 +300,18 @@ enum SCHEDULED_FUNCTIONS
 // them up to date while the code is running
 //==============================================
 
-float	lineGravity;
-int   lookAheadDist = 25; //feet
-int		steerThrow = 45;
-int   steerStyle = 2;
-float	steerFactor = 1.5;
-float	minFwd, maxFwd;
-int		revThrow;
-float	revSpeed;
-float	pingWeight;
-int		avoidCoastTime, avoidStraightBack, avoidSteerBack; 
-float	tireDiameter;
-int		steerCenter;
+float   lineGravity;
+int     lookAheadDist = 25; //feet
+int     steerThrow = 45;
+int     steerStyle = 2;
+float   steerFactor = 1.5;
+float   minFwd, maxFwd;
+int     revThrow;
+float   revSpeed;
+float   pingWeight;
+int     avoidCoastTime, avoidStraightBack, avoidSteerBack;
+float   tireDiameter;
+int     steerCenter;
 //in miles, margin for error in rover location
 float PointRadius  = .0015;
 float approachRadius = .0038;
@@ -1351,25 +1340,25 @@ void navigate()
 
 			float disp  = steerThrow - abs(steerCenter-outputAngle);
 
-      //start with the fastest speed and decrease as appropriate
+            //start with the fastest speed and decrease as appropriate
 			float speed = maxFwd;
 
 			//not sure why one would use disp vs speed?  Is this for turning distance?
 			//speed is even a distance.  if we get Less the x feet away and it is smaller 
 			//then approachSpeed and turning angle then we us it?
 
-//			speed = min(speed, disp)/6.f; //logical speed clamps
-      
+            //speed = min(speed, disp)/6.f; //logical speed clamps
+
 			approachSpeed = manager.getTargetWaypoint().getApproachSpeed();
 
-      //speed reduction based on steering angle
-      float max_full_speed_steering = 15; //probably should be a UI setable value or moved to top
-      if (abs(steerCenter-outputAngle) > max_full_speed_steering)
-      {
-        speed = approachSpeed * ((steerThrow-abs(steerCenter-outputAngle))/steerThrow);
-        //sanity check
-        speed = max(speed, 0.0); //put in target approach speed
-      }
+            //speed reduction based on steering angle
+            float max_full_speed_steering = 15; //probably should be a UI setable value or moved to top
+            if (abs(steerCenter-outputAngle) > max_full_speed_steering)
+            {
+              speed = approachSpeed * ((steerThrow-abs(steerCenter-outputAngle))/steerThrow);
+              //sanity check
+              speed = max(speed, 0.0); //put in target approach speed
+            }
 
 			speed = min(speed, approachSpeed); //put in target approach speed
 
@@ -1419,14 +1408,14 @@ float steering_control_lat_lon(GPS_COORD & wp1, const GPS_COORD & wp2, const GPS
   wgs84_to_cartesian(x2, y2, wp2, wp1, 0.0);
   wgs84_to_cartesian(xbot, ybot, bot_location, wp1, 0.0);
 
-  float yaw_bot = heading_bot * M_PI / 180.0;
+  float yaw_bot = (90.0 - heading_bot) * M_PI / 180.0;
 
-  return steering_control(x1, y1, x2, y2, xbot, ybot, yaw_bot) * 180.0 / M_PI;      
+  return steering_control(x1, y1, x2, y2, xbot, ybot, yaw_bot) * 180.0 / M_PI;
 }
 
 float steering_control(float x1, float y1, float x2, float y2, float xbot, float ybot, float yaw_bot)
 {
-  float path_yaw = atan2(x2 - x1, y2 - y1);
+  float path_yaw = atan2(y2 - y1, x2 - x1);
   float yaw_error = yaw_bot - path_yaw;
 
   if (yaw_error > M_PI) {
@@ -1502,7 +1491,7 @@ void updateGPS()
 		location = gps.getLocation();
 
 
-    #ifdef M_DEBUG2
+    #ifdef M_DEBUG
 		// Logger Msg
 		RawPositionMsg_t msg;
 		GPS_ANGLE loc_lat = location.angLatitude();
@@ -1587,7 +1576,7 @@ void positionChanged()
 
 	distance = manager.getTargetWaypoint().distanceTo(location);
 
-  #ifdef M_DEBUG2
+  #ifdef M_DEBUG
 	// Logger Msg
 	WaypointMsg_t msg;
 
@@ -1606,7 +1595,7 @@ void positionChanged()
 	msg.lonTarget.minutes = int16_t(endTargetWpLon.minutes);
 	msg.lonTarget.frac = debugger.frac_float_to_int32(endTargetWpLon.frac);
   #endif
-    #ifdef M_DEBUG2
+    #ifdef M_DEBUG
 		msg.latIntermediate.minutes = 0;
 		msg.latIntermediate.frac = 0;  
 		msg.lonIntermediate.minutes = 0;
@@ -1616,7 +1605,7 @@ void positionChanged()
   
 	if (kalman_heading && !heading_lock) {
 		pathHeading = trueHeading; //drive straight
-    #ifdef M_DEBUG2
+    #ifdef M_DEBUG
     msg.pathHeading = (int16_t)(truncateDegree(pathHeading)*100.0);
     debugger.send(msg);
     #endif
@@ -1625,7 +1614,7 @@ void positionChanged()
  else
  {
     pathHeading = backWaypoint.headingTo(manager.getTargetWaypoint());
-    #ifdef M_DEBUG2
+    #ifdef M_DEBUG
     msg.pathHeading = (int16_t)(truncateDegree(pathHeading)*100.0);
     debugger.send(msg);
     #endif
@@ -1847,7 +1836,7 @@ void output(float mph, uint8_t steer)
 	gps.setGroundSpeed(mph);
 	#endif
 
-  #ifdef M_DEBUG2
+  #ifdef M_DEBUG
 	if (ctr >= 10) {
 	// Logger Msg
 	ControlMsg_t msg;
@@ -2035,7 +2024,7 @@ void updateGyro()
 		trueHeading = k_heading;
 	}
 	
-	#ifdef M_DEBUG2
+	#ifdef M_DEBUG
   if (ctr >= 10) {
 	// Logger Msg
 	OrientationMsg_t msg;
@@ -2112,7 +2101,6 @@ void reportState()
 void updateSteerSkew(float s)
 {
   steerSkew = int8_t(round(s));
-//  steerSkew = -4;
 }
 
 void newPIDparam(float x)
