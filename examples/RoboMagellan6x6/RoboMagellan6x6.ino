@@ -6,7 +6,7 @@
 #include "util/callbackTemplate.h"
 #include "version.h"
 
-//#define M_DEBUG  //comment out to disable debugger
+#define M_DEBUG  //comment out to disable debugger
 
 #ifdef M_DEBUG
   #include "MINDSiDebugger.h"
@@ -876,9 +876,9 @@ void changeDriveState(uint8_t newState)
 	msg.driveState = driveState;
 	msg.autoState = autoState;
 	msg.autoFlag = autoStateFlags;
-	msg.voltage = voltage*10;
-	msg.amperage = amperage*10;
-	msg.groundSpeed = RPMtoMPH(encoder::getRPM())*10;
+	msg.voltage = voltage;
+	msg.amperage = amperage;
+	msg.groundSpeed = RPMtoMPH(encoder::getRPM());
 	debugger.send(msg);
 	#endif
 
@@ -1462,11 +1462,11 @@ void extrapPosition()
 		ExtrapolatedPositionMsg_t msg;
 		GPS_ANGLE loc_lat = location.angLatitude();
 		GPS_ANGLE loc_lon = location.angLongitude();
-		msg.latitude.minutes = int16_t(loc_lat.minutes);
-		msg.latitude.frac = debugger.frac_float_to_int32(loc_lat.frac);  
-		msg.longitude.minutes = int16_t(loc_lon.minutes);
-		msg.longitude.frac = debugger.frac_float_to_int32(loc_lon.frac);    
-		msg.altitude = debugger.alt_float_to_uint16(0);
+		msg.latitude.minutes = loc_lat.minutes;
+		msg.latitude.frac = loc_lat.frac;  
+		msg.longitude.minutes = loc_lon.minutes;
+		msg.longitude.frac = loc_lon.frac;    
+		msg.altitude = 0.0;
 		debugger.send(msg);
     #endif
 	}
@@ -1496,11 +1496,11 @@ void updateGPS()
 		RawPositionMsg_t msg;
 		GPS_ANGLE loc_lat = location.angLatitude();
 		GPS_ANGLE loc_lon = location.angLongitude();
-		msg.latitude.minutes = int16_t(loc_lat.minutes);
-		msg.latitude.frac = debugger.frac_float_to_int32(loc_lat.frac);  
-		msg.longitude.minutes = int16_t(loc_lon.minutes);
-		msg.longitude.frac = debugger.frac_float_to_int32(loc_lon.frac);    
-		msg.altitude = debugger.alt_float_to_uint16(0);
+		msg.latitude.minutes = loc_lat.minutes;
+		msg.latitude.frac = loc_lat.frac;  
+		msg.longitude.minutes = loc_lon.minutes;
+		msg.longitude.frac = loc_lon.frac;    
+		msg.altitude = 0.0;
 		debugger.send(msg);
     #endif
 
@@ -1582,18 +1582,18 @@ void positionChanged()
 
 	GPS_ANGLE backWpLat = backWaypoint.angLatitude();
 	GPS_ANGLE backWpLon = backWaypoint.angLongitude();
-	msg.latStart.minutes = int16_t(backWpLat.minutes);
-	msg.latStart.frac = debugger.frac_float_to_int32(backWpLat.frac);  
-	msg.lonStart.minutes = int16_t(backWpLon.minutes);
-	msg.lonStart.frac = debugger.frac_float_to_int32(backWpLon.frac);
+	msg.latStart.minutes = backWpLat.minutes;
+	msg.latStart.frac = backWpLat.frac;  
+	msg.lonStart.minutes = backWpLon.minutes;
+	msg.lonStart.frac = backWpLon.frac;
 
 	Waypoint end_target = manager.getTargetWaypoint();
 	GPS_ANGLE endTargetWpLat = end_target.angLatitude();
 	GPS_ANGLE endTargetWpLon = end_target.angLongitude();
-	msg.latTarget.minutes = int16_t(endTargetWpLat.minutes);
-	msg.latTarget.frac = debugger.frac_float_to_int32(endTargetWpLat.frac);  
-	msg.lonTarget.minutes = int16_t(endTargetWpLon.minutes);
-	msg.lonTarget.frac = debugger.frac_float_to_int32(endTargetWpLon.frac);
+	msg.latTarget.minutes = endTargetWpLat.minutes;
+	msg.latTarget.frac = endTargetWpLat.frac;  
+	msg.lonTarget.minutes = endTargetWpLon.minutes;
+	msg.lonTarget.frac = endTargetWpLon.frac;
   #endif
     #ifdef M_DEBUG
 		msg.latIntermediate.minutes = 0;
@@ -1734,11 +1734,11 @@ void checkVoltage()
 	}
 	
 	#ifdef M_DEBUG
-	AsciiMsg_t msg;
-	String tst = String(millis()) + ":" + String(timer) + ":" + String(uint8_t(voltage*10));
-	msg.ascii.len = tst.length();
-	tst.toCharArray(msg.ascii.data,tst.length()+1);
-	debugger.send(msg);
+	//AsciiMsg_t msg;
+	//String tst = String(millis()) + ":" + String(timer) + ":" + String(uint8_t(voltage*10));
+	//msg.ascii.len = tst.length();
+	//tst.toCharArray(msg.ascii.data,tst.length()+1);
+	//debugger.send(msg);
 	#endif
 }
 
@@ -1837,20 +1837,14 @@ void output(float mph, uint8_t steer)
 	#endif
 
   #ifdef M_DEBUG
-	if (ctr >= 10) {
+  if (ctr >= 10) {
 	// Logger Msg
 	ControlMsg_t msg;
-	msg.speed = (int16_t)(mph*100);
+	msg.speed = mph;
 	msg.steering = steer;
-	msg.sc_steering = (int16_t)(scOutputAngle * 100.0);
-	msg.true_steering = (int16_t)(trueOutputAngle * 100.0);
-	msg.k_crosstrack = (int16_t)(k_cross_track * 1000.0);
-	msg.k_yaw = (int16_t)(k_yaw * 1000.0);
-	msg.heading_error = (int16_t)(headingError * 100.0);
-	msg.crosstrack_error = (int16_t)(crosstrackError * 100.0);
 	debugger.send(msg);
- ctr = 0;
-	}
+	ctr = 0;
+  }
   else {
     ctr++;
   }
@@ -1910,20 +1904,20 @@ void updateHeading()
 
 	#ifdef M_DEBUG
 	{
-		AsciiMsg_t msg;
-		String tst = String(millis()) + ": HEADING_MSG : heading: " + String(trueHeading, 4) + " imu_yaw: " + String(mpudmp.getEulerZ() * 180.0 / M_PI, 4) + " ratio: " + String(ratio_adjustment, 10);
-		msg.ascii.len = tst.length();
-		tst.toCharArray(msg.ascii.data,tst.length()+1);
-		debugger.send(msg);
+		//AsciiMsg_t msg;
+		//String tst = String(millis()) + ": HEADING_MSG : heading: " + String(trueHeading, 4) + " imu_yaw: " + String(mpudmp.getEulerZ() * 180.0 / M_PI, 4) + " ratio: " + String(ratio_adjustment, 10);
+		//msg.ascii.len = tst.length();
+		//tst.toCharArray(msg.ascii.data,tst.length()+1);
+		//debugger.send(msg);
 	}
 	{
-		AsciiMsg_t msg;
-		String tst = String(millis()) + ": IMU_MSG_RPY:  r: " + String(mpudmp.getEulerX()) + "  p: " + String(mpudmp.getEulerY()) + "  y: " + String(mpudmp.getEulerZ()) + '\n' +
-		             String(millis()) + ": IMU_MSG_ACC: ax: " + String(mpudmp.get_ax()) + " ay: " + String(mpudmp.get_ay()) + " az: " + String(mpudmp.get_az()) + '\n' +
-                     String(millis()) + ": IMU_MSG_ANG: wx: " + String(mpudmp.get_wx()) + " wy: " + String(mpudmp.get_wy()) + " wz: " + String(mpudmp.get_wz());
-		msg.ascii.len = tst.length();
-		tst.toCharArray(msg.ascii.data,tst.length()+1);
-		debugger.send(msg);
+		//AsciiMsg_t msg;
+		//String tst = String(millis()) + ": IMU_MSG_RPY:  r: " + String(mpudmp.getEulerX()) + "  p: " + String(mpudmp.getEulerY()) + "  y: " + String(mpudmp.getEulerZ()) + '\n' +
+		//             String(millis()) + ": IMU_MSG_ACC: ax: " + String(mpudmp.get_ax()) + " ay: " + String(mpudmp.get_ay()) + " az: " + String(mpudmp.get_az()) + '\n' +
+  //                   String(millis()) + ": IMU_MSG_ANG: wx: " + String(mpudmp.get_wx()) + " wy: " + String(mpudmp.get_wy()) + " wz: " + String(mpudmp.get_wz());
+		//msg.ascii.len = tst.length();
+		//tst.toCharArray(msg.ascii.data,tst.length()+1);
+		//debugger.send(msg);
 	}
 	#endif
 
@@ -2028,9 +2022,9 @@ void updateGyro()
   if (ctr >= 10) {
 	// Logger Msg
 	OrientationMsg_t msg;
-	msg.heading = (uint16_t)(trueHeading*100);
-	msg.roll = (uint16_t)(toDeg(mpudmp.getEulerY())*100);
-	msg.pitch = (uint16_t)(toDeg(mpudmp.getEulerX())*100);
+	msg.heading = trueHeading;
+	msg.roll = toDeg(mpudmp.getEulerY());
+	msg.pitch = mpudmp.getEulerX();
 	debugger.send(msg);
   ctr = 0;
   }
