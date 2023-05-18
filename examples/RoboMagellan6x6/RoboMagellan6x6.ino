@@ -1224,9 +1224,6 @@ void navigate()
 				}
 			}
 
-
-
-
 			switch(steerStyle)
 			{
 				case 0:
@@ -1263,6 +1260,7 @@ void navigate()
 					outputAngle = (angularError/180.l)*(2.l*steerThrow);
 					break;
 			}
+
 			scOutputAngle = outputAngle;
 
 
@@ -1319,6 +1317,20 @@ void navigate()
 					  				double(steerCenter-steerThrow),
 				 	  				double(steerCenter+steerThrow));
 			trueOutputAngle = outputAngle;
+
+			#ifdef M_DEBUG
+				// Logger Msg
+				SteeringControllerMsg_t msg;
+				msg.scSteering = scOutputAngle;
+				msg.trueSteering = trueOutputAngle;
+				msg.kYaw = k_yaw;
+				msg.kCrosstrack = k_cross_track;
+				msg.headingError = headingError;
+				msg.crosstrackError = crosstrackError;
+				//msg.goalPt1Lat = ba
+				//bool finished_line = finish_line_reached(backWaypoint.m_gpsCoord, manager.getTargetWaypoint().m_gpsCoord, location.m_gpsCoord);
+				debugger.send(msg);
+			#endif
 
 			//outputAngle is [45,135] steerCenter == 90 and steerThrow == 45
 
@@ -1606,7 +1618,7 @@ void positionChanged()
 	if (kalman_heading && !heading_lock) {
 		pathHeading = trueHeading; //drive straight
     #ifdef M_DEBUG
-    msg.pathHeading = (int16_t)(truncateDegree(pathHeading)*100.0);
+    msg.pathHeading = pathHeading;
     debugger.send(msg);
     #endif
 		return;
@@ -1615,7 +1627,7 @@ void positionChanged()
  {
     pathHeading = backWaypoint.headingTo(manager.getTargetWaypoint());
     #ifdef M_DEBUG
-    msg.pathHeading = (int16_t)(truncateDegree(pathHeading)*100.0);
+    msg.pathHeading = pathHeading;
     debugger.send(msg);
     #endif
  }
