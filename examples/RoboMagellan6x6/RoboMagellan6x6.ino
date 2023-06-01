@@ -149,8 +149,8 @@ int8_t  backDir;
 uint8_t radioControllerDev = RC_TGY_IA6B;
 bool radioFailsafeEnabled = false;
 
-float k_cross_track = 0.05;
-float k_yaw = 0.3;
+float k_cross_track = 0.2;
+float k_yaw = 0.4;
 float max_cross_track_error = 2.0;
 
 uint8_t radioFailsafeCount=0;
@@ -1327,8 +1327,6 @@ void navigate()
 				msg.kCrosstrack = k_cross_track;
 				msg.headingError = headingError;
 				msg.crosstrackError = crosstrackError;
-				//msg.goalPt1Lat = ba
-				//bool finished_line = finish_line_reached(backWaypoint.m_gpsCoord, manager.getTargetWaypoint().m_gpsCoord, location.m_gpsCoord);
 				debugger.send(msg);
 			#endif
 
