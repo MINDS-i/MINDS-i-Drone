@@ -1377,7 +1377,7 @@ void navigate()
 			//deal with speed reduction for caution and approach
 			if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION) || isSetAutoStateFlag(AUTO_STATE_FLAG_APPROACH))
 			{
-				speed = speed/2;
+                speed = speed/2;
 			}
 
 			output(speed, outputAngle);
@@ -1572,6 +1572,7 @@ void waypointUpdated()
 		else
 		{
 			changeDriveState(DRIVE_STATE_STOP);
+			backWaypoint = manager.getTargetWaypoint();
 			manager.setTargetIndex(0);
 		}
 
