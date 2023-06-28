@@ -2147,7 +2147,7 @@ void setupSettings()
      *Switches between arctangent of error steering - disabled (0) <br>
      *square of error steering - disabled (1) <br>
      *cross track and heading error controller (2)
-     *and proportional to error steering -disabled (3)
+     *and proportional to error steering - disabled (3)
      */
     index = 2;
     settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<int, &steerStyle>);
