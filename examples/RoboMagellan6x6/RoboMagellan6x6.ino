@@ -1166,42 +1166,11 @@ void navigate()
                 }
             }
 
-            switch (steerStyle)
-            {
-            case 0:
-                // not sure.  Ratio of opposite/adjacent multiplied by steering throw
-                // convert from degrees to radians for use with atan
-                outputAngle = atan(angularError * PI / 180.l) * (2 * steerThrow / PI);
-                break;
-            case 1:
-                // get squared of percentage of error from 180.  x^2 function where 180=1.00
-                outputAngle = ((angularError / 180.l) * (angularError / 180.l));
-
-                // above percentage of the full steerthrow
-                if (isSetAutoStateFlag(AUTO_STATE_FLAG_APPROACH) == false)
-                    outputAngle *= (4.l * steerThrow);
-                else
-                    outputAngle *= (8.l * steerThrow);
-
-                // negative angle if left turning vs right turning ( or opposite?)
-                if (angularError < 0)
-                    outputAngle *= -1;
-                break;
-            case 2:
-                outputAngle = steering_control_lat_lon(
-                    backWaypoint.m_gpsCoord,
-                    manager.getTargetWaypoint().m_gpsCoord,
-                    location.m_gpsCoord,
-                    (float)trueHeading);
-                break;
-            default:
-                // simplest. Percentage of error multipled by 2x the steerthow
-                //  if angularError is 90 degrees off we max out the steering (left/right)
-                //  this is constrained below
-                //  at this point we could be 180 degress off and have output angle of 90
-                outputAngle = (angularError / 180.l) * (2.l * steerThrow);
-                break;
-            }
+            outputAngle = steering_control_lat_lon(
+                backWaypoint.m_gpsCoord,
+                manager.getTargetWaypoint().m_gpsCoord,
+                location.m_gpsCoord,
+                (float)trueHeading);
 
             scOutputAngle = outputAngle;
 
@@ -2174,10 +2143,11 @@ void setupSettings()
     index = 1;
     settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<int, &steerThrow>);
 
-    /*GROUNDSETTING index="2" name="Steer Style" min="0" max="2" def="1"
-     *Switches between arctangent of error steering (0) <br>
-     *square of error steering (1) <br>
-     *and proportional to error steering (2)
+    /*GROUNDSETTING index="2" name="Steer Style" min="0" max="3" def="2"
+     *Switches between arctangent of error steering - disabled (0) <br>
+     *square of error steering - disabled (1) <br>
+     *cross track and heading error controller (2)
+     *and proportional to error steering -disabled (3)
      */
     index = 2;
     settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<int, &steerStyle>);
