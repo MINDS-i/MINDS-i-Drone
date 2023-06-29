@@ -957,13 +957,12 @@ void changeAutoState(uint8_t newState)
 					else
 					{
 						//if bumper isn't set (or both were triggered) then use ultrasonic to decide
-						if (ping[0][PING_CUR] < ping[4][PING_CUR])
+						if (min(ping[0][PING_CUR], ping[1][PING_CUR]) < min(ping[3][PING_CUR],ping[4][PING_CUR]))
 							backDir = 1;
 						else
 							backDir = -1;
 
 					}
-
 
 
 					autoState=newState;
@@ -1259,8 +1258,8 @@ void navigate()
 			//only adjust steering using the ping sensors if CAUTION flag is active 
 			if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION)) {
 				//find x and y component of output angle
-				x = cos(toRad(outputAngle));
-				y = sin(toRad(outputAngle));
+				x = 0;//cos(toRad(outputAngle));
+				y = 0;//sin(toRad(outputAngle));
 
 				//Not 100 sure:  Generally using pings sensor values to adjust output angle
 				//modify x and y based on what pings are seeing		
