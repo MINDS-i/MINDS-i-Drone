@@ -121,6 +121,11 @@ enum PING_HIST {
 	PING_LAST,
 };
 
+bool ping_center_only = false; //is only the front sensor seeing an obstacle
+//only apply when ping_center_only is true
+short ping_guess = 0; //our current guess for direction to avoid (0=unset)
+byte guess_angle = 25; //turning angle when guessing
+
 uint16_t ping[5][2] = {20000,20000,20000,20000,20000};
 uint8_t  pIter; //iterators for scheduler and ping
 
@@ -1075,7 +1080,6 @@ void navigate()
 	float   mph = ((throttle-90) / 90.f)*MAN_MAX_FWD;
 	uint8_t steer = APMRadio::get(RadioChannel[RADIO_STEER]);
 
-
 	if (driveState == DRIVE_STATE_LOW_VOLTAGE_STOP)
 	{
 		output(0,steerCenter);
@@ -1275,7 +1279,21 @@ void navigate()
 				}
 
 				//determine angle based on x,y then adjust from steering center ( 90 )
-				outputAngle = toDeg(atan2(y,x))+steerCenter;
+				float offset_angle = toDeg(atan2(y,x));
+				if (ping_center_only == true && fabs(offset_angle) < guess_angle) {
+					//force a direction
+					if (ping_guess == 0) //unset
+					{
+						if (offset_angle > 0)
+							ping_guess = 1;
+						else
+							ping_guess = -1;
+					}
+					else {
+						offset_angle = guess_angle * ping_guess;
+					}
+				}
+				outputAngle = offset_angle+steerCenter;
 			}
 			else {
 				outputAngle += steerCenter;    
@@ -1773,6 +1791,17 @@ void checkPing()
 
 				}
 			}
+		}
+	}
+
+	if (pIter == 0) //only run when all ping values have been updated
+	{
+		if (ping[2][PING_CUR] < warnLevel[2] && (ping[0][PING_CUR] >= warnLevel[0] && ping[1][PING_CUR] >= warnLevel[1] && ping[3][PING_CUR] >= warnLevel[3] && ping[4][PING_CUR] >= warnLevel[4])) {
+			ping_center_only = true;
+		}
+		else {
+			ping_center_only = false;
+			ping_guess = 0;
 		}
 	}
 
@@ -2354,6 +2383,3 @@ void setupSettings()
 	settings.attach(28, 0, &radioController);
 
 }
-
-
- 
