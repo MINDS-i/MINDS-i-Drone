@@ -195,6 +195,7 @@ enum AVOID_STATES {
 	AVOID_STATE_STRAIGHTBACK,
 	AVOID_STATE_STEER,
 	AVOID_STATE_REV_BRAKE,
+	AVOID_STATE_STEER_FWD,
 	AVOID_STATE_DONE,
 	AVOID_STATE_NUM_STATES
 };
@@ -933,13 +934,13 @@ void changeAutoState(uint8_t newState)
 
 					//If we had set caution flag then entered avoid we need to clear
 					//might consider leaving in caution but for now...
-					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
+//					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
 
 					
 					avoidState=AVOID_STATE_ENTER;
 					
 
-					int8_t bumperBackDir;
+/*					int8_t bumperBackDir;
 
 					if (bumperSensor.leftButtonState()==bumperSensor.rightButtonState())
 					{
@@ -960,14 +961,14 @@ void changeAutoState(uint8_t newState)
 						backDir=bumperBackDir;
 					}
 					else
-					{
+					{*/
 						//if bumper isn't set (or both were triggered) then use ultrasonic to decide
 						if (min(ping[0][PING_CUR], ping[1][PING_CUR]) < min(ping[3][PING_CUR],ping[4][PING_CUR]))
 							backDir = 1;
 						else
 							backDir = -1;
 
-					}
+//					}
 
 
 					autoState=newState;
@@ -1166,8 +1167,8 @@ void navigate()
 						//If new speed is slow enough move on to new state
 						if (current_speed > -.5)
 						{
-							avoidState=AVOID_STATE_DONE;
-							manager.sendString(AVOID_STATES_STRING[AVOID_STATE_DONE]);
+							avoidState=AVOID_STATE_STEER_FWD;
+							manager.sendString(AVOID_STATES_STRING[AVOID_STATE_STEER_FWD]);
 						}
 						else
 						{
@@ -1175,6 +1176,24 @@ void navigate()
 						}
 						sTime=millis();
 					}
+					break;
+				case AVOID_STATE_STEER_FWD:
+					if(backDir == 0)
+					{
+						temp_steer=steerCenter;
+					}
+					else if (backDir > 0)
+					{
+						//opposite of back dir
+						temp_steer=steerCenter+revThrow;
+					}
+					else
+					{
+						//opposite of back dir
+						temp_steer=steerCenter-revThrow;
+					}
+					//opposite of reverse speed
+					handleAvoidState(-revSpeed,temp_steer,AVOID_STATE_DONE,avoidSteerBack+avoidStraightBack);
 					break;
 				case AVOID_STATE_DONE:
 					changeAutoState(AUTO_STATE_FULL);
@@ -1801,6 +1820,10 @@ void checkPing()
 		}
 		else {
 			ping_center_only = false;
+		}
+
+		if (!isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
+		{
 			ping_guess = 0;
 		}
 	}
