@@ -934,7 +934,7 @@ void changeAutoState(uint8_t newState)
 
 					//If we had set caution flag then entered avoid we need to clear
 					//might consider leaving in caution but for now...
-//					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
+					clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
 
 					
 					avoidState=AVOID_STATE_ENTER;
@@ -1774,7 +1774,14 @@ void checkPing()
 	pIter+=2;
 	pIter = pIter%5;
 
-	
+	if ( driveState == DRIVE_STATE_AUTO && autoState == AUTO_STATE_AVOID && (avoidState == AVOID_STATE_REV_BRAKE || avoidState == AVOID_STATE_STEER_FWD))
+	{ 
+		if(ping[pIter][PING_CUR] < blockLevel[pIter] && ping[pIter][PING_LAST] < blockLevel[pIter]) 
+		{
+			avoidState = AVOID_STATE_ENTER;
+		}    
+	}
+
 	if ( driveState == DRIVE_STATE_AUTO && autoState == AUTO_STATE_FULL)
 	{	
 
