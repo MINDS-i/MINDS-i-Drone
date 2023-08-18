@@ -2250,7 +2250,7 @@ void setupSettings()
   index = 1;
 	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<int, &steerThrow>);
 
-    /*GROUNDSETTING index="2" name="Steer Style" min="0" max="2" def="1"
+    /*GROUNDSETTING index="2" name="Steer Style" min="0" max="2" def="2"
      *Switches between arctangent of error steering (0) <br>
      *square of error steering (1) <br>
      *and proportional to error steering (2)
@@ -2271,7 +2271,7 @@ void setupSettings()
 	index = 4;
 	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<float, &minFwd>);
 
-	/*GROUNDSETTING index="5" name="Max Fwd Speed" min="1.5" max="3" def="2.0"
+	/*GROUNDSETTING index="5" name="Max Fwd Speed" min="1.5" max="3" def="3.0"
 	 *Maximum forward driving speed in MPH
 	 */
 	index = 5;
@@ -2341,13 +2341,13 @@ void setupSettings()
 //Target radi settings
 
 
-	/*GROUNDSETTING index="16" name="Waypoint acheived radius in miles" min="0" max=".003" def=".0015"
+	/*GROUNDSETTING index="16" name="Waypoint acheived radius in miles" min="0" max=".003" def=".00075"
 	 * Radius centered at waypoint where target is determined to be meet
 	 */
 	index = 16;
 	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<float,&PointRadius>);
 
-	/*GROUNDSETTING index="17" name="Approach radius" min="0" max=".0076" def=".0038"
+	/*GROUNDSETTING index="17" name="Approach radius" min="0" max=".0076" def=".0015"
 	 * Radius cneter at waypoint where the approach flag is set
 	 */
 
@@ -2370,13 +2370,13 @@ void setupSettings()
 	index = 21;
 	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &pingBlockLevelEdgesCallback);
 
-	/*GROUNDSETTING index="22" name="Avoid Ping value Middles" min="500" max="10000" def="1600"
+	/*GROUNDSETTING index="22" name="Avoid Ping value Middles" min="500" max="10000" def="1800"
 	 *
 	 */
 	index = 22;
 	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), &pingBlockLevelMiddlesCallback);
 
-  /*GROUNDSETTING index="23" name="Avoid Ping value center" min="500" max="10000" def="3000"
+  /*GROUNDSETTING index="23" name="Avoid Ping value center" min="500" max="10000" def="3200"
 	 *
 	 */
 	index = 23;
