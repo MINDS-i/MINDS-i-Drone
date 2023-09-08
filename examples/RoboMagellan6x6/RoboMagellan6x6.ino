@@ -2061,8 +2061,8 @@ void updateGyro()
 	// Logger Msg
 	OrientationMsg_t msg;
 	msg.heading = trueHeading;
-	msg.roll = toDeg(mpudmp.getEulerY());
-	msg.pitch = mpudmp.getEulerX();
+	msg.roll = toDeg((mpudmp.getEulerY()*cos(mpudmp.getEulerZ())+mpudmp.getEulerX()*sin(mpudmp.getEulerZ())));
+	msg.pitch = toDeg((mpudmp.getEulerX()*cos(mpudmp.getEulerZ())-mpudmp.getEulerY()*sin(mpudmp.getEulerZ())));
 	debugger.send(msg);
   ctr = 0;
   }
@@ -2085,8 +2085,8 @@ void reportLocation()
 	manager.sendTelem(Protocol::telemetryType(HEADING),     trueHeading);
 	#endif
 
-	manager.sendTelem(Protocol::telemetryType(PITCH),       toDeg(mpudmp.getEulerX()));
-	manager.sendTelem(Protocol::telemetryType(ROLL),        toDeg(mpudmp.getEulerY()));
+	manager.sendTelem(Protocol::telemetryType(PITCH),       toDeg((mpudmp.getEulerX()*cos(mpudmp.getEulerZ())-mpudmp.getEulerY()*sin(mpudmp.getEulerZ()))));
+	manager.sendTelem(Protocol::telemetryType(ROLL),        toDeg((mpudmp.getEulerY()*cos(mpudmp.getEulerZ())+mpudmp.getEulerX()*sin(mpudmp.getEulerZ()))));
 
 	#ifdef simMode
 	manager.sendTelem(Protocol::telemetryType(GROUNDSPEED), gps.getGroundSpeed());
