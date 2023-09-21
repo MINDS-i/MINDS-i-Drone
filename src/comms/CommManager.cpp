@@ -195,9 +195,10 @@ inline void CommManager::handleWaypoint(uint8_t* msg, uint8_t length)
 		lat.bytes[3-i] = msg[1+i];
 		lon.bytes[3-i] = msg[5+i];
 	}
-	uint16_t alt  = (((uint16_t)msg[9])<<8) | msg[10];
+	uint16_t alt  = (((uint16_t)msg[9])<<8) | msg[10]; //this is speed on rover
 	//Waypoint data = Waypoint(lat.f, lon.f, Units::DEGREES, alt);
 	Waypoint data = Waypoint(lat.f, lon.f);
+	data.setExtra(alt); //this is speed on rover
 
 	uint8_t  index = msg[11];
 	switch(subtype)
