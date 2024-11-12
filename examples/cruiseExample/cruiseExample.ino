@@ -1,6 +1,6 @@
 #include "SPI.h"
 #include "Wire.h"
-#include "MINDSi.h"
+#include "MINDS-i-Common.h"
 #include "Encoder.h"
 #include "MINDS-i-Drone.h"
 

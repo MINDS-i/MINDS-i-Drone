@@ -15,7 +15,7 @@
 
 #ifndef BUMPER_H
 #define BUMPER_H
-#include "MINDSi.h"
+#include "MINDS-i-Common.h"
 
 #define DEFAULT_DEBOUNCE_DELAY 25
 #define BUMPER_BUTTON_LEFT 0
