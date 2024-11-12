@@ -1,7 +1,7 @@
 #include "SPI.h"
 #include "Wire.h"
-#include "MINDS-i-Common.h"
-#include "Encoder.h"
+#include <MINDS-i-Common.h>
+#include <MINDS-i-Common-Encoder.h>
 #include "MINDS-i-Drone.h"
 
 const uint8_t EncoderPin[]= { 2,  3 }; //apm 6,7
