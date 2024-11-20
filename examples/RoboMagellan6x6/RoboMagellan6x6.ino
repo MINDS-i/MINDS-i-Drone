@@ -1,8 +1,8 @@
 #include "SPI.h"
 #include "Wire.h"
-#include "MINDSi.h"
-#include "Encoder.h"
 #include "MINDS-i-Drone.h"
+#include "MINDS-i-Drone-Common.h"
+#include "MINDS-i-Drone-Common-Encoder.h"
 #include "util/callbackTemplate.h"
 #include "version.h"
 
