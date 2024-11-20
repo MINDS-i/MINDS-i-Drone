@@ -1,12 +1,10 @@
 #include "SPI.h"
 #include "Wire.h"
-#include <MINDS-i-Common.h>
-#include <MINDS-i-Common-Encoder.h>
 #include "MINDS-i-Drone.h"
+#include "MINDS-i-Drone-Common.h"
+#include "MINDS-i-Drone-Common-Encoder.h"
 #include "util/callbackTemplate.h"
 #include "version.h"
-
-namespace minds_i_sensors = minds_i_common::sensors;
 
 //#define M_DEBUG  //comment out to disable debugger
 
@@ -1766,7 +1764,7 @@ void checkPing()
 	ping[pIter][PING_LAST] = ping[pIter][PING_CUR];
 
 	#ifndef simMode
-    ping[pIter][PING_CUR] = minds_i_sensors::getPing(PingPin[pIter]);
+    ping[pIter][PING_CUR] = getPing(PingPin[pIter]);
 	#else
 	pinMode(PingPin[pIter], INPUT);    
 	ping[pIter][PING_CUR] = map(analogRead(PingPin[pIter]),0,1023,0,10000);

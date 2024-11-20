@@ -1,8 +1,8 @@
 #include "SPI.h"
 #include "Wire.h"
-#include <MINDS-i-Common.h>
-#include <MINDS-i-Common-Encoder.h>
 #include "MINDS-i-Drone.h"
+#include "MINDS-i-Drone-Common.h"
+#include <MINDS-i-Drone-Common-Encoder.h>
 
 const uint8_t EncoderPin[]= { 2,  3 }; //apm 6,7
 const uint8_t ServoPin[]  = {12, 11,  8};//drive, steer, backS; APM 1,2,3 resp.
