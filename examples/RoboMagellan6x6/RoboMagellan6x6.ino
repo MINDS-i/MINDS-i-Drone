@@ -492,9 +492,9 @@ void setup()
 	//add state callbacks
 	manager.setStateStopCallback(stateStop);
 	manager.setStateStartCallback(stateStart);
-  manager.setBumperDisableCallback(bumperDisable);
-  manager.setBumperEnableCallback(bumperEnable);
-  manager.setSettingsResetCallback(setDefaultSettings);
+    manager.setBumperDisableCallback(bumperDisable);
+    manager.setBumperEnableCallback(bumperEnable);
+    manager.setSettingsResetCallback(setDefaultSettings);
 	manager.setVersionCallback(version);
 
 
@@ -2188,45 +2188,43 @@ enum SETTINGS_INDEX_ID
 };
 
 const float settingsData[][3] PROGMEM = { 
-															{.25,5.0,1.0},			//Line Gravity
-															{0,90,45},					//Steer Throw
-															{0,2,1},						//Steer Style
-															{0,8,1.5},					//Steer Scalar (steerFactor)
-															{1,3,1.5},					//Min Fwd Speed
-															{1.5,3,2.0},				//Max Fwd Speed
-															{0,90,20},					//Rev Str Throw
-															{-2,-1,-1},					//Reverse Speed
-															{1,20000,1400},			//Ping Factor
-															{2000,8000, 2000},  //Coast Time
-															{500,2000, 1000},   //Min Rev Time
-															{0,1, 0.05},				//Cruise P
-															{0,10, 0.1},				//Cruise I
-															{0,10, 0.0},				//Cruise D
-															{0,12, 5.85},			  //Tire Diameter
-															{0,180, 90},				//Steer Center
-															{0,.003, .0015},		//Waypoint acheived radius in miles
-															{0,.0076, .0038},	  //Approach radius
-															{0,1, 0},					  //old GryoSync...removed
-															{0,1,0},				//???...missing index 19
-															{-10,10, 0},				//Steer Skew
-															{500,10000, 1000},	//Avoid Ping value Edges
-															{500,10000, 1600},	//Avoid Ping value Middles
-															{500,10000, 3000},	//Avoid Ping value center
-															{500,10000, 2000},	//Warn Ping value Edges
-															{500,10000, 3200},	//Warn Ping value Middles
-															{500,10000, 6000},	  //Warn Ping value center
-															{0,1,0},						//Radio failsafe enabled
-															{0,1,0},						//Radio Dev type
-
-
-														};
+    {.25,5.0,1.0},      //Line Gravity
+    {0,90,45},          //Steer Throw
+    {0,2,1},            //Steer Style
+    {0,8,1.5},          //Steer Scalar (steerFactor)
+    {1,3,1.5},          //Min Fwd Speed
+    {1.5,3,2.0},        //Max Fwd Speed
+    {0,90,20},          //Rev Str Throw
+    {-2,-1,-1},         //Reverse Speed
+    {1,20000,1400},     //Ping Factor
+    {2000,8000, 2000},  //Coast Time
+    {500,2000, 1000},   //Min Rev Time
+    {0,1, 0.05},        //Cruise P
+    {0,10, 0.1},        //Cruise I
+    {0,10, 0.0},        //Cruise D
+    {0,12, 5.85},       //Tire Diameter
+    {0,180, 90},        //Steer Center
+    {0,.003, .0015},    //Waypoint acheived radius in miles
+    {0,.0076, .0038},   //Approach radius
+    {0,1, 0},           //old GryoSync...removed
+    {0,1,0},            //???...missing index 19
+    {-10,10, 0},        //Steer Skew
+    {500,10000, 1000},  //Avoid Ping value Edges
+    {500,10000, 1600},  //Avoid Ping value Middles
+    {500,10000, 3000},  //Avoid Ping value center
+    {500,10000, 2000},  //Warn Ping value Edges
+    {500,10000, 3200},  //Warn Ping value Middles
+    {500,10000, 6000},  //Warn Ping value center
+    {0,1,0},            //Radio failsafe enabled
+    {0,1,0},            //Radio Dev type
+};
 
 void setDefaultSettings()
 {
-	for (byte i=0;i<sizeof(settingsData)/sizeof(settingsData[0]);i++)
-	{		
-		storage->updateRecord(i,pgm_read_float_near(&settingsData[i][SETTINGS_DATA_DEF]));
-	}
+    for (byte i=0;i<sizeof(settingsData)/sizeof(settingsData[0]);i++)
+    {
+        storage->updateRecord(i,pgm_read_float_near(&settingsData[i][SETTINGS_DATA_DEF]));
+    }
 }
 
 
@@ -2240,15 +2238,15 @@ void setupSettings()
 	 *course between waypoints, verses the direct path from its current location
 	 * to the target<br>
 	 */
-	index = 0;
-	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<float, &lineGravity>);
+    index = 0;
+    settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<float, &lineGravity>);
 
 	/*GROUNDSETTING index="1" name="Steer Throw" min="0" max="90" def="45"
 	 *The number of degrees that rover will turn its wheels when it needs to
 	 *to turn its most extreme amount
 	 */
-  index = 1;
-	settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<int, &steerThrow>);
+    index = 1;
+    settings.attach(index, pgm_read_float_near(&settingsData[index][0]), pgm_read_float_near(&settingsData[index][1]), pgm_read_float_near(&settingsData[index][2]), callback<int, &steerThrow>);
 
     /*GROUNDSETTING index="2" name="Steer Style" min="0" max="2" def="2"
      *Switches between arctangent of error steering (0) <br>
