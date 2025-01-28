@@ -4,7 +4,6 @@
 #include "MINDS-i-Drone-Common.h"
 #include "MINDS-i-Drone-Common-Encoder.h"
 #include "util/callbackTemplate.h"
-#include "version.h"
 
 //#define M_DEBUG  //comment out to disable debugger
 
@@ -248,7 +247,6 @@ void stateStop();
 void stateStart();
 void bumperDisable();
 void bumperEnable();
-void version();
 
 void setupSettings();
 
@@ -495,7 +493,6 @@ void setup()
     manager.setBumperDisableCallback(bumperDisable);
     manager.setBumperEnableCallback(bumperEnable);
     manager.setSettingsResetCallback(setDefaultSettings);
-	manager.setVersionCallback(version);
 
 
 	//todo loop while testing systems
@@ -2168,12 +2165,6 @@ void bumperDisable()
 {
   isBumperEnabled = false;
 }
-
-void version()
-{
-	manager.sendVersion(version_major, version_minor, version_rev);
-}
-
 
 //todo: add string and make array of structs?
 //update setupSettings to use array too

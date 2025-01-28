@@ -1,4 +1,5 @@
 #include "CommManager.h"
+#include "version.h"
 
 using namespace Protocol;
  
@@ -26,6 +27,11 @@ using namespace Protocol;
 		pktDecodeState(READ_HEADER1)
 {
 	waypoints = new SRAMlist<Waypoint>(MAX_WAYPOINTS);
+}
+
+void CommManager::defaultVersionCallback()
+{
+    sendVersion(version_major, version_minor, version_rev);
 }
 
 void CommManager::update()
@@ -280,6 +286,8 @@ inline void CommManager::handleData(uint8_t* msg, uint8_t length)
 				case (APM_VERSION):
 					if (versionCallback != NULL)
 						versionCallback();
+					else
+					    defaultVersionCallback();
 				break;
 			}
 			break;
