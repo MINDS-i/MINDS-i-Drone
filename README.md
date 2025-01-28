@@ -78,3 +78,7 @@ Operating your Quadcopter
 [1]: https://github.com/MINDS-i/Dashboard/releases
 [2]: https://github.com/MINDS-i/Drone-Tests
 [3]: http://mindsirobotics.com/
+
+## Updates
+
+When pushing updates, make sure to update the version in both [library.properties](library.properties) and [version.h](src/comms/version.h)
