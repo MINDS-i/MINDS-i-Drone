@@ -7,8 +7,9 @@ it to your *sketchbook/libraries* folder.
 Setting up your Quadcopter
 --------------------------
 1. Install your motors in the following configuration:
+
    ```
-     ^ Forward ^
+   ^ Forward ^
    .->-.   .-<-.
    | 3 |   | 1 |
    .-<-\ ^ /->-.
@@ -17,8 +18,7 @@ Setting up your Quadcopter
    .-<-/   \->-.
    | 2 |   | 4 |
    .->-.   .-<-.
-  ```
-
+   ```
    | Output Channel | Position      | Direction         |
    |:--------------:|:-------------:|:-----------------:|
    | 1              | Front Right   | Counter Clockwise |
