@@ -1078,6 +1078,7 @@ void navigate()
 	float   mph = ((throttle-90) / 90.f)*MAN_MAX_FWD;
 	uint8_t steer = APMRadio::get(RadioChannel[RADIO_STEER]);
 
+
 	if (driveState == DRIVE_STATE_LOW_VOLTAGE_STOP)
 	{
 		output(0,steerCenter);
@@ -2109,6 +2110,11 @@ void reportLocation()
 
 	//extra gps info
 	manager.sendTelem(Protocol::telemetryType(HEADING_LOCK), ( heading_lock ) == true ? 1 : 0);
+
+	//radio status
+	manager.sendTelem(Protocol::telemetryType(RDTHROTTLE), APMRadio::get(RadioChannel[RADIO_THROTTLE]));
+	manager.sendTelem(Protocol::telemetryType(RDYAW), APMRadio::get(RadioChannel[RADIO_STEER]));
+	// todo failsafe?
 
 	//digitalWrite(45,LOW);
 }
