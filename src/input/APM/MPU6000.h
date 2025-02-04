@@ -1,3 +1,5 @@
+#pragma once
+
 #include "MPUregs.h"
 #include "input/AxisTranslator.h"
 #include "input/InertialManager.h"

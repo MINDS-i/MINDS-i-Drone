@@ -1,3 +1,5 @@
+#pragma once
+
 #include "MPU6000_DMP.h"
 #include <SPI.h>
 #include <math.h>

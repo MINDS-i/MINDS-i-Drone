@@ -1,3 +1,7 @@
+#pragma once
+
+#include <SPI.h>
+
 #define MPU6050_DMP_CODE_SIZE 1929  // the number of values for writing the dmpMemory[]
 #define MPU6050_DMP_CONFIG_SIZE 192 // the number of values for writing the dmpConfig[]
 #define MPU6050_DMP_UPDATES_SIZE 47 // the number of values for writing the dmpUpdates[]
