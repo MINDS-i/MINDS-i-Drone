@@ -1,4 +1,5 @@
-#pragma once
+#ifndef APM_SERVOGENERATOR_H
+#define APM_SERVOGENERATOR_H
 
 #include "Arduino.h"
 #include <util/atomic.h>
@@ -108,3 +109,5 @@ class Servo {
     }
 };
 } // namespace ServoGenerator
+
+#endif // APM_SERVOGENERATOR_H

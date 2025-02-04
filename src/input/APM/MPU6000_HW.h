@@ -1,4 +1,5 @@
-#pragma once
+#ifndef INPUT_APM_MPU6000_HW_H
+#define INPUT_APM_MPU6000_HW_H
 
 #include "MPU6000_DMP.h"
 #include <SPI.h>
@@ -145,3 +146,5 @@ class MPU6000_DMP {
     unsigned int getFIFOCount(int ChipSelPin);
     byte dmpInitialize();
 };
+
+#endif // INPUT_APM_MPU6000_HW_H

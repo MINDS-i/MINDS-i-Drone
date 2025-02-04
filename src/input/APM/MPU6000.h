@@ -1,4 +1,5 @@
-#pragma once
+#ifndef INPUT_APM_MPU6000_H
+#define INPUT_APM_MPU6000_H
 
 #include "MPUregs.h"
 #include "input/AxisTranslator.h"
@@ -172,3 +173,5 @@ float MPU6000::gyroZ() {
     rawData data = readSensors();
     return (((float)data.gyro[2]) * GYRO_CONVERSION_FACT);
 }
+
+#endif // INPUT_APM_MPU6000_H
