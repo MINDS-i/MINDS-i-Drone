@@ -43,12 +43,12 @@ const uint8_t VoltagePin = 67;
 const uint8_t LEDpin[] = {25, 26, 27};          // blue, yellow, red
 const uint8_t PingPin[] = {A0, A1, A2, A3, A4}; // left to right
 const uint8_t ServoPin[] = {12, 11, 8};         // drive, steer, backS; APM 1,2,3 resp.
-uint8_t RadioChannel[] = {1, 0, 2};             // see enum
 const uint8_t EncoderPin[] = {2 /*APM pin 7*/, 3 /*APM pin 6*/};
 
 //== radio controller enums ==//
-enum RadioChannelTypes { RADIO_FAILSAFE = 0, RADIO_STEER = 1, RADIO_THROTTLE = 2 };
+enum RadioChannelTypes { RADIO_STEER = 0, RADIO_THROTTLE = 1, RADIO_FAILSAFE = 2, RADIO_X = 3, RADIO_Y = 4, RADIO_Z = 5 }; // x,y,z are not currently used, but are reported to dashboard
 enum RadioControllerTypes { RC_TGY_IA6B = 0, RC_HOBBY_KING_GT2B = 1 };
+uint8_t RadioChannel[] = {0, 1, 2, 3, 4, 5};
 
 //== ping sensor vars ==
 
@@ -324,13 +324,13 @@ void radioController(float in) {
     radioControllerDev = (uint8_t)in;
     switch ((int)in) {
     case RC_TGY_IA6B:
-        RadioChannel[RADIO_THROTTLE] = 1;
         RadioChannel[RADIO_STEER] = 0;
+        RadioChannel[RADIO_THROTTLE] = 1;
         RadioChannel[RADIO_FAILSAFE] = 2;
         break;
     case RC_HOBBY_KING_GT2B:
-        RadioChannel[RADIO_THROTTLE] = 0;
         RadioChannel[RADIO_STEER] = 1;
+        RadioChannel[RADIO_THROTTLE] = 0;
         RadioChannel[RADIO_FAILSAFE] = 2;
         break;
     default:
@@ -1831,8 +1831,12 @@ void reportLocation() {
     manager.sendTelem(Protocol::telemetryType(HEADING_LOCK), (heading_lock) == true ? 1 : 0);
 
     // radio status
-    manager.sendTelem(Protocol::telemetryType(RDTHROTTLE), APMRadio::get(RadioChannel[RADIO_THROTTLE]));
-    manager.sendTelem(Protocol::telemetryType(RDYAW), APMRadio::get(RadioChannel[RADIO_STEER]));
+    manager.sendTelem(Protocol::telemetryType(RDROLL), APMRadio::get(RadioChannel[RADIO_STEER]));
+    manager.sendTelem(Protocol::telemetryType(RDPITCH), APMRadio::get(RadioChannel[RADIO_THROTTLE]));
+    manager.sendTelem(Protocol::telemetryType(RDTHROTTLE), APMRadio::get(RadioChannel[RADIO_FAILSAFE]));
+    manager.sendTelem(Protocol::telemetryType(RDYAW), APMRadio::get(RadioChannel[RADIO_X]));
+    manager.sendTelem(Protocol::telemetryType(RDSWITCH), APMRadio::get(RadioChannel[RADIO_Y]));
+    manager.sendTelem(Protocol::telemetryType(RDAUX2), APMRadio::get(RadioChannel[RADIO_Z]));
     // todo failsafe?
 
     // digitalWrite(45,LOW);

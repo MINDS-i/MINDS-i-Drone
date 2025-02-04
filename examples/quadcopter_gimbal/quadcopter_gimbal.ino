@@ -6,7 +6,7 @@ using namespace Platform;
 const uint8_t MAX_ALLOWED_THROTTLE = 75;
 
 // Radio Channel Mapping
-enum RadioChannel { RADIO_PITCH = 1, RADIO_ROLL = 0, RADIO_THROTTLE = 2, RADIO_YAW = 3, RADIO_GEAR = 4, RADIO_AUX = 5 };
+enum RadioChannel { RADIO_ROLL = 0, RADIO_PITCH = 1, RADIO_THROTTLE = 2, RADIO_YAW = 3, RADIO_SWITCH = 4, RADIO_AUX2 = 5 };
 const uint8_t CHANNEL_TRIGGER_MIN = 32;
 const uint8_t CHANNEL_TRIGGER_MAX = 148;
 const float CENTER_RATIO = 0.1f; // 1/2 percentage of stick considered centered
@@ -138,7 +138,7 @@ void fly() {
     float rollCmd = ((float)APMRadio::get(RADIO_ROLL) - 90) / -70.0;
     float yawCmd = ((float)APMRadio::get(RADIO_YAW) - 90) / -90.0;
     float throttle = ((float)radioBaseThrottle - 25) / 130.0;
-    bool altSwitch = (APMRadio::get(RADIO_GEAR) > 90);
+    bool altSwitch = (APMRadio::get(RADIO_SWITCH) > 90);
 
     // Calculate time delta
     static uint32_t lastRunTime = micros();
@@ -248,7 +248,8 @@ const telemLine telemetryTable[] = {
     []() { return (float)APMRadio::get(RADIO_PITCH); },
     []() { return (float)APMRadio::get(RADIO_ROLL); },
     []() { return (float)APMRadio::get(RADIO_YAW); },
-    []() { return (float)APMRadio::get(RADIO_GEAR); },
+    []() { return (float)APMRadio::get(RADIO_SWITCH); },
+    []() { return (float)APMRadio::get(RADIO_AUX2); },
 };
 
 const uint8_t telemetryTotal = sizeof(telemetryTable) / sizeof(telemetryTable[0]);
