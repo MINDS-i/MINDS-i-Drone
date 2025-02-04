@@ -1,35 +1,35 @@
-#include "Wire.h"
-#include "SPI.h"
 #include "MINDS-i-Drone.h"
+#include "SPI.h"
+#include "Wire.h"
 
 #include "platforms/Ardupilot.h"
 using namespace Platform;
 
-InertialVec*    sens[1] = {&mpu};
-Translator      conv[1] = {Translators::APM};
+InertialVec* sens[1] = {&mpu};
+Translator conv[1] = {Translators::APM};
 InertialManager sensors(sens, conv, 1);
 
-GyroOnly        orientation;
+GyroOnly orientation;
 
 const float I = 4.0f;
 float integral;
 
 ServoGenerator::Servo output;
 
-void isrCallback(uint16_t microseconds){
-    float ms = ((float)microseconds)/1000.0;
+void isrCallback(uint16_t microseconds) {
+    float ms = ((float)microseconds) / 1000.0;
     sensors.update();
     orientation.update(sensors, ms);
 }
 
 void setup() {
     beginAPM();
-    Serial.begin (9600);
+    Serial.begin(9600);
     output.attach(A0);
     ServoGenerator::setUpdateCallback(isrCallback);
 }
 
-void loop(){
+void loop() {
     updateAPM();
     Quaternion attitude = orientation.getAttitude();
     float pitch = attitude.getPitch();
@@ -38,7 +38,7 @@ void loop(){
     Serial.print(integral);
     Serial.print("\n");
 
-    integral += I*pitch;
+    integral += I * pitch;
     integral = constrain(integral, -90, 90);
-    output.write(integral+90);
+    output.write(integral + 90);
 }

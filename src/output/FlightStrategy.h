@@ -3,8 +3,8 @@
 
 #include "filter/OrientationEngine.h"
 
-class FlightStrategy{
-public:
+class FlightStrategy {
+  public:
     /**
      * Calculate output torques for a airborn craft
      * orientation - an orientation model for the current craft

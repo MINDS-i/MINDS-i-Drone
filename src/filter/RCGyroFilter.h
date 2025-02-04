@@ -1,20 +1,20 @@
 #ifndef RCGyroFilter_H
 #define RCGyroFilter_H
 
-#include "input/InertialManager.h"
 #include "filter/OrientationEngine.h"
+#include "input/InertialManager.h"
 #include "math/Quaternion.h"
-#include "math/Vec3.h"
 #include "math/SpatialMath.h"
+#include "math/Vec3.h"
 #ifdef STAND_ALONE_TEST
-    #include "micros.h"
+#include "micros.h"
 #else
-    #include "util/profile.h"
+#include "util/profile.h"
 #endif
 
-//rate correction filter with online gyro drift estimation
+// rate correction filter with online gyro drift estimation
 class RCGyroFilter : public OrientationEngine {
-private:
+  private:
     /** If the filter is being run in calibrate mode */
     bool calMode;
     /** The inverse (negative) of the current gyro drift estimate */
@@ -32,47 +32,40 @@ private:
     /** Stores the most recent pitch, roll, and yaw angle */
     float pitch, roll, yaw;
     void updatePRY();
-public:
+
+  public:
     RCGyroFilter(float rcgain, float rGain)
-        :calMode(false),
-         rateCal(0,0,0),
-         attitude(),
-         rcGain(rcgain), gdGain(rGain),
-         pitch(0), roll(0), yaw(0)
-         {}
+        : calMode(false), rateCal(0, 0, 0), attitude(), rcGain(rcgain), gdGain(rGain), pitch(0), roll(0), yaw(0) {}
     void update(InertialManager& sensors, float ms);
     void calibrate(bool mode);
-    Quaternion getAttitude(){ return attitude; }
-    Vec3  getRate(){ return rate; }
-    float getPitchRate(){ return rate[1]; }
-    float getRollRate(){  return rate[0]; }
-    float getYawRate(){   return rate[2]; }
-    float getRoll(){  return roll; }
-    float getPitch(){ return pitch;}
-    float getYaw(){   return yaw;  }
+    Quaternion getAttitude() { return attitude; }
+    Vec3 getRate() { return rate; }
+    float getPitchRate() { return rate[1]; }
+    float getRollRate() { return rate[0]; }
+    float getYawRate() { return rate[2]; }
+    float getRoll() { return roll; }
+    float getPitch() { return pitch; }
+    float getYaw() { return yaw; }
     void setRateCorrectionGain(float g) { rcGain = g; }
     void setGyroDriftGain(float r) { gdGain = r; }
 };
-void
-RCGyroFilter::updatePRY(){
+void RCGyroFilter::updatePRY() {
     pitch = attitude.getPitch();
-    roll  = attitude.getRoll();
-    yaw   = attitude.getYaw();
+    roll = attitude.getRoll();
+    yaw = attitude.getYaw();
 }
-void
-RCGyroFilter::calibrate(bool calibrate){
-    if(calMode == true && calibrate == false){
-        if(calTrack != 0) {
-            rateCal = rateCal/calTrack;
+void RCGyroFilter::calibrate(bool calibrate) {
+    if (calMode == true && calibrate == false) {
+        if (calTrack != 0) {
+            rateCal = rateCal / calTrack;
         }
-    } else if (calMode == false && calibrate == true){
-        rateCal  = Vec3();
+    } else if (calMode == false && calibrate == true) {
+        rateCal = Vec3();
         calTrack = 0;
     }
     calMode = calibrate;
 }
-void
-RCGyroFilter::update(InertialManager& sensors, float dt){
+void RCGyroFilter::update(InertialManager& sensors, float dt) {
     // This filter works by integrating the gyroscope while applying corrections
     // as rotation rate vectors derived from the absolute angular position
     // sensors. The rotation correction vectors are the cross products of
@@ -118,7 +111,7 @@ RCGyroFilter::update(InertialManager& sensors, float dt){
     // get the gyroscope value and apply gyro drift calibration terms
     rate = *sensors.gyroRef();
     rate *= dt;
-    if(!calMode) {
+    if (!calMode) {
         rate += rateCal;
         rateCal += gdGain * (delta - rate);
     } else {
@@ -127,11 +120,12 @@ RCGyroFilter::update(InertialManager& sensors, float dt){
     }
 
     // Integrate the gyroscope and correction delta
-    attitude.integrate(rate*(1.0-rcGain) + delta*rcGain);
+    attitude.integrate(rate * (1.0 - rcGain) + delta * rcGain);
 
     // Normalize, check for errors, recalculate pitch/roll/yaw
     attitude.normalize();
-    if(attitude.error()) attitude = Quaternion();
+    if (attitude.error())
+        attitude = Quaternion();
     updatePRY();
 }
 

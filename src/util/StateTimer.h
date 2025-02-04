@@ -3,21 +3,22 @@
 
 #include "Arduino.h"
 
-class StateTimer{
-private:
+class StateTimer {
+  private:
     bool (*stateF)(void);
     uint32_t enterTime;
     bool lastState;
-public:
+
+  public:
     /**
      * Construct a State Timer
      * @param stateF A fuction returning the state being observed
      */
-    StateTimer(bool (*stateF)(void)): stateF(stateF) {}
+    StateTimer(bool (*stateF)(void)) : stateF(stateF) {}
     /** Perform an observation of the state being tracked */
     void update() {
         bool state = stateF();
-        if(state != lastState){
+        if (state != lastState) {
             lastState = state;
             enterTime = millis();
         }

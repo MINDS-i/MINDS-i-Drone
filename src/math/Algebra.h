@@ -1,58 +1,52 @@
 #ifndef ALGEBRA_H
 #define ALGEBRA_H
-template <size_t rows, size_t cols>
-static void
-rowReduce(float (&matrix)[rows][cols]){
-    //iterate down diagonol, zeroing up and down
-    for(size_t d=0; d<min(rows,cols); d++){
+template <size_t rows, size_t cols> static void rowReduce(float (&matrix)[rows][cols]) {
+    // iterate down diagonol, zeroing up and down
+    for (size_t d = 0; d < min(rows, cols); d++) {
         float m = matrix[d][d];
-        if(m==0) continue;
-        //iterate along rows that are not the row of interest
-        for(size_t r=0; r<rows; r++){
-            if(r==d) continue;
-            float factor = -matrix[r][d]/m;
-            //iterate along row doing calculations
-            for(size_t i=d; i<cols; i++){
-                matrix[r][i] += factor*matrix[d][i];
+        if (m == 0)
+            continue;
+        // iterate along rows that are not the row of interest
+        for (size_t r = 0; r < rows; r++) {
+            if (r == d)
+                continue;
+            float factor = -matrix[r][d] / m;
+            // iterate along row doing calculations
+            for (size_t i = d; i < cols; i++) {
+                matrix[r][i] += factor * matrix[d][i];
             }
         }
     }
 }
-inline float
-cubicHorner(float x, const float (&horner)[4]){
+inline float cubicHorner(float x, const float (&horner)[4]) {
     float b = horner[0];
-    for(int i=1; i<4; i++){
+    for (int i = 1; i < 4; i++) {
         b *= x;
         b += horner[i];
     }
     return b;
 }
-inline float
-sqrtCurve(float input){
+inline float sqrtCurve(float input) {
     float res = sqrt(fabs(input));
     return copysign(res, input);
 }
-inline float
-cubeCurve(float input){
-    float res = input*input*input;
+inline float cubeCurve(float input) {
+    float res = input * input * input;
     return res;
 }
-inline float
-squareCurve(float input){
-    float res = input*input;
+inline float squareCurve(float input) {
+    float res = input * input;
     return copysign(res, input);
 }
-inline float
-atanCurve(float input){
+inline float atanCurve(float input) {
     float res = atan(fabs(input));
     return copysign(res, input);
 }
-inline float
-logCurve(float input){
-    float res = log(fabs(input)+1.0);
+inline float logCurve(float input) {
+    float res = log(fabs(input) + 1.0);
     return copysign(res, input);
 }
-class ThrottleCurve{
+class ThrottleCurve {
     /**
      * Built from a cubic function (a*x^3 + b*x^2 + c*x + d) defined at
      * f(-1) = 0
@@ -61,13 +55,13 @@ class ThrottleCurve{
      * with the last degree of freedom setting the x^3 vs x balance
      *     which corresponds to how "linear" the curve is
      */
-private:
-public:
-    float a,b,c,d;
+  private:
+  public:
+    float a, b, c, d;
     /**
      * Construct a ThrottleCurve given a linearity (0, 1) and hoverPoint (0, 1)
      */
-    ThrottleCurve(float linearity, float hoverPoint){
+    ThrottleCurve(float linearity, float hoverPoint) {
         setLinearity(linearity);
         setHoverPoint(hoverPoint);
     }
@@ -79,8 +73,8 @@ public:
      * Only defined for values between 0.0 and 1.0 exclusive
      * @param linearity How "linear" the final curve should be
      */
-    void setLinearity(float linearity){
-        a = 0.5-linearity;
+    void setLinearity(float linearity) {
+        a = 0.5 - linearity;
         c = linearity;
     }
     /**
@@ -89,8 +83,8 @@ public:
      * Only defined for values between 0.0 and 1.0 exclusive
      * @param hoverPoint The output value that becomes half throttle
      */
-    void setHoverPoint(float hoverPoint){
-        b = 0.5-hoverPoint;
+    void setHoverPoint(float hoverPoint) {
+        b = 0.5 - hoverPoint;
         d = hoverPoint;
     }
     /**
@@ -101,8 +95,8 @@ public:
      * @return       The curved value
      */
     float get(float value) const {
-        const float x = value*2.0f - 1.0f;
-        return d + x*(c + x*(b + x*a));
+        const float x = value * 2.0f - 1.0f;
+        return d + x * (c + x * (b + x * a));
     }
 };
 #endif

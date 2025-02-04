@@ -24,7 +24,7 @@ Copyright 2015 MINDS-i Inc.
 //#pragma GCC optimize ("Os")
 
 // todo remove these includes once integrated with MINDS-i-Common library
-#include "common/io.h"
 #include "common/Ping.h"
+#include "common/io.h"
 
 #endif // MINDS_I_DRONE_LIBS_COMMON_H

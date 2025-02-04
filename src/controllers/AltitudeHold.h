@@ -5,12 +5,12 @@
 #include "filter/Altitude.h"
 #include "util/Interval.h"
 
-class AltitudeHold{
-private:
+class AltitudeHold {
+  private:
     /** The interval in milliseconds between altitude hold update calculations*/
     const uint32_t UPDATE_INTERVAL = 10;
     /** The interval in seconds between altituhe hold update calculations */
-    const float DT = ((float) UPDATE_INTERVAL)/1000.0;
+    const float DT = ((float)UPDATE_INTERVAL) / 1000.0;
     /**
      * The minimum and maximum multiplier's away from hoverThrottle
      * that the output will ever go, effectivly setting a "liveband" on the
@@ -28,7 +28,8 @@ private:
     float integralFactor;
     // landing detection variables
     bool minThrottleHit;
-public:
+
+  public:
     AltitudeHold() {}
     void setResponseFactor(float f) { responseFactor = f; }
     void setVelocityFactor(float f) { velocityFactor = f; }
@@ -37,7 +38,7 @@ public:
      * Initialize altitude hold mode
      * @param hoverThrottle The throttle value to start at in a hover
      */
-    void setup(float hoverThrottle){
+    void setup(float hoverThrottle) {
         hover = hoverThrottle;
         integral = 0.0;
         output = 0.0;
@@ -48,24 +49,22 @@ public:
      * @param measurements The altitude object tracking the quads current pos
      * @return Throttle value to apply to the craft [0,1]
      */
-    float update(float targetAltitude, Altitude measurements){
+    float update(float targetAltitude, Altitude measurements) {
         static auto timer = Interval::every(UPDATE_INTERVAL);
-        if(timer()) {
-            float error = targetAltitude-measurements.getAltitude();
-            float newIntegral = integral + error*DT;
-            float correction = error +
-                               -measurements.getVelocity()*velocityFactor +
-                               newIntegral*integralFactor;
+        if (timer()) {
+            float error = targetAltitude - measurements.getAltitude();
+            float newIntegral = integral + error * DT;
+            float correction = error + -measurements.getVelocity() * velocityFactor + newIntegral * integralFactor;
             float throttle = hover + responseFactor * correction;
 
-            if(throttle < hover*MIN_THROTTLE_RATIO){
+            if (throttle < hover * MIN_THROTTLE_RATIO) {
                 minThrottleHit = true;
                 // Cap the minimum throttle
-                output = hover*MIN_THROTTLE_RATIO;
-            } else if(throttle > hover*MAX_THROTTLE_RATIO) {
+                output = hover * MIN_THROTTLE_RATIO;
+            } else if (throttle > hover * MAX_THROTTLE_RATIO) {
                 minThrottleHit = false;
                 // Cap the maximum throttle
-                output = hover*MAX_THROTTLE_RATIO;
+                output = hover * MAX_THROTTLE_RATIO;
             } else {
                 minThrottleHit = false;
                 // Output the calculated value and store the new integral
@@ -79,8 +78,6 @@ public:
      * Returns true if the quadcopter has likely hit land and can descend
      *   no further
      */
-    bool landingDetected(){
-        return minThrottleHit;
-    }
+    bool landingDetected() { return minThrottleHit; }
 };
 #endif
