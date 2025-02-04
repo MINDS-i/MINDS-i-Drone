@@ -46,7 +46,14 @@ const uint8_t ServoPin[] = {12, 11, 8};         // drive, steer, backS; APM 1,2,
 const uint8_t EncoderPin[] = {2 /*APM pin 7*/, 3 /*APM pin 6*/};
 
 //== radio controller enums ==//
-enum RadioChannelTypes { RADIO_STEER = 0, RADIO_THROTTLE = 1, RADIO_FAILSAFE = 2, RADIO_X = 3, RADIO_Y = 4, RADIO_Z = 5 }; // x,y,z are not currently used, but are reported to dashboard
+enum RadioChannelTypes {
+    RADIO_STEER = 0,
+    RADIO_THROTTLE = 1,
+    RADIO_FAILSAFE = 2,
+    RADIO_X = 3,
+    RADIO_Y = 4,
+    RADIO_Z = 5
+}; // x,y,z are not currently used, but are reported to dashboard
 enum RadioControllerTypes { RC_TGY_IA6B = 0, RC_HOBBY_KING_GT2B = 1 };
 uint8_t RadioChannel[] = {0, 1, 2, 3, 4, 5};
 

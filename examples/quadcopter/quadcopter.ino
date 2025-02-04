@@ -5,7 +5,14 @@
 using namespace Platform;
 
 // Radio Channel Mapping
-enum RadioChannel { RADIO_ROLL = 0, RADIO_PITCH = 1, RADIO_THROTTLE = 2, RADIO_YAW = 3, RADIO_SWITCH = 4, RADIO_AUX2 = 5 };
+enum RadioChannel {
+    RADIO_ROLL = 0,
+    RADIO_PITCH = 1,
+    RADIO_THROTTLE = 2,
+    RADIO_YAW = 3,
+    RADIO_SWITCH = 4,
+    RADIO_AUX2 = 5
+};
 const uint8_t CHANNEL_TRIGGER_MIN = 32;
 const uint8_t CHANNEL_TRIGGER_MAX = 148;
 const float CENTER_RATIO = 0.1f; // 1/2 percentage of stick considered centered
