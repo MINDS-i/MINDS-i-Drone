@@ -245,6 +245,7 @@ const telemLine telemetryTable[] = {
     []() { return (float)APMRadio::get(RADIO_PITCH); },
     []() { return (float)APMRadio::get(RADIO_ROLL); },
     []() { return (float)APMRadio::get(RADIO_YAW); },
+
     []() { return (float)APMRadio::get(RADIO_GEAR); },
 };
 
