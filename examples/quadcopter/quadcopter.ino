@@ -251,9 +251,9 @@ const telemLine telemetryTable[] = {
     []() { return power.getVoltage(); },            // VOLTAGE
     []() { return power.getAmperage(); },           // AMPERAGE
     []() { return altitude.getAltitude(); },        // ALTITUDE
-    []() { return (float)APMRadio::get(RADIO_THROTTLE); },
-    []() { return (float)APMRadio::get(RADIO_PITCH); },
     []() { return (float)APMRadio::get(RADIO_ROLL); },
+    []() { return (float)APMRadio::get(RADIO_PITCH); },
+    []() { return (float)APMRadio::get(RADIO_THROTTLE); },
     []() { return (float)APMRadio::get(RADIO_YAW); },
     []() { return (float)APMRadio::get(RADIO_SWITCH); },
     []() { return (float)APMRadio::get(RADIO_AUX2); },
