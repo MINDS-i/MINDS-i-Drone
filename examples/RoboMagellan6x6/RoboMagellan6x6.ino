@@ -163,6 +163,7 @@ float max_cross_track_error = 2.0;
 
 uint8_t radioFailsafeCount = 0;
 #define RADIO_FAILURE_COUNT_MAX 10
+#define FAILSAFE_THRESHOLD 90
 
 //====================================
 // State related variables/enums
@@ -490,12 +491,18 @@ void loop() {
 }
 
 void checkRadioFailsafe() {
-    if (radioFailsafeEnabled == false)
+    if (!radioFailsafeEnabled) {
+        // captures the case when we're in failsafe and disable radio failsafe checks
+        if (driveState == DRIVE_STATE_RADIO_FAILSAFE) {
+            radioFailsafeCount = 0;
+            changeDriveState(DRIVE_STATE_STOP);
+        }
         return;
+    }
 
     if (driveState != DRIVE_STATE_RADIO_FAILSAFE) {
 
-        if (APMRadio::get(RadioChannel[RADIO_FAILSAFE]) == 0) {
+        if (APMRadio::get(RadioChannel[RADIO_FAILSAFE]) < FAILSAFE_THRESHOLD) {
             // radio disconnect failsafe
             radioFailsafeCount++;
 
@@ -507,7 +514,7 @@ void checkRadioFailsafe() {
         }
     } else // DRIVE_STATE_RADIO_FAILSAFE
     {
-        if (APMRadio::get(RadioChannel[RADIO_FAILSAFE]) != 0) {
+        if (APMRadio::get(RadioChannel[RADIO_FAILSAFE]) >= FAILSAFE_THRESHOLD) {
             // radio reconnected
             radioFailsafeCount++;
 
