@@ -419,6 +419,7 @@ void setup() {
     manager.setBumperEnableCallback(bumperEnable);
     manager.setSettingsResetCallback(setDefaultSettings);
 
+    changeAPMState(APM_STATE_SELF_TEST);
     // todo loop while testing systems
     // Maybe do ping sensor check?
     // gps lock test?
@@ -439,8 +440,6 @@ void setup() {
     }
 
     euler_z_offset = mpudmp.getEulerZ();
-
-    changeAPMState(APM_STATE_SELF_TEST);
 
     checkVoltage();
 }
@@ -541,7 +540,7 @@ void changeAPMState(uint8_t newState) {
         }
         break;
     case APM_STATE_INIT:
-        // only allow transition from invalid to self-test
+        // only allow transition from init to self-test
         switch (newState) {
         case APM_STATE_SELF_TEST:
             manager.sendString("APM State: Self Test");
@@ -554,7 +553,7 @@ void changeAPMState(uint8_t newState) {
         }
         break;
     case APM_STATE_SELF_TEST:
-        // only allow transition from invalid to drive
+        // only allow transition from self-test to drive
         switch (newState) {
         case APM_STATE_DRIVE:
             manager.sendString("APM State: Drive");
