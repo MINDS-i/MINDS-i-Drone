@@ -13,10 +13,11 @@ struct PIDparameters {
     }
     void setStandard(float kp, float ti, float td) {
         P = kp;
-        if (ti == 0)
+        if (ti == 0) {
             I = 0;
-        else
+        } else {
             I = P / ti;
+        }
         D = kp * td;
     }
     void setStandardP(float kp) {
@@ -27,10 +28,11 @@ struct PIDparameters {
         P = kp;
     }
     void setStandardI(float ti) {
-        if (ti == 0)
+        if (ti == 0) {
             I = 0;
-        else
+        } else {
             I = P / ti;
+        }
     }
     void setStandardD(float td) { D = P * td; }
 

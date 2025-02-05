@@ -44,8 +44,9 @@ float inline invSqrt(float x) {
  * small enough angles
  */
 float inline saSin(float t) {
-    if (fabs(t) >= .22)
+    if (fabs(t) >= .22) {
         return sin(t);
+    }
     return t;
 }
 /**
@@ -53,8 +54,9 @@ float inline saSin(float t) {
  * small enough angles
  */
 float inline saCos(float t) {
-    if (fabs(t) >= .64)
+    if (fabs(t) >= .64) {
         return cos(t);
+    }
     return 1.l - ((t * t) / 2);
 }
 /**
@@ -64,8 +66,9 @@ float inline saCos(float t) {
 float inline simplifyRadian(float ref, float val) {
     ref += M_PI;
     float diff = ref - val;
-    if (diff < 0.0f)
+    if (diff < 0.0f) {
         diff += Units::twoPI * ceil(diff / -Units::twoPI);
+    }
     return ref - fmod(diff, Units::twoPI);
 }
 /**
@@ -75,8 +78,9 @@ float inline simplifyRadian(float ref, float val) {
 float inline simplifyDegree(float ref, float val) {
     ref += 180.0f;
     float diff = ref - val;
-    if (diff < 0.0f)
+    if (diff < 0.0f) {
         diff += 360.0f * ceil(diff / -360.0f);
+    }
     return ref - fmod(diff, 360.0f);
 }
 /**

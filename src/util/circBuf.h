@@ -38,8 +38,9 @@ template <typename T, int S> class circBuf {
      */
     void add(T item) {
         data[youngest] = item;
-        if (!empty && youngest == oldest) // delete oldest item
+        if (!empty && youngest == oldest) { // delete oldest item
             oldest = (oldest + 1) % S;
+        }
         youngest = (youngest + 1) % S;
         empty = false;
     }
@@ -53,14 +54,16 @@ template <typename T, int S> class circBuf {
      * `start` to `end`.
      */
     int end() { // exclusive
-        if (empty)
+        if (empty) {
             return oldest;
+        }
         return (youngest > oldest) ? youngest : youngest + S;
     }
     /** Return the number of items in the buffer */
     int size() {
-        if (empty)
+        if (empty) {
             return 0;
+        }
         return end() - start();
     }
     /** return the remaining available space for new items in the buffer */

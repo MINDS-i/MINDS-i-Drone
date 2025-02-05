@@ -101,12 +101,14 @@ void CommManager::update() {
 
 // returns if the rightmost characters of lhs match rhs
 boolean CommManager::rightMatch(const uint8_t* lhs, const uint8_t llen, const uint8_t* rhs, const uint8_t rlen) {
-    if (rlen > llen)
+    if (rlen > llen) {
         return false;
+    }
 
     for (int i = 0; i < rlen; i++) {
-        if (lhs[llen - i - 1] != rhs[rlen - i - 1])
+        if (lhs[llen - i - 1] != rhs[rlen - i - 1]) {
             return false;
+        }
     }
     return true;
 }
@@ -148,10 +150,12 @@ void CommManager::addWaypoint(float lat, float lng, uint8_t index, uint16_t alt)
     // todo fix. Now we assume index is ok?
     // add would returns error but ignored
     waypoints->add(index, data);
-    if (index <= getTargetIndex())
+    if (index <= getTargetIndex()) {
         advanceTargetIndex();
-    if (index == getTargetIndex())
+    }
+    if (index == getTargetIndex()) {
         cachedTarget = getWaypoint(index);
+    }
 }
 
 inline void CommManager::handleWaypoint(uint8_t* msg, uint8_t length) {
@@ -188,10 +192,12 @@ inline void CommManager::handleWaypoint(uint8_t* msg, uint8_t length) {
 #endif
 
         waypoints->add(index, data);
-        if (index <= getTargetIndex())
+        if (index <= getTargetIndex()) {
             advanceTargetIndex();
-        if (index == getTargetIndex())
+        }
+        if (index == getTargetIndex()) {
             cachedTarget = getWaypoint(index);
+        }
         break;
     case ALTER:
         Serial2.print("Alter waypoint ");
@@ -210,8 +216,9 @@ inline void CommManager::handleWaypoint(uint8_t* msg, uint8_t length) {
 #endif
 
         waypoints->set(index, data);
-        if (index == getTargetIndex())
+        if (index == getTargetIndex()) {
             cachedTarget = getWaypoint(index);
+        }
         break;
     default:
         // todo packet subtype error
@@ -237,10 +244,11 @@ inline void CommManager::handleData(uint8_t* msg, uint8_t length) {
     case INFO:
         switch (msg[1]) {
         case (APM_VERSION):
-            if (versionCallback != NULL)
+            if (versionCallback != NULL) {
                 versionCallback();
-            else
+            } else {
                 defaultVersionCallback();
+            }
             break;
         }
         break;
@@ -258,8 +266,9 @@ inline void CommManager::handleWord(uint8_t* msg, uint8_t length) {
         break;
     case SYNC:
         onConnect();
-        if (a == Protocol::SYNC_REQUEST)
+        if (a == Protocol::SYNC_REQUEST) {
             sendSyncMessage(Protocol::SYNC_RESPOND);
+        }
         break;
     case COMMAND:
         handleCommands(a, b);
@@ -270,8 +279,9 @@ inline void CommManager::handleWord(uint8_t* msg, uint8_t length) {
 inline void CommManager::handleCommands(uint8_t a, uint8_t b) {
     switch (a) {
     case ESTOP:
-        if (eStopCallback != NULL)
+        if (eStopCallback != NULL) {
             eStopCallback();
+        }
         break;
     case TARGET:
         setTargetIndex(b);
@@ -310,10 +320,12 @@ inline void CommManager::handleCommands(uint8_t a, uint8_t b) {
 #endif
 
         waypoints->remove(b);
-        if (b <= getTargetIndex())
+        if (b <= getTargetIndex()) {
             retardTargetIndex();
-        if (waypoints->size() == 0)
+        }
+        if (waypoints->size() == 0) {
             cachedTarget = Waypoint();
+        }
         break;
     case STATE_STOP:
         if (stateStopCallback != NULL) {
@@ -355,8 +367,9 @@ void CommManager::handleString(uint8_t* msg, uint8_t length) { /*dead end for st
 }
 
 Waypoint CommManager::getWaypoint(uint16_t index) {
-    if (index >= waypoints->size())
+    if (index >= waypoints->size()) {
         return Waypoint();
+    }
     return waypoints->get(index);
 }
 
@@ -375,8 +388,9 @@ uint16_t CommManager::numWaypoints() { return waypoints->size(); }
 bool CommManager::loopWaypoints() { return waypointsLooped; }
 
 void CommManager::setTargetIndex(uint16_t index) {
-    if (index >= waypoints->size())
+    if (index >= waypoints->size()) {
         return;
+    }
     targetIndex = index;
     cachedTarget = getWaypoint(index);
     sendCommand(commandType(TARGET), targetIndex);
@@ -432,8 +446,9 @@ void CommManager::onConnect() {
     for (int i = 0; i < MAX_SETTINGS; i++) {
         sendSetting(i, getSetting(i));
     }
-    if (connectCallback != NULL)
+    if (connectCallback != NULL) {
         connectCallback();
+    }
 }
 
 void CommManager::sendTelem(uint8_t id, float value) {

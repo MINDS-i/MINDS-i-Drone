@@ -117,8 +117,9 @@ class NMEA {
         sectionBufPos = 0;
     }
     bool pushToBuffer(char c) { // here for inlining
-        if (sectionBufPos >= sizeSectionBuf)
+        if (sectionBufPos >= sizeSectionBuf) {
             return false;
+        }
         sectionBuf[sectionBufPos] = c;
         sectionBufPos++;
         return true;

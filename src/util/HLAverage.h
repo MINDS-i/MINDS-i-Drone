@@ -17,8 +17,9 @@ class HLA {
      */
     HLA(float half, float init) : halfLife(half * 1000.l), value(init) { time = micros(); }
     float update(float newValue) {
-        if (isnan(newValue))
+        if (isnan(newValue)) {
             return value;
+        }
         uint32_t cTime = micros();
         float dt = float(cTime - time);
         float factor = pow(2.l, -dt / halfLife);
@@ -30,8 +31,9 @@ class HLA {
     float millisSinceUpdate() { return (micros() - time) / 1000.l; }
     uint32_t microsSinceUpdate() { return micros() - time; }
     void set(float newValue) {
-        if (isnan(newValue))
+        if (isnan(newValue)) {
             return;
+        }
         value = newValue;
     }
     void resetTime() { time = micros(); }

@@ -16,17 +16,19 @@ void loop() {
     bumperSensor.update();
 
     if (bumperSensor.leftButtonEvent()) {
-        if (bumperSensor.leftButtonState())
+        if (bumperSensor.leftButtonState()) {
             Serial.println("Left Button Pressed");
-        else
+        } else {
             Serial.println("Left Button Released");
+        }
     }
 
     if (bumperSensor.rightButtonEvent()) {
-        if (bumperSensor.rightButtonState())
+        if (bumperSensor.rightButtonState()) {
             Serial.println("Right Button Pressed");
-        else
+        } else {
             Serial.println("Right Button Released");
+        }
     }
 
     delay(25);

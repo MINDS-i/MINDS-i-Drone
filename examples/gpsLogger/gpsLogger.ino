@@ -18,10 +18,12 @@ void loop() {
     // Check if the list clear command is sent
     if (Serial.available()) {
         char c = Serial.read();
-        if (c == 'C')
+        if (c == 'C') {
             eeList->clear();
-        if (c == 'S')
+        }
+        if (c == 'S') {
             showList();
+        }
     }
 
     // update the gps and store good readings periodically
@@ -41,8 +43,9 @@ void loop() {
 }
 
 void addToList(Waypoint point) {
-    if (eeList->size() == eeList->maxSize())
+    if (eeList->size() == eeList->maxSize()) {
         eeList->popTop();
+    }
     eeList->pushBottom(point);
     Serial.println("Adding point");
 }

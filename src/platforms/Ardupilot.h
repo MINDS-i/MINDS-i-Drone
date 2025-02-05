@@ -33,8 +33,9 @@ bool errorsDetected = false;
  * Returns true if none of the hardware has reported an error
  */
 bool safe() {
-    if (errorsDetected) /*if errors were detected when board powered on return false*/
+    if (errorsDetected) { /*if errors were detected when board powered on return false*/
         return false;
+    }
     /*at arm time check compass to see if it is returning good values*/
     bool status = hmc.checkGoodValues();
     if (!status) {
@@ -68,11 +69,13 @@ void beginAPM() {
 
     // Startup the onboard sensors
     Sensor* sensors[] = {&mpu, &hmc, &baro, &gps};
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++) {
         sensors[i]->begin();
+    }
     delay(50);
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++) {
         sensors[i]->calibrate();
+    }
     delay(50);
     for (int i = 0; i < 4; i++) {
         auto status = sensors[i]->status();

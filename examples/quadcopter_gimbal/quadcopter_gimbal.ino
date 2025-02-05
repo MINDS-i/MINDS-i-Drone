@@ -120,12 +120,14 @@ float outputPitch, outputRoll, outputThrottle;
 
 void fly() {
     static auto timer = Interval::every(10);
-    if (!timer())
+    if (!timer()) {
         return;
+    }
 
     uint8_t radioBaseThrottle = APMRadio::get(RADIO_THROTTLE);
-    if (radioBaseThrottle > MAX_ALLOWED_THROTTLE)
+    if (radioBaseThrottle > MAX_ALLOWED_THROTTLE) {
         radioBaseThrottle = MAX_ALLOWED_THROTTLE; // limit maximum throttle for drone on gimbal
+    }
 
     if (radioBaseThrottle == 0) {
         // radio disconnect failsafe
@@ -218,8 +220,9 @@ void fly() {
 
 void land() {
     static auto timer = Interval::every(10);
-    if (!timer())
+    if (!timer()) {
         return;
+    }
 
     static bool landed = false;
 
@@ -229,8 +232,9 @@ void land() {
         altitudeSetpoint -= autolandDescentRate / (1e2 /*interval in seconds*/);
         outputThrottle = altitudeHold.update(altitudeSetpoint, altitude);
         horizon.set(0, 0, yawTarget, outputThrottle);
-        if (altitudeHold.landingDetected())
+        if (altitudeHold.landingDetected()) {
             landed = true;
+        }
     }
 }
 

@@ -19,22 +19,27 @@ template <typename T, int SIZE> class SRAMstorage : public Storage<T> {
         }
     }
     void attachCallback(uint8_t dataNum, void (*call)(T)) {
-        if (dataNum >= SIZE)
+        if (dataNum >= SIZE) {
             return;
+        }
         callback[dataNum] = call;
-        if (callback[dataNum] != NULL)
+        if (callback[dataNum] != NULL) {
             callback[dataNum](getRecord(dataNum));
+        }
     }
     void updateRecord(uint8_t dataNum, T value) {
-        if (dataNum >= SIZE)
+        if (dataNum >= SIZE) {
             return;
+        }
         data[dataNum] = value;
-        if (callback[dataNum] != NULL)
+        if (callback[dataNum] != NULL) {
             callback[dataNum](value);
+        }
     }
     T getRecord(uint8_t dataNum) {
-        if (dataNum >= SIZE)
+        if (dataNum >= SIZE) {
             return T();
+        }
         return data[dataNum];
     }
 };

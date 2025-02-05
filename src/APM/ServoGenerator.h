@@ -95,17 +95,19 @@ class Servo {
      * @param sig A standard [0,180] servo signal
      */
     void write(uint8_t sig) {
-        if (channel != -1)
+        if (channel != -1) {
             // convert [0,180] to [600,2400]
             set(channel, ((uint16_t)sig) * 10 + 600);
+        }
     }
     /**
      * Writes a specific microsecond value to the attached pin
      * @param us servo signal high time
      */
     void writeMicroseconds(uint16_t us) {
-        if (channel != -1)
+        if (channel != -1) {
             set(channel, us);
+        }
     }
 };
 } // namespace ServoGenerator

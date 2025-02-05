@@ -54,12 +54,15 @@ bool needsConfirmation(uint8_t label) {
     uint8_t type = getMessageType(label);
     uint8_t subtype = getSubtype(label);
 
-    if (type == WAYPOINT)
+    if (type == WAYPOINT) {
         return true;
-    if (type == DATA && subtype == SETTING)
+    }
+    if (type == DATA && subtype == SETTING) {
         return true;
-    if (type == WORD && subtype == COMMAND)
+    }
+    if (type == WORD && subtype == COMMAND) {
         return true;
+    }
 
     return false;
 }
@@ -69,23 +72,27 @@ messageType getMessageType(uint8_t label) { return (messageType)(label & 0x0F); 
 uint8_t getSubtype(uint8_t label) { return (label >> 4) & 0x0F; }
 
 uint8_t buildMessageLabel(waypointSubtype subtype) {
-    if (subtype > 0x0F)
+    if (subtype > 0x0F) {
         return 0;
+    }
     return (subtype << 4) | messageType(WAYPOINT);
 }
 uint8_t buildMessageLabel(dataSubtype subtype) {
-    if (subtype > 0x0F)
+    if (subtype > 0x0F) {
         return 0;
+    }
     return (subtype << 4) | messageType(DATA);
 }
 uint8_t buildMessageLabel(wordSubtype subtype) {
-    if (subtype > 0x0F)
+    if (subtype > 0x0F) {
         return 0;
+    }
     return (subtype << 4) | messageType(WORD);
 }
 uint8_t buildMessageLabel(stringSubtype subtype) {
-    if (subtype > 0x0F)
+    if (subtype > 0x0F) {
         return 0;
+    }
     return (subtype << 4) | messageType(STRING);
 }
 } // namespace Protocol

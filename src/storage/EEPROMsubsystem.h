@@ -44,14 +44,16 @@ void eeprom::setup() {
 void eeprom::disableInterrupt() { bitClear(EECR, EERIE); }
 void eeprom::enableInterrupt() { bitSet(EECR, EERIE); }
 void eeprom::write(EEaddr addr, uint8_t val) {
-    if (addr == EENULL || addr >= EE_MAX)
+    if (addr == EENULL || addr >= EE_MAX) {
         return;
+    }
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { _eepromWriteQueue.push(eepromWrite(addr, val)); }
     eeprom::enableInterrupt();
 }
 void eeprom::safeWrite(EEaddr addr, uint8_t val) {
-    if (addr == EENULL || addr >= EE_MAX)
+    if (addr == EENULL || addr >= EE_MAX) {
         return;
+    }
     eeprom::enableInterrupt();
     bool success = false;
     while (!success) {
@@ -61,45 +63,53 @@ void eeprom::safeWrite(EEaddr addr, uint8_t val) {
 void eeprom::writeLong(EEaddr addr, uint32_t val) {
     byteConv data;
     data.l = val;
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++) {
         safeWrite(addr + i, data.bytes[i]);
+    }
 }
 void eeprom::writeFloat(EEaddr addr, float val) {
     byteConv data;
     data.f = val;
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++) {
         safeWrite(addr + i, data.bytes[i]);
+    }
 }
 boolean eeprom::safeToRead() { return (_eepromWriteQueue.isEmpty() && !bitRead(EECR, EEPE)); }
 uint8_t eeprom::read(EEaddr addr) {
-    if (addr == EENULL || addr >= EE_MAX)
+    if (addr == EENULL || addr >= EE_MAX) {
         return 0;
-    if (!eeprom::safeToRead())
+    }
+    if (!eeprom::safeToRead()) {
         return 0; // don't block, just exit
+    }
     EEAR = addr;
     bitSet(EECR, EERE); // start read; takes 4 cycles
     return EEDR;
 }
 uint8_t eeprom::safeRead(EEaddr addr) {
-    if (addr == EENULL || addr >= EE_MAX)
+    if (addr == EENULL || addr >= EE_MAX) {
         return 0;
+    }
     // wait for chance to Read
-    while (!eeprom::safeToRead())
+    while (!eeprom::safeToRead()) {
         eeprom::enableInterrupt();
+    }
     EEAR = addr;
     bitSet(EECR, EERE); // start read; takes 4 cycles
     return EEDR;
 }
 uint32_t eeprom::readLong(EEaddr addr) {
     byteConv data;
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++) {
         data.bytes[i] = safeRead(addr + i);
+    }
     return data.l;
 }
 float eeprom::readFloat(EEaddr addr) {
     byteConv data;
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++) {
         data.bytes[i] = safeRead(addr + i);
+    }
     return data.f;
 }
 ISR(EE_READY_vect) {

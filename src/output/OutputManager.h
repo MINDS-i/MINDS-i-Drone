@@ -59,8 +59,9 @@ class OutputManager {
     void calibrate();
 };
 void OutputManager::enable() {
-    if (!armed)
+    if (!armed) {
         return;
+    }
     if (!enabled) {
         flightMode->reset();
     }
@@ -68,8 +69,9 @@ void OutputManager::enable() {
     enabled = true;
 }
 void OutputManager::standby() {
-    if (!enabled)
+    if (!enabled) {
         enable();
+    }
     standingby = true;
 }
 void OutputManager::disable() {
@@ -95,8 +97,9 @@ void OutputManager::arm() {
 }
 void OutputManager::calibrate() {
     // calibration will fail if the motors are already armed
-    if (armed)
+    if (armed) {
         return;
+    }
 
     uint32_t startTime = millis();
     for (int i = 0; i < 4; i++) {

@@ -25,8 +25,9 @@ uint16_t getPing(int pin, uint16_t maxMicros) {
     delayMicroseconds(5);
     pinMode(pin, INPUT);
     int inputpulse = pulseIn(pin, HIGH, maxMicros);
-    if (inputpulse == 0)
+    if (inputpulse == 0) {
         inputpulse = maxMicros;
+    }
     delayMicroseconds(200);
     pinMode(pin, OUTPUT);
     digitalWrite(pin, LOW);
@@ -42,8 +43,9 @@ uint16_t QTI(int pin, uint16_t maxLoops) {
     digitalWrite(pin, LOW);
     while (digitalRead(pin)) {
         time++;
-        if (time >= maxLoops)
+        if (time >= maxLoops) {
             break;
+        }
     }
     return time;
 }

@@ -119,8 +119,9 @@ float outputPitch, outputRoll, outputThrottle;
 
 void fly() {
     static auto timer = Interval::every(10);
-    if (!timer())
+    if (!timer()) {
         return;
+    }
 
     uint8_t radioBaseThrottle = APMRadio::get(RADIO_THROTTLE);
 
@@ -215,8 +216,9 @@ void fly() {
 
 void land() {
     static auto timer = Interval::every(10);
-    if (!timer())
+    if (!timer()) {
         return;
+    }
 
     static bool landed = false;
 
@@ -226,8 +228,9 @@ void land() {
         altitudeSetpoint -= autolandDescentRate / (1e2 /*interval in seconds*/);
         outputThrottle = altitudeHold.update(altitudeSetpoint, altitude);
         horizon.set(0, 0, yawTarget, outputThrottle);
-        if (altitudeHold.landingDetected())
+        if (altitudeHold.landingDetected()) {
             landed = true;
+        }
     }
 }
 

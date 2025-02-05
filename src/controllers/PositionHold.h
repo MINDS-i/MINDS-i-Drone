@@ -61,8 +61,9 @@ class PositionHold {
         // Recalculate output only when the gps reports new data
         static uint16_t lastIndex = -1;
         static Result output = {0.0, 0.0};
-        if (gps.dataIndex() == lastIndex)
+        if (gps.dataIndex() == lastIndex) {
             return output;
+        }
         lastIndex = gps.dataIndex();
 
         Waypoint position = gps.getLocation();

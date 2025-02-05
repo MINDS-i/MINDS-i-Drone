@@ -60,8 +60,9 @@ class bumper {
     void updateButton(uint8_t pin_id) {
         uint8_t curButtonState;
 
-        if (pin_id > 2)
+        if (pin_id > 2) {
             return;
+        }
 
         // invert state: pressed is logic level 0
         curButtonState = !digitalRead(m_pin[pin_id]);

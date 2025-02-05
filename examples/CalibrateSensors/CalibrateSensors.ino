@@ -40,8 +40,9 @@ class datastream {
     void pushAverage(float v) {
         *avloc = v;
         avloc++;
-        if (avloc >= &average[AVSIZE])
+        if (avloc >= &average[AVSIZE]) {
             avloc = &average[0];
+        }
     }
 
   public:
@@ -85,15 +86,17 @@ void setup() {
     if (!mpuState.good()) {
         Serial.println("Bad MPU6000 status");
         Serial.println(mpuState.message);
-        while (true)
+        while (true) {
             ;
+        }
     }
     auto cmpState = cmp.status();
     if (!cmpState.good()) {
         Serial.println("Bad HMC5883L status");
         Serial.println(cmpState.message);
-        while (true)
+        while (true) {
             ;
+        }
     }
 
     Serial.println(startMessage);
@@ -109,8 +112,9 @@ void loop() {
         switch (state) {
         case COLLECT_STATES:
             // returns true when all necessary states have been visited
-            if (collectStates())
+            if (collectStates()) {
                 state = CALC_RESULTS;
+            }
             printCollectionStatus();
             break;
         case CALC_RESULTS:
@@ -126,8 +130,9 @@ void loop() {
             streamData();
             break;
         default:
-            while (1)
+            while (1) {
                 ; // stop
+            }
         }
 
         Serial.flush();
@@ -143,8 +148,9 @@ bool collectStates() {
             int idx = (i + 2) % 3; // pick remaining axis
             facingDir = idx * 2 + (accl[idx].getValue() > 0);
             isShaking = !(accl[idx].isShaking());
-            if (accl[idx].stable())
+            if (accl[idx].stable()) {
                 logData(facingDir);
+            }
         }
     }
     return axisLogCount == 0b00111111; // all axis have been counted

@@ -66,9 +66,9 @@ void DualErrorFilter::update(InertialManager& sensors, float ms) {
     rate = *sensors.gyroRef();
     Vec3 rawA = sensors.getAccl();
 
-    if (!calMode)
+    if (!calMode) {
         rate += rateCal;
-    else {
+    } else {
         rateCal -= rate;
         calTrack++;
     }
@@ -88,10 +88,11 @@ void DualErrorFilter::update(InertialManager& sensors, float ms) {
 
     // run model and lerp
     updateStateModel(ms);
-    if (attitude.error())
+    if (attitude.error()) {
         attitude = accl;
-    else
+    } else {
         attitude.nlerpWith(accl, acclGain);
+    }
     updatePRY();
 }
 void DualErrorFilter::calibrate(bool calibrate) {

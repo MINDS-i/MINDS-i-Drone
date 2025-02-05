@@ -68,8 +68,9 @@ Sensor::Status L3GD20H::status() { return Sensor::OK; }
 void L3GD20H::calibrate() {
     int16_t data[3];
     float average[3];
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++) {
         average[i] = 0;
+    }
     for (uint8_t i = 0; i < CAL_SAMPLE_SIZE; i++) {
         getRawGyro(data);
         for (int j = 0; j < 3; j++) {
@@ -77,8 +78,9 @@ void L3GD20H::calibrate() {
         }
         delay(1000 / CAL_SAMPLE_SIZE);
     }
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++) {
         lowPass[i] = average[i];
+    }
 }
 void L3GD20H::update(InertialManager& man, Translator axis) {
     float rate[3];

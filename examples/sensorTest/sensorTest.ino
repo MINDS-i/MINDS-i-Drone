@@ -34,12 +34,15 @@ void loop() {
         sensors.getMagField(magn[0], magn[1], magn[2]);
 
         display(millis());
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++) {
             display(accl[i]);
-        for (int i = 0; i < 3; i++)
+        }
+        for (int i = 0; i < 3; i++) {
             display(gyro[i] * 1000);
-        for (int i = 0; i < 3; i++)
+        }
+        for (int i = 0; i < 3; i++) {
             display(magn[i]);
+        }
 
         Serial.print("\n");
     }

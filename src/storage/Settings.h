@@ -41,32 +41,38 @@ class Settings {
   public:
     Settings(Storage<EE_STORAGE_TYPE>* str) : storage(str) {}
     bool foundIMUTune() {
-        if (!formatChecked)
+        if (!formatChecked) {
             checkStorageFormat();
+        }
         return validCalib;
     }
     bool foundSettings() {
-        if (!formatChecked)
+        if (!formatChecked) {
             checkStorageFormat();
+        }
         return validFormat;
     }
     void checkStorageFormat() {
-        if (storage == NULL)
+        if (storage == NULL) {
             return;
+        }
         validCalib = (storage->getRecord(CALIB_VER) == CALIBRATION_VERSON);
         validFormat = (storage->getRecord(STORAGE_VER) == VERSION);
-        if (!validFormat)
+        if (!validFormat) {
             storage->updateRecord(STORAGE_VER, VERSION);
+        }
         formatChecked = true;
     }
     void writeCalibrationVersion() {
-        if (storage == NULL)
+        if (storage == NULL) {
             return;
+        }
         storage->updateRecord(CALIB_VER, CALIBRATION_VERSON);
     }
     void writeTuningValues(LTATune accel, LTATune mag) {
-        if (storage == NULL)
+        if (storage == NULL) {
             return;
+        }
         for (int i = 0; i < 6; i++) {
             storage->updateRecord(ACCL_X_SHFT + i, accel.raw[i]);
             storage->updateRecord(MAG_X_SHFT + i, mag.raw[i]);
@@ -74,10 +80,12 @@ class Settings {
         writeCalibrationVersion();
     }
     bool attach(int type, EE_STORAGE_TYPE defaul, void (*call)(EE_STORAGE_TYPE)) {
-        if (!formatChecked)
+        if (!formatChecked) {
             checkStorageFormat();
-        if (storage == NULL)
+        }
+        if (storage == NULL) {
             return false;
+        }
         uint8_t index = (int)type;
 
         if (!validFormat) {
@@ -88,8 +96,9 @@ class Settings {
     }
     bool attach(int type, EE_STORAGE_TYPE min, EE_STORAGE_TYPE max, EE_STORAGE_TYPE defaul,
                 void (*call)(EE_STORAGE_TYPE)) {
-        if (storage == NULL)
+        if (storage == NULL) {
             return false;
+        }
         uint8_t index = (int)type;
 
         EE_STORAGE_TYPE value = storage->getRecord(index);
@@ -105,26 +114,31 @@ class Settings {
         return storage->getRecord(index);
     }
     LTATune getTuneAt(int startIndex) {
-        if (!formatChecked)
+        if (!formatChecked) {
             checkStorageFormat();
-        if (storage == NULL)
+        }
+        if (storage == NULL) {
             return LTATune();
+        }
         LTATune output;
-        if (!validCalib)
+        if (!validCalib) {
             return output;
+        }
         for (int i = 0; i < 6; i++) {
             output.raw[i] = storage->getRecord(startIndex + i);
         }
         return output;
     }
     LTATune getAccelTune() {
-        if (!formatChecked)
+        if (!formatChecked) {
             checkStorageFormat();
+        }
         return getTuneAt(ACCL_X_SHFT);
     }
     LTATune getMagTune() {
-        if (!formatChecked)
+        if (!formatChecked) {
             checkStorageFormat();
+        }
         return getTuneAt(MAG_X_SHFT);
     }
 };

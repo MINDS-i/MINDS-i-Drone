@@ -15,14 +15,16 @@ template <typename T> class SimpleQueue {
     boolean full;
     void advance(uint8_t& index) {
         index = index + 1;
-        if (index >= maxSize)
+        if (index >= maxSize) {
             index -= maxSize;
+        }
     }
 
   public:
     SimpleQueue(T* array, const uint8_t& size) : data(array), maxSize(size), next(0), end(0), full(false) {
-        for (int i = 0; i < maxSize; i++)
+        for (int i = 0; i < maxSize; i++) {
             data[i] = T();
+        }
     }
     /**
      * Attempt to push `input` into the queue
@@ -30,12 +32,14 @@ template <typename T> class SimpleQueue {
      * returns false if the insertion failed (queue was full)
      */
     boolean push(T input) {
-        if (full)
+        if (full) {
             return false; // full
+        }
         data[next] = input;
         advance(next);
-        if (next == end)
+        if (next == end) {
             full = true;
+        }
         return true;
     }
     /**
@@ -43,8 +47,9 @@ template <typename T> class SimpleQueue {
      * returns default `T()` if empty
      */
     T pop() {
-        if (this->isEmpty())
+        if (this->isEmpty()) {
             return T(); // empty
+        }
         T ret = data[end];
         advance(end);
         full = false;

@@ -131,8 +131,9 @@ void RCFilter::update(InertialManager& sensors, float dt) {
 
     // Normalize, check for errors, recalculate pitch/roll/yaw
     attitude.normalize();
-    if (attitude.error())
+    if (attitude.error()) {
         attitude = Quaternion();
+    }
     updatePRY();
 }
 

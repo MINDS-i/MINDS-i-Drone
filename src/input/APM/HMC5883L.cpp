@@ -32,12 +32,14 @@ bool HMC5883L::checkGoodValues() {
     float mag = (float)(m[0] * m[0] + m[1] * m[1]);
     mag = sqrt(mag);
     bool isGood = true;
-    if (mag >= HMC5883L_MAX_EXPECTED_VALUE_MAG || mag <= HMC5883L_MIN_EXPECTED_VALUE_MAG)
+    if (mag >= HMC5883L_MAX_EXPECTED_VALUE_MAG || mag <= HMC5883L_MIN_EXPECTED_VALUE_MAG) {
         isGood = false;
+    }
     int zmag = abs(m[2]);
     isGood = (isGood && (zmag <= HMC5883L_MAX_EXPECTED_VALUE_MAG));
-    if (isGood)
+    if (isGood) {
         return true; // check if cloned compass is returning reasonable values, if so go on.
+    }
     /*#HMCFAIL HMC5883L Compass sensor failed contact or reported bad status*/
     return false;
 }
@@ -50,8 +52,9 @@ Sensor::Status HMC5883L::status() {
     Wire.requestFrom(address, (uint8_t)0x01);
     if (Wire.available() >= 1) {
         uint8_t status = Wire.read();
-        if ((status & 0x3) == 1)
+        if ((status & 0x3) == 1) {
             return Sensor::OK; // always return ok here
+        }
     }
     isTrueHMC5883L = false; // bad return value either compass failed or is clone. Set compass as clone.
     return Sensor::OK; // always return sensor ok here, this function is called when board is powered on, good values

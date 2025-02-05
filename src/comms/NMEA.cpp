@@ -38,8 +38,9 @@ void NMEA::update() {
                 msg[msgLen] = n; // capture full msg for later checksum
                 msgLen++;
                 bool success = pushToBuffer(n);
-                if (!success)
+                if (!success) {
                     seqPos = -1; // buffer full
+                }
             } else {
                 msg[msgLen] = n; // capture full msg for later checksum
                 msgLen++;
@@ -53,10 +54,11 @@ void NMEA::update() {
                     parseSuccess = handleSections();
                 }
 
-                if (!parseSuccess)
+                if (!parseSuccess) {
                     seqPos = -1;
-                else
+                } else {
                     seqPos += 1;
+                }
 
                 clearBuffer();
 
@@ -95,8 +97,9 @@ bool NMEA::verifyChecksum(char msg[], uint8_t msgLen, uint8_t msgCheckSum) {
 bool NMEA::readFloat(float& store) {
     char* endptr;
     float tmp = strtod(sectionBuf, &endptr);
-    if (endptr == sectionBuf)
+    if (endptr == sectionBuf) {
         return false;
+    }
     store = tmp;
     return true;
 }
@@ -122,8 +125,9 @@ bool NMEA::readFloat(float& store) {
 bool NMEA::readUInt(unsigned int& store) {
     char* endptr;
     unsigned int tmp = (unsigned int)strtoul(sectionBuf, &endptr, 10);
-    if (endptr == sectionBuf)
+    if (endptr == sectionBuf) {
         return false;
+    }
     store = tmp;
     return true;
 }
@@ -192,14 +196,15 @@ const sectionHandler NMEA::sectionHandlersGPRMC[]{
     [](NMEA& nmea) -> bool { return nmea.readFloat(nmea.rmc_msg.timeOfFix); },
     // Status
     [](NMEA& nmea) -> bool {
-        if (nmea.sectionBufPos != 1)
+        if (nmea.sectionBufPos != 1) {
             return false;
-        else if (nmea.sectionBuf[0] == 'A')
+        } else if (nmea.sectionBuf[0] == 'A') {
             nmea.warning = false;
-        else if (nmea.sectionBuf[0] == 'V')
+        } else if (nmea.sectionBuf[0] == 'V') {
             nmea.warning = true;
-        else
+        } else {
             return false;
+        }
         return true;
     },
     // Latitude
@@ -245,8 +250,9 @@ const sectionHandler NMEA::sectionHandlersGPRMC[]{
     // Ground Speed
     [](NMEA& nmea) -> bool {
         bool success = nmea.readFloat(nmea.rmc_msg.groundSpeed);
-        if (success)
+        if (success) {
             nmea.rmc_msg.groundSpeed = toMilesPerHours(nmea.rmc_msg.groundSpeed);
+        }
         return success;
     },
     // Track Angle
@@ -257,8 +263,9 @@ const sectionHandler NMEA::sectionHandlersGPRMC[]{
     [](NMEA& nmea) -> bool { return nmea.readFloat(nmea.rmc_msg.magVar); },
     // magnetic Variation direction
     [](NMEA& nmea) -> bool {
-        if (nmea.sectionBuf[0] == 'E')
+        if (nmea.sectionBuf[0] == 'E') {
             nmea.rmc_msg.magVar *= -1;
+        }
         return true;
     },
     // Mode Indicator

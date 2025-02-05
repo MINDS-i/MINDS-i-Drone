@@ -54,8 +54,9 @@ class Power {
      *   battery
      */
     float suggestedPowerCap() {
-        if (voltage > lowWarningVoltage)
+        if (voltage > lowWarningVoltage) {
             return 1.0;
+        }
         /*
         11 = .00
         12 = .33

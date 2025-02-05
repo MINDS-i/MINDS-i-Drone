@@ -89,8 +89,9 @@ void isrCallback(uint16_t microseconds) {
  * `isrCallback` is run.
  */
 void changeInterruptPeriod(float newPeriod) {
-    if (newPeriod < MINIMUM_INT_PERIOD)
+    if (newPeriod < MINIMUM_INT_PERIOD) {
         newPeriod = MINIMUM_INT_PERIOD;
+    }
     ServoGenerator::setUpdateCallback(isrCallback);
     ServoGenerator::begin(newPeriod);
 }

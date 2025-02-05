@@ -76,8 +76,9 @@ float Quaternion::getYaw() const { return atan2(2 * ((z * w) - (x * y)), 1 - 2 *
 bool Quaternion::error() const { return !(isfinite(x) && isfinite(y) && isfinite(z) && isfinite(w)); }
 void Quaternion::nlerpWith(const Quaternion& l, float percentNew) {
     float percentOld = 1.f - percentNew;
-    if (dot(l) < 0.0f)
+    if (dot(l) < 0.0f) {
         percentNew *= -1; // lerp with the right "polarity"
+    }
     w = percentOld * w + percentNew * l.w;
     x = percentOld * x + percentNew * l.x;
     y = percentOld * y + percentNew * l.y;

@@ -31,8 +31,9 @@ void GyroOnly::calibrate(bool mode) {}
 void GyroOnly::update(InertialManager& sensors, float dt) {
     rate = *sensors.gyroRef();
     attitude.integrate(rate * dt);
-    if (attitude.error())
+    if (attitude.error()) {
         attitude = Quaternion();
+    }
     attitude.normalize();
 }
 

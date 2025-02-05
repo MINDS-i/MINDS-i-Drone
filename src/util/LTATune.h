@@ -79,18 +79,21 @@ struct LTATune {
                               {Vz, Vxz, Vyz, Vzz, Ez}};
         rowReduce<4, 5>(matrix);
 
-        if (matrix[1][1] != 0)
+        if (matrix[1][1] != 0) {
             tune.shift[0] = -(matrix[1][4] / matrix[1][1]) / -2.0;
-        else
+        } else {
             tune.shift[0] = 0;
-        if (matrix[2][2] != 0)
+        }
+        if (matrix[2][2] != 0) {
             tune.shift[1] = -(matrix[2][4] / matrix[2][2]) / -2.0;
-        else
+        } else {
             tune.shift[1] = 0;
-        if (matrix[3][3] != 0)
+        }
+        if (matrix[3][3] != 0) {
             tune.shift[2] = -(matrix[3][4] / matrix[3][3]) / -2.0;
-        else
+        } else {
             tune.shift[2] = 0;
+        }
 
         // find scale factors
         float X = 0, Y = 0, Z = 0;

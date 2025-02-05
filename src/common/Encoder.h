@@ -39,26 +39,30 @@ class encoder {
     }
     static void interrupt(void) {
         stepAverage();
-        if (pin[1] != -1 && fastDigitalRead(pin[1]))
+        if (pin[1] != -1 && fastDigitalRead(pin[1])) {
             return;
+        }
         tickCount++;
     }
     static void Binterrupt(void) {
-        if (fastDigitalRead(pin[0]))
+        if (fastDigitalRead(pin[0])) {
             return;
+        }
         tickCount--;
     }
     static void pushAverage(int16_t val) {
         *avptr = val;
         avptr++;
-        if (avptr >= &average[sampleSize])
+        if (avptr >= &average[sampleSize]) {
             avptr = average;
+        }
     }
 
   public:
     static void begin(uint8_t pinA) {
-        if (digitalPinToInterrupt(pinA) == NOT_AN_INTERRUPT)
+        if (digitalPinToInterrupt(pinA) == NOT_AN_INTERRUPT) {
             return;
+        }
 
         // check if the interrupt is already on
 
@@ -71,10 +75,12 @@ class encoder {
         SREG = oldSREG;
     }
     static void begin(uint8_t pinA, uint8_t pinB) {
-        if (digitalPinToInterrupt(pinA) == NOT_AN_INTERRUPT)
+        if (digitalPinToInterrupt(pinA) == NOT_AN_INTERRUPT) {
             return;
-        if (digitalPinToInterrupt(pinB) == NOT_AN_INTERRUPT)
+        }
+        if (digitalPinToInterrupt(pinB) == NOT_AN_INTERRUPT) {
             return;
+        }
 
         // check if the interrupt is already on
 

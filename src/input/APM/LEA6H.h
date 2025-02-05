@@ -147,14 +147,16 @@ void LEA6H::sendUBloxMessage(uint8_t Type, uint8_t ID, uint16_t len, const uint8
     header[3] = (uint8_t)len >> 8;
 
     calcChecksum(header, 4, check[0], check[1]);
-    if (len > 0)
+    if (len > 0) {
         calcChecksum(buf, len, check[0], check[1]);
+    }
 
     stream.write((char)0xB5);
     stream.write((char)0x62);
     stream.write(header, 4);
-    if (len > 0)
+    if (len > 0) {
         stream.write(buf, len);
+    }
     stream.write(check, 2);
 }
 void LEA6H::calcChecksum(const uint8_t* msg, uint8_t len, uint8_t& c_a, uint8_t& c_b) {

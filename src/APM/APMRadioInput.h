@@ -25,8 +25,9 @@ void setup() {
     TCCR5B |= _BV(ICES5); // rising edge trigger
     TIMSK5 |= _BV(ICIE5); // enable enternal interrupt capture
     TCCR5B |= _BV(CS50);  // set clock at 1x prescaler
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 8; i++) {
         pulse[i] = DEFAULTP;
+    }
 }
 
 /** Get the raw radio signal on channel at its highest resolution */

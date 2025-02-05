@@ -396,11 +396,13 @@ void setup() {
     digitalWrite(40, HIGH);
     mpudmp.begin();
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++) {
         pinMode(LEDpin[i], OUTPUT);
+    }
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++) {
         servo[i].attach(ServoPin[i]);
+    }
 
     output(0.0f, steerCenter);
 
@@ -529,8 +531,9 @@ void checkRadioFailsafe() {
 
 void changeAPMState(uint8_t newState) {
     // ignore if we are not changing state
-    if (apmState == newState)
+    if (apmState == newState) {
         return;
+    }
 
     switch (apmState) {
     case APM_STATE_INVALID:
@@ -581,8 +584,9 @@ void changeAPMState(uint8_t newState) {
 
 void changeDriveState(uint8_t newState) {
     // ignore if we are not changing state
-    if (driveState == newState)
+    if (driveState == newState) {
         return;
+    }
 
     // ignore if drive state is low battery
     if (driveState == DRIVE_STATE_LOW_VOLTAGE_STOP && newState != DRIVE_STATE_LOW_VOLTAGE_RESTART) {
@@ -628,8 +632,9 @@ void changeDriveState(uint8_t newState) {
             // DRIVE_STATE_LOW_VOLTAGE_RESTART
             driveState = DRIVE_STATE_STOP;
 
-            if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION))
+            if (isSetAutoStateFlag(AUTO_STATE_FLAG_CAUTION)) {
                 clearAutoStateFlag(AUTO_STATE_FLAG_CAUTION);
+            }
             break;
         }
 
@@ -773,8 +778,9 @@ void changeDriveState(uint8_t newState) {
 
 void changeAutoState(uint8_t newState) {
     // ignore if we are not changing state
-    if (autoState == newState)
+    if (autoState == newState) {
         return;
+    }
 
     switch (newState) {
     case AUTO_STATE_INVALID:
@@ -834,10 +840,11 @@ void changeAutoState(uint8_t newState) {
                                 else
                                 {*/
             // if bumper isn't set (or both were triggered) then use ultrasonic to decide
-            if (min(ping[0][PING_CUR], ping[1][PING_CUR]) < min(ping[3][PING_CUR], ping[4][PING_CUR]))
+            if (min(ping[0][PING_CUR], ping[1][PING_CUR]) < min(ping[3][PING_CUR], ping[4][PING_CUR])) {
                 backDir = 1;
-            else
+            } else {
                 backDir = -1;
+            }
 
             //					}
 
@@ -1066,10 +1073,11 @@ void navigate() {
                 // if we are forcing right turn but calculations says left; Force right.
                 // else if we are forcing left turn but calculations says right; Force left.
                 // else do nothing as we are turning in correct direction.
-                if (turnAroundDir == 1 && angularError < 0)
+                if (turnAroundDir == 1 && angularError < 0) {
                     outputAngle *= -1.0;
-                else if (turnAroundDir == -1 && angularError > 0)
+                } else if (turnAroundDir == -1 && angularError > 0) {
                     outputAngle *= -1.0;
+                }
             }
 
             // scale angle (default of 1.5) This is to account for the 45 deg steer really is 30 deg
@@ -1103,10 +1111,11 @@ void navigate() {
                     // force a direction
                     if (ping_guess == 0) // unset
                     {
-                        if (offset_angle > 0)
+                        if (offset_angle > 0) {
                             ping_guess = 1;
-                        else
+                        } else {
                             ping_guess = -1;
+                        }
                     } else {
                         offset_angle = guess_angle * ping_guess;
                     }
@@ -1335,8 +1344,9 @@ void waypointUpdated() {
     distance = manager.getTargetWaypoint().distanceTo(location);
 
     // approach flag gets locked in until we we move to another waypoint or stop.
-    if (distance < approachRadius && isSetAutoStateFlag(AUTO_STATE_FLAG_APPROACH) == false)
+    if (distance < approachRadius && isSetAutoStateFlag(AUTO_STATE_FLAG_APPROACH) == false) {
         setAutoStateFlag(AUTO_STATE_FLAG_APPROACH);
+    }
 
     bool finished_line =
         finish_line_reached(backWaypoint.m_gpsCoord, manager.getTargetWaypoint().m_gpsCoord, location.m_gpsCoord);
@@ -1441,8 +1451,9 @@ void positionChanged() {
 
 void checkBumperSensor() {
     // If bumper is disabled, do nothing.
-    if (!isBumperEnabled)
+    if (!isBumperEnabled) {
         return;
+    }
 
     uint8_t leftButtonState = bumperSensor.leftButtonState();
     uint8_t rightButtonState = bumperSensor.rightButtonState();
@@ -1763,11 +1774,13 @@ void updateGyro() {
         trueHeading = cur_euler_z - euler_z_offset;
 
         // correct for any wraps out of the -3.14 to 3.14
-        if (trueHeading < -PI)
+        if (trueHeading < -PI) {
             trueHeading += 2 * PI;
+        }
 
-        if (trueHeading > PI)
+        if (trueHeading > PI) {
             trueHeading -= 2 * PI;
+        }
 
         trueHeading = toDeg(trueHeading);
 

@@ -84,15 +84,17 @@ rawData MPU6000::readSensors() {
 bool MPU6000::readFrom(uint8_t addr, uint8_t len, uint8_t* data) {
     spiControl.capture();
     SPI.transfer(addr | 0x80); // last bit set to specify a read
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < len; i++) {
         data[i] = SPI.transfer(0);
+    }
     return spiControl.release();
 }
 bool MPU6000::writeTo(uint8_t addr, uint8_t len, uint8_t* msg) {
     spiControl.capture();
     SPI.transfer(addr & ~0x80); // clear last bit to specify a write
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < len; i++) {
         SPI.transfer(msg[i]);
+    }
     return spiControl.release();
 }
 bool MPU6000::writeTo(uint8_t addr, uint8_t msg) { return writeTo(addr, 1, &msg); }
@@ -121,8 +123,9 @@ Sensor::Status MPU6000::status() {
     // poll WHO_AM_I for the correct value to see if its an MPU is present
     uint8_t buf[1];
     readFrom(REG_WHOAMI, 1, buf);
-    if (buf[0] == WHOIIS)
+    if (buf[0] == WHOIIS) {
         return Sensor::OK;
+    }
     return Sensor::BAD("MPUFAIL");
 }
 void MPU6000::calibrate() {

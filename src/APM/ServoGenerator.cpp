@@ -91,8 +91,9 @@ bool enable(uint8_t channel, int pin) {
     if (!output[channel].enabled()) {
         activeOutputs++;
         pass = true;
-        if (!begun)
+        if (!begun) {
             begin(DEFAULT_REFRESH_INTERVAL);
+        }
     }
     pinMode(pin, OUTPUT);
     output[channel].setPin(pin);
@@ -126,14 +127,16 @@ void setUpdateCallback(UpdateFunc callback) {
 
 Servo::Servo() : channel(-1) {}
 bool Servo::attach(uint8_t arduinopin) {
-    if (channel != -1)
+    if (channel != -1) {
         return false; // already attached
+    }
 
     // find open channel, try to attach
     uint8_t ch = 0;
     for (; ch < MAX_OUTPUTS; ch++) {
-        if (!output[ch].enabled())
+        if (!output[ch].enabled()) {
             break;
+        }
     }
     if (ch < MAX_OUTPUTS) {
         enable(ch, arduinopin);
@@ -143,8 +146,9 @@ bool Servo::attach(uint8_t arduinopin) {
     return false;
 }
 void Servo::detach() {
-    if (channel != -1)
+    if (channel != -1) {
         disable(channel);
+    }
     channel = -1;
 }
 bool Servo::attached() { return channel != -1; }
@@ -157,11 +161,13 @@ ISR(TIMER_ISR(TIMER_NUM, COMPA)) {
         uint16_t t = next->time;
         OCRA = t;
 
-        if (t > TCNT)
+        if (t > TCNT) {
             break;
+        }
         // clear any interrupt that may have been generated when OCRA was set
-        else
+        else {
             TIFR = _BV(OCF1A);
+        }
     } while (true);
 }
 
@@ -175,8 +181,9 @@ ISR(TIMER_ISR(TIMER_NUM, CAPT)) {
         // load the time and channel of action[i] only when needed
         uint16_t time = actions[i].time;
         // quickly check for sorted input
-        if (time >= actions[i - 1].time)
+        if (time >= actions[i - 1].time) {
             continue;
+        }
         // swap up the data to make room for actions[i]
         uint8_t channel = actions[i].channel;
         uint8_t j = i;

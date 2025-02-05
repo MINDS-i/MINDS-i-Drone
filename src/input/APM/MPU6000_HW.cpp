@@ -278,10 +278,12 @@ void MPU6000_DMP::setMemoryBank(byte bank, boolean prefetchEnabled, boolean user
     // bank 6: 6 & 0x1F = 00000110 $ 00011111 = 00000110
     // bank 7: 7 & 0x1F = 00000111 $ 00011111 = 00000111
     // is this to maximize the number of banks to 00011111 is 0x1F = 31 ?
-    if (userBank)
+    if (userBank) {
         bank |= 0x20;
-    if (prefetchEnabled)
+    }
+    if (prefetchEnabled) {
         bank |= 0x40;
+    }
     SPIwrite(0x6D, bank, ChipSelPin);
 }
 
@@ -912,8 +914,9 @@ byte MPU6000_DMP::dmpInitialize() {
 
             // DEBUG_PRINTLN(F("Waiting for FIFO count > 2..."));
             // Serial.println("Waiting for FIFO count to increment");
-            while ((fifoCount = getFIFOCount(m_chipSelect)) < 3)
+            while ((fifoCount = getFIFOCount(m_chipSelect)) < 3) {
                 ;
+            }
             // Serial.println("Done");
             /* switched off, may crash the sketch (FIFO contents not used here anyway)
             // 1st read FIFO
@@ -941,8 +944,9 @@ byte MPU6000_DMP::dmpInitialize() {
 
             // DEBUG_PRINTLN(F("Waiting for FIFO count > 2..."));
             // Serial.println("Waiting for FIFO count to increment");
-            while ((fifoCount = getFIFOCount(m_chipSelect)) < 3)
+            while ((fifoCount = getFIFOCount(m_chipSelect)) < 3) {
                 ;
+            }
             // Serial.println("Done");
 
             // DEBUG_PRINT(F("Current FIFO count="));
