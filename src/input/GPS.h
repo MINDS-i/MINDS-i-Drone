@@ -7,7 +7,7 @@
  * Interface for providing access to basic GPS information
  */
 class GPS {
-public:
+  public:
     /**
      * The most recent Waypoint indicating the GPS's current location
      */

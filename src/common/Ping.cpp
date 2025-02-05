@@ -15,7 +15,7 @@
 
 #include "Ping.h"
 
-uint16_t getPing(int pin, uint16_t maxMicros){
+uint16_t getPing(int pin, uint16_t maxMicros) {
     pinMode(pin, OUTPUT);
     digitalWrite(pin, LOW);
     delayMicroseconds(5);
@@ -25,14 +25,16 @@ uint16_t getPing(int pin, uint16_t maxMicros){
     delayMicroseconds(5);
     pinMode(pin, INPUT);
     int inputpulse = pulseIn(pin, HIGH, maxMicros);
-    if(inputpulse == 0) inputpulse = maxMicros;
+    if (inputpulse == 0) {
+        inputpulse = maxMicros;
+    }
     delayMicroseconds(200);
     pinMode(pin, OUTPUT);
     digitalWrite(pin, LOW);
     return inputpulse;
 }
 
-uint16_t QTI(int pin, uint16_t maxLoops){
+uint16_t QTI(int pin, uint16_t maxLoops) {
     uint16_t time = 0;
     pinMode(pin, OUTPUT);
     digitalWrite(pin, HIGH);
@@ -41,7 +43,9 @@ uint16_t QTI(int pin, uint16_t maxLoops){
     digitalWrite(pin, LOW);
     while (digitalRead(pin)) {
         time++;
-        if(time >= maxLoops) break;
+        if (time >= maxLoops) {
+            break;
+        }
     }
     return time;
 }

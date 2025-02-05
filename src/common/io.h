@@ -17,16 +17,13 @@ Copyright 2024 MINDS-i Inc.
 #ifndef MINDS_I_DRONE_COMMON_IO_H
 #define MINDS_I_DRONE_COMMON_IO_H
 
-#include <util/atomic.h>
 #include "Arduino.h"
 #include "wiring_private.h"
+#include <util/atomic.h>
 
 /** read a digital pin quicker than normal digitalRead
-     * by leaving out checks for the pin existing and its PWM mode
-     */
-inline bool fastDigitalRead(int pin){
-    return *portInputRegister(digitalPinToPort(pin))
-            & digitalPinToBitMask(pin);
-}
+ * by leaving out checks for the pin existing and its PWM mode
+ */
+inline bool fastDigitalRead(int pin) { return *portInputRegister(digitalPinToPort(pin)) & digitalPinToBitMask(pin); }
 
 #endif // MINDS_I_DRONE_COMMON_IO_H

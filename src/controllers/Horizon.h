@@ -1,37 +1,35 @@
-#include "util/PIDexternaltime.h"
-#include "util/PIDparameters.h"
 #include "math/SpatialMath.h"
 #include "output/FlightStrategy.h"
+#include "util/PIDexternaltime.h"
+#include "util/PIDparameters.h"
 
 class Horizon : public FlightStrategy {
-private:
+  private:
     PIDexternaltime pitchPID, pError;
-    PIDexternaltime  rollPID, rError;
-    PIDexternaltime   yawPID, yError;
+    PIDexternaltime rollPID, rError;
+    PIDexternaltime yawPID, yError;
     float pitch, roll, yaw, throttle;
-public:
-    Horizon(PIDparameters* pitchI, PIDparameters* pitchO,
-            PIDparameters*  rollI, PIDparameters*  rollO,
-            PIDparameters*   yawI, PIDparameters*   yawO ) :
-                pitchPID(pitchI), pError(pitchO),
-                 rollPID( rollI), rError( rollO),
-                  yawPID(  yawI), yError(  yawO) {}
-    void update(OrientationEngine& orientation, float ms, float (&torques)[4]){
-        //calculate outer loop
+
+  public:
+    Horizon(PIDparameters* pitchI, PIDparameters* pitchO, PIDparameters* rollI, PIDparameters* rollO,
+            PIDparameters* yawI, PIDparameters* yawO)
+        : pitchPID(pitchI), pError(pitchO), rollPID(rollI), rError(rollO), yawPID(yawI), yError(yawO) {}
+    void update(OrientationEngine& orientation, float ms, float (&torques)[4]) {
+        // calculate outer loop
         float p = pError.update(orientation.getPitch() - pitch, ms);
         float r = rError.update(orientation.getRoll() - roll, ms);
-        float y = yError.update(distanceRadian(yaw,orientation.getYaw()), ms);
-        //set inner loops with outer calculations
+        float y = yError.update(distanceRadian(yaw, orientation.getYaw()), ms);
+        // set inner loops with outer calculations
         pitchPID.set(p);
         rollPID.set(r);
         yawPID.set(y);
-        //set torques from inner PID loop calculations
-        torques[0] = pitchPID.update(orientation.getPitchRate()*1024.f,ms);//1024 from rad/millisecond
-        torques[1] = rollPID.update(orientation.getRollRate()*1024.f,ms);  //to rad/second
-        torques[2] = yawPID.update(orientation.getYawRate()*1024.f,ms);
+        // set torques from inner PID loop calculations
+        torques[0] = pitchPID.update(orientation.getPitchRate() * 1024.f, ms); // 1024 from rad/millisecond
+        torques[1] = rollPID.update(orientation.getRollRate() * 1024.f, ms);   // to rad/second
+        torques[2] = yawPID.update(orientation.getYawRate() * 1024.f, ms);
         torques[3] = throttle;
     }
-    void reset(){
+    void reset() {
         pitchPID.clearAccumulator();
         pitchPID.set(0);
         pError.clearAccumulator();
@@ -45,13 +43,11 @@ public:
         yError.clearAccumulator();
         yError.set(0);
     }
-    void set(float (&setps)[4]){
-        set(setps[0], setps[1], setps[2], setps[3]);
-    }
-    void set(float pitch, float roll, float yaw, float throttle){
-        this->pitch    = pitch;
-        this->roll     = roll;
-        this->yaw      = yaw;
+    void set(float (&setps)[4]) { set(setps[0], setps[1], setps[2], setps[3]); }
+    void set(float pitch, float roll, float yaw, float throttle) {
+        this->pitch = pitch;
+        this->roll = roll;
+        this->yaw = yaw;
         this->throttle = min(throttle, 1.0);
     }
 };
